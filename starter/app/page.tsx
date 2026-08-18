@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { createDatabase, pages, SlotView } from "@mimnets/core";
+import { SlotView } from "@mimnets/core";
+import { createDatabase, pages } from "@mimnets/core/db";
 
 import { registry } from "../blocks.config";
 

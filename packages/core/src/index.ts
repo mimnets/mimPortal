@@ -1,5 +1,6 @@
-export { createDatabase, pages } from "./db/index";
-export type { Database, NewPageRow, PageRow } from "./db/index";
+// The database lives behind "@mimnets/core/db" on purpose: this entrypoint is imported by
+// the Editor, which runs in a browser, and a Postgres driver has no business being bundled
+// there. Server code imports that subpath explicitly.
 
 export { defineBlock } from "./blocks/define";
 export type { AnyBlockType, BlockType, BlockTypeConfig } from "./blocks/define";

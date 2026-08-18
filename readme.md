@@ -237,6 +237,7 @@ was considered and rejected for a reason.
 7. [AI-generated Presets](./docs/adr/0007-ai-generated-presets.md)
 8. [One deployable, host-agnostic](./docs/adr/0008-one-deployable-host-agnostic.md)
 9. [Plain Postgres, Neon as the default managed host](./docs/adr/0009-plain-postgres-neon-as-default-host.md)
+10. [The web installer has two modes](./docs/adr/0010-web-installer-two-modes.md)
 
 ## Build order
 

@@ -81,6 +81,11 @@ Better Auth. Owner and Author roles. A `locked` flag per Slot, defaulting to loc
 Header and Footer. Every mutation checks the role server-side — the Editor hiding a button
 is a courtesy, not a permission.
 
+Auth also brings the **web installer** ([ADR-0010](./adr/0010-web-installer-two-modes.md)):
+provisioning mode for an Owner on self-hosted infrastructure, onboarding mode for a client
+who only creates their account and names the Site. It locks itself permanently on
+completion.
+
 **Done when:** an Author account can edit the main Slot, and cannot edit the Header, delete
 a Page, or change the Theme — verified by calling the endpoints directly, not just by
 looking at the UI.

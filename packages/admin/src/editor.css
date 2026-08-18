@@ -1,0 +1,287 @@
+/* Editor chrome only. The Blocks inside the preview are styled by the Site's own CSS, so
+   the preview shows what visitors will see rather than an approximation. */
+
+.mn-ed {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #111;
+}
+
+.mn-ed-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e2e6;
+  background: #fafafb;
+}
+
+.mn-ed-state {
+  margin-left: auto;
+  font-size: 0.8125rem;
+  color: #666;
+}
+
+.mn-ed-split {
+  display: grid;
+  grid-template-columns: 1fr 22rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.mn-ed-preview {
+  overflow: auto;
+  padding: 1rem;
+  background: #f4f4f6;
+}
+
+.mn-ed-panel {
+  overflow: auto;
+  border-left: 1px solid #e2e2e6;
+  background: #fff;
+}
+
+.mn-ed-panel-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.mn-ed-panel-body h2 {
+  margin: 0;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #666;
+}
+
+.mn-ed-slot {
+  margin-bottom: 1.25rem;
+}
+
+.mn-ed-slot-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8a8a96;
+  margin-bottom: 0.375rem;
+}
+
+.mn-ed-section {
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.mn-ed-section.is-selected {
+  border-color: #3b6cf6;
+  box-shadow: 0 0 0 2px rgb(59 108 246 / 0.15);
+}
+
+.mn-ed-section.is-dragging,
+.mn-ed-block.is-dragging {
+  opacity: 0.4;
+}
+
+.mn-ed-section-bar,
+.mn-ed-block-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.mn-ed-block-bar {
+  border-bottom: none;
+  border-top: 1px solid #f0f0f2;
+  justify-content: space-between;
+}
+
+.mn-ed-section-bar button,
+.mn-ed-block-bar button {
+  border: 1px solid #dcdce2;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+}
+
+.mn-ed-section-bar select {
+  font-size: 0.75rem;
+}
+
+.mn-ed-grip {
+  cursor: grab;
+  touch-action: none;
+}
+
+/* Dragging by the handle must not start a text selection in the Block being dragged. */
+.mn-ed-section-bar,
+.mn-ed-block-bar,
+.mn-ed-slot-label {
+  user-select: none;
+}
+
+.mn-ed-columns {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: var(--mn-columns, 1fr);
+  padding: 0.75rem;
+}
+
+.mn-ed-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 5rem;
+  min-width: 0;
+  border: 1px dashed #dcdce2;
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.mn-ed-column.is-over {
+  border-color: #3b6cf6;
+  background: rgb(59 108 246 / 0.04);
+}
+
+.mn-ed-block {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.mn-ed-block.is-selected {
+  border-color: #3b6cf6;
+  box-shadow: 0 0 0 2px rgb(59 108 246 / 0.15);
+}
+
+.mn-ed-block-body {
+  padding: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.mn-ed-empty {
+  margin: 0;
+  padding: 0.75rem;
+  text-align: center;
+  color: #9a9aa6;
+  font-size: 0.8125rem;
+}
+
+.mn-ed-add,
+.mn-ed-add-section {
+  font-size: 0.75rem;
+}
+
+.mn-ed-hint {
+  color: #666;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.mn-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.mn-field-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mn-field input,
+.mn-field select,
+.mn-field textarea {
+  font: inherit;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #dcdce2;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.mn-field small {
+  color: #8a8a96;
+}
+
+.mn-field-group {
+  border: 1px solid #e2e2e6;
+  border-radius: 4px;
+  padding: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.mn-field-group legend {
+  font-size: 0.75rem;
+  color: #666;
+  padding: 0 0.25rem;
+}
+
+.mn-repeater-item {
+  border: 1px solid #ececed;
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.mn-repeater-bar {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #8a8a96;
+  margin-bottom: 0.5rem;
+}
+
+.mn-repeater-bar button {
+  border: 1px solid #dcdce2;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 0.25rem;
+}
+
+.mn-repeater-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mn-button {
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #dcdce2;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.mn-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mn-button-primary {
+  background: #3b6cf6;
+  border-color: #3b6cf6;
+  color: #fff;
+}
+
+.mn-button-danger {
+  color: #b00020;
+  border-color: #e6c3c9;
+}

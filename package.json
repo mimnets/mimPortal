@@ -14,7 +14,8 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish",
-    "seed": "pnpm --filter starter run seed"
+    "seed": "pnpm --filter starter run seed",
+    "test": "vitest run"
   },
   "engines": {
     "node": ">=20"
@@ -23,6 +24,7 @@
     "@changesets/cli": "^3.0.0",
     "dotenv": "^17.4.2",
     "turbo": "^2.10.10",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }
