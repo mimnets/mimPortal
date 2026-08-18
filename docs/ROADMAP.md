@@ -64,7 +64,7 @@ refresh, and everything is where you left it.
 
 ---
 
-## M3 — Draft, publish, history
+## M3 — Draft, publish, history ✅
 
 `draftLayout` and `publishedLayout` on Page. Publishing copies one to the other and appends
 a snapshot to a version table. A restore action. Public routes read published only; the

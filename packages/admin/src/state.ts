@@ -50,6 +50,7 @@ export type EditorAction =
   | { type: "deleteSection"; path: SectionPath }
   | { type: "moveSection"; slot: SlotName; from: number; to: number }
   | { type: "setSectionLayout"; path: SectionPath; layout: ColumnLayout }
+  | { type: "loadLayout"; layout: PageLayout }
   | { type: "saved" };
 
 function newId(prefix: string): string {
@@ -146,6 +147,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
 
     case "saved":
       return { ...state, dirty: false };
+
+    // Restoring a version replaces the draft in place. It counts as an unsaved change,
+    // because a restore is a proposal until the Author publishes it.
+    case "loadLayout":
+      return { layout: action.layout, selection: null, dirty: true };
 
     case "setProp": {
       const layout = structuredClone(state.layout);

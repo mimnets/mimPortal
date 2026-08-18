@@ -5,9 +5,19 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import type { Dispatch } from "react";
 
-import type { BlockInstance, BlockRegistry, ColumnNode, PageLayout, SectionNode, SlotName } from "@mimnets/core";
-import { COLUMN_LAYOUTS, columnTemplate, SLOT_NAMES } from "@mimnets/core";
+import type {
+  BlockInstance,
+  BlockRegistry,
+  ColumnLayout,
+  ColumnNode,
+  PageLayout,
+  SectionNode,
+  SlotName,
+} from "@mimnets/core";
+import { columnTemplate, SLOT_NAMES } from "@mimnets/core";
 
+import { BlockIcon, GripIcon, ICONS_BY_BLOCK, SlotIcon, TrashIcon } from "./icons";
+import { BlockPicker, LayoutPicker } from "./pickers";
 import type { BlockPath, EditorAction, Selection } from "./state";
 
 /**
@@ -44,6 +54,7 @@ function BlockCard({
   });
   const blockType = registry.get(block.type);
   const selected = isSelectedBlock(selection, path);
+  const Glyph = ICONS_BY_BLOCK[block.type] ?? BlockIcon;
 
   return (
     <div
@@ -56,19 +67,31 @@ function BlockCard({
       }}
     >
       <div className="mn-ed-block-bar">
-        <button type="button" className="mn-ed-grip" {...attributes} {...listeners} aria-label="Drag block">
-          ⠿
-        </button>
-        <span>{blockType?.label ?? block.type}</span>
         <button
           type="button"
-          aria-label="Delete block"
+          className="mn-icon-button mn-ed-grip"
+          {...attributes}
+          {...listeners}
+          aria-label={`Drag ${blockType?.label ?? block.type} block`}
+          title="Drag to move"
+        >
+          <GripIcon />
+        </button>
+        <span className="mn-ed-tag">
+          <Glyph />
+          {blockType?.label ?? block.type}
+        </span>
+        <button
+          type="button"
+          className="mn-icon-button mn-icon-button-danger"
+          aria-label={`Delete ${blockType?.label ?? block.type} block`}
+          title="Delete Block"
           onClick={(event) => {
             event.stopPropagation();
             dispatch({ type: "deleteBlock", path });
           }}
         >
-          ✕
+          <TrashIcon />
         </button>
       </div>
       <div className="mn-ed-block-body">
@@ -109,27 +132,19 @@ function Column({
         ))}
       </SortableContext>
 
-      {column.blocks.length === 0 ? <p className="mn-ed-empty">Drop a Block here</p> : null}
+      {column.blocks.length === 0 ? (
+        <p className="mn-ed-empty">Drop a Block here</p>
+      ) : null}
 
-      <select
-        className="mn-ed-add"
-        value=""
-        aria-label="Add a Block to this Column"
-        onChange={(event) => {
-          const blockType = registry.get(event.target.value);
+      <BlockPicker
+        registry={registry}
+        onPick={(name) => {
+          const blockType = registry.get(name);
           if (blockType) {
             dispatch({ type: "addBlock", target: { slot, section, column: columnIndex }, blockType });
           }
-          event.target.value = "";
         }}
-      >
-        <option value="">+ Add Block</option>
-        {registry.blocks.map((blockType) => (
-          <option key={blockType.name} value={blockType.name}>
-            {blockType.label}
-          </option>
-        ))}
-      </select>
+      />
     </div>
   );
 }
@@ -155,43 +170,49 @@ function Section({
       ref={setNodeRef}
       className={`mn-ed-section${selected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      onClick={() => dispatch({ type: "select", selection: { kind: "section", path: { slot, section: index } } })}
+      onClick={() =>
+        dispatch({ type: "select", selection: { kind: "section", path: { slot, section: index } } })
+      }
     >
       <div className="mn-ed-section-bar">
-        <button type="button" className="mn-ed-grip" {...attributes} {...listeners} aria-label="Drag section">
-          ⠿
-        </button>
-        <select
-          value={section.layout}
-          aria-label="Column layout"
-          onClick={(event) => event.stopPropagation()}
-          onChange={(event) =>
-            dispatch({
-              type: "setSectionLayout",
-              path: { slot, section: index },
-              layout: event.target.value as keyof typeof COLUMN_LAYOUTS,
-            })
-          }
-        >
-          {Object.keys(COLUMN_LAYOUTS).map((layout) => (
-            <option key={layout} value={layout}>
-              {layout}
-            </option>
-          ))}
-        </select>
         <button
           type="button"
+          className="mn-icon-button mn-ed-grip"
+          {...attributes}
+          {...listeners}
+          aria-label="Drag section"
+          title="Drag to reorder"
+        >
+          <GripIcon />
+        </button>
+        <span className="mn-ed-tag">Section</span>
+
+        <LayoutPicker
+          compact
+          value={section.layout}
+          onChange={(layout: ColumnLayout) =>
+            dispatch({ type: "setSectionLayout", path: { slot, section: index }, layout })
+          }
+        />
+
+        <button
+          type="button"
+          className="mn-icon-button mn-icon-button-danger"
           aria-label="Delete section"
+          title="Delete Section"
           onClick={(event) => {
             event.stopPropagation();
             dispatch({ type: "deleteSection", path: { slot, section: index } });
           }}
         >
-          ✕
+          <TrashIcon />
         </button>
       </div>
 
-      <div className="mn-ed-columns" style={{ ["--mn-columns" as string]: columnTemplate(section.layout) }}>
+      <div
+        className="mn-ed-columns"
+        style={{ ["--mn-columns" as string]: columnTemplate(section.layout) }}
+      >
         {section.columns.map((column, columnIndex) => (
           <Column
             key={column.id}
@@ -219,7 +240,10 @@ export function Preview({
     <div className="mn-ed-preview" onClick={() => dispatch({ type: "select", selection: null })}>
       {SLOT_NAMES.map((slot) => (
         <div key={slot} className="mn-ed-slot" data-slot={slot}>
-          <header className="mn-ed-slot-label">{slot}</header>
+          <header className="mn-ed-slot-label">
+            <SlotIcon slot={slot} />
+            <span>{slot}</span>
+          </header>
 
           <SortableContext
             items={layout.slots[slot].map((section) => `sec:${section.id}`)}
@@ -240,13 +264,13 @@ export function Preview({
 
           <button
             type="button"
-            className="mn-button mn-ed-add-section"
+            className="mn-button mn-button-ghost"
             onClick={(event) => {
               event.stopPropagation();
               dispatch({ type: "addSection", slot, layout: "1" });
             }}
           >
-            + Section
+            + Add Section
           </button>
         </div>
       ))}

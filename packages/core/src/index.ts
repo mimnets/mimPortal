@@ -2,6 +2,8 @@
 // the Editor, which runs in a browser, and a Postgres driver has no business being bundled
 // there. Server code imports that subpath explicitly.
 
+export type { PageVersionRow } from "./db/schema";
+
 export { defineBlock } from "./blocks/define";
 export type { AnyBlockType, BlockType, BlockTypeConfig } from "./blocks/define";
 

@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { createDatabase, pages } from "@mimnets/core/db";
-import { EditorClient } from "./EditorClient";
 
 import { registry } from "../../blocks.config";
-import { saveDraft } from "./actions";
+import { listVersions, publishPage, restoreVersion, saveDraft } from "./actions";
+import { EditorClient } from "./EditorClient";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +28,19 @@ export default async function EditorPage() {
     );
   }
 
-  // An unparseable draft opens as an empty Page rather than a crash; the Author can rebuild
-  // it. M3 adds the version history that makes that recoverable rather than merely survivable.
+  // An unparseable draft opens as an empty Page rather than a crash, and History is where
+  // the Author recovers from it.
   const { layout } = registry.safeParseLayout(page.draftLayout ?? page.publishedLayout);
+  const versions = await listVersions(page.id);
 
-  return <EditorClient layout={layout} pageTitle={page.title} onSave={saveDraft} />;
+  return (
+    <EditorClient
+      layout={layout}
+      pageTitle={page.title}
+      versions={versions}
+      onSave={saveDraft}
+      onPublish={publishPage}
+      onRestore={restoreVersion}
+    />
+  );
 }

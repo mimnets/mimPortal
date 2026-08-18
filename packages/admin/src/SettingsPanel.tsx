@@ -3,9 +3,11 @@
 import type { Dispatch } from "react";
 
 import type { BlockRegistry, FieldsShape, PageLayout } from "@mimnets/core";
-import { COLUMN_LAYOUTS } from "@mimnets/core";
+import type { ColumnLayout } from "@mimnets/core";
 
 import { FieldInput } from "./FieldInput";
+import { BlockIcon, ICONS_BY_BLOCK, TrashIcon } from "./icons";
+import { LayoutPicker } from "./pickers";
 import { blockAt, blockTypeFor, type EditorAction, type Selection } from "./state";
 
 /**
@@ -33,7 +35,13 @@ export function SettingsPanel({
 
     return (
       <div className="mn-ed-panel-body">
-        <h2>{blockType.label}</h2>
+        <h2 className="mn-ed-panel-title">
+          {(() => {
+            const Glyph = ICONS_BY_BLOCK[blockType.name] ?? BlockIcon;
+            return <Glyph />;
+          })()}
+          {blockType.label}
+        </h2>
         {Object.entries(blockType.fields as FieldsShape).map(([name, field]) => (
           <FieldInput
             key={name}
@@ -48,6 +56,7 @@ export function SettingsPanel({
           className="mn-button mn-button-danger"
           onClick={() => dispatch({ type: "deleteBlock", path: selection.path })}
         >
+          <TrashIcon />
           Delete Block
         </button>
       </div>
@@ -61,35 +70,25 @@ export function SettingsPanel({
     return (
       <div className="mn-ed-panel-body">
         <h2>Section</h2>
-        <label className="mn-field" htmlFor="section-layout">
+        <div className="mn-field">
           <span>Column layout</span>
-          <select
-            id="section-layout"
+          <LayoutPicker
             value={section.layout}
-            onChange={(event) =>
-              dispatch({
-                type: "setSectionLayout",
-                path: selection.path,
-                layout: event.target.value as keyof typeof COLUMN_LAYOUTS,
-              })
+            onChange={(layout: ColumnLayout) =>
+              dispatch({ type: "setSectionLayout", path: selection.path, layout })
             }
-          >
-            {Object.keys(COLUMN_LAYOUTS).map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
+          />
           <small>
             Narrowing a Section keeps the Blocks from the Columns it drops — they move into the
             last one.
           </small>
-        </label>
+        </div>
         <button
           type="button"
           className="mn-button mn-button-danger"
           onClick={() => dispatch({ type: "deleteSection", path: selection.path })}
         >
+          <TrashIcon />
           Delete Section
         </button>
       </div>
@@ -100,7 +99,7 @@ export function SettingsPanel({
     <div className="mn-ed-panel-body">
       <h2>Nothing selected</h2>
       <p className="mn-ed-hint">
-        Click a Block to edit its fields, or a Section to change its Columns. Drag by the ⠿ handle
+        Click a Block to edit its fields, or a Section to change its Columns. Drag by the handle
         to reorder, including from one Column into another.
       </p>
     </div>

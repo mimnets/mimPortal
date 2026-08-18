@@ -12,6 +12,8 @@ import { useReducer, useState } from "react";
 
 import type { BlockRegistry, PageLayout } from "@mimnets/core";
 
+import { History, type PageVersionSummary } from "./History";
+import { SaveIcon } from "./icons";
 import { Preview } from "./Preview";
 import { SettingsPanel } from "./SettingsPanel";
 import {
@@ -28,12 +30,33 @@ export interface EditorProps {
   pageTitle: string;
   /** Persists the draft. Throwing here surfaces the message to the Author. */
   onSave: (layout: PageLayout) => Promise<void>;
+  /**
+   * Publishes the draft and returns the version list as it now stands, so the panel stays
+   * accurate without the Editor knowing anything about routing or revalidation.
+   */
+  onPublish: (layout: PageLayout) => Promise<PageVersionSummary[]>;
+  /** Loads an old version back into the draft. */
+  onRestore: (versionId: string) => Promise<PageLayout>;
+  versions: PageVersionSummary[];
 }
 
-export function Editor({ layout, registry, pageTitle, onSave }: EditorProps) {
+type Tab = "settings" | "history";
+
+export function Editor({
+  layout,
+  registry,
+  pageTitle,
+  onSave,
+  onPublish,
+  onRestore,
+  versions: initialVersions,
+}: EditorProps) {
   const [state, dispatch] = useReducer(editorReducer, layout, initialState);
-  const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "saving" | "publishing">("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [versions, setVersions] = useState(initialVersions);
+  const [tab, setTab] = useState<Tab>("settings");
 
   // A small distance before a drag begins, so clicking a Block to select it does not drag it.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -74,35 +97,59 @@ export function Editor({ layout, registry, pageTitle, onSave }: EditorProps) {
     }
   }
 
-  async function save() {
-    setStatus("saving");
+  async function run(kind: "saving" | "publishing", work: () => Promise<string>) {
+    setStatus(kind);
+    setError(null);
     setMessage(null);
     try {
-      await onSave(state.layout);
+      const result = await work();
       dispatch({ type: "saved" });
+      setMessage(result);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Something went wrong");
+    } finally {
       setStatus("idle");
-      setMessage("Draft saved");
-    } catch (error) {
-      setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Could not save");
     }
   }
+
+  const busy = status !== "idle";
 
   return (
     <div className="mn-ed">
       <header className="mn-ed-bar">
         <strong>{pageTitle}</strong>
-        <span className="mn-ed-state">
-          {state.dirty ? "Unsaved changes" : "No changes"}
-          {message ? ` — ${message}` : ""}
+
+        <span className={`mn-ed-state${error ? " is-error" : state.dirty ? " is-dirty" : ""}`}>
+          {error ?? message ?? (state.dirty ? "Unsaved changes" : "All changes saved")}
         </span>
+
+        <button
+          type="button"
+          className="mn-button"
+          disabled={busy || !state.dirty}
+          onClick={() =>
+            run("saving", async () => {
+              await onSave(state.layout);
+              return "Draft saved";
+            })
+          }
+        >
+          <SaveIcon />
+          {status === "saving" ? "Saving…" : "Save draft"}
+        </button>
+
         <button
           type="button"
           className="mn-button mn-button-primary"
-          disabled={status === "saving" || !state.dirty}
-          onClick={save}
+          disabled={busy}
+          onClick={() =>
+            run("publishing", async () => {
+              setVersions(await onPublish(state.layout));
+              return "Published";
+            })
+          }
         >
-          {status === "saving" ? "Saving…" : "Save draft"}
+          {status === "publishing" ? "Publishing…" : "Publish"}
         </button>
       </header>
 
@@ -121,13 +168,47 @@ export function Editor({ layout, registry, pageTitle, onSave }: EditorProps) {
             selection={state.selection}
             dispatch={dispatch}
           />
+
           <aside className="mn-ed-panel">
-            <SettingsPanel
-              layout={state.layout}
-              registry={registry}
-              selection={state.selection}
-              dispatch={dispatch}
-            />
+            <div className="mn-ed-tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === "settings"}
+                className={`mn-ed-tab${tab === "settings" ? " is-active" : ""}`}
+                onClick={() => setTab("settings")}
+              >
+                Settings
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === "history"}
+                className={`mn-ed-tab${tab === "history" ? " is-active" : ""}`}
+                onClick={() => setTab("history")}
+              >
+                History{versions.length > 0 ? ` (${versions.length})` : ""}
+              </button>
+            </div>
+
+            {tab === "settings" ? (
+              <SettingsPanel
+                layout={state.layout}
+                registry={registry}
+                selection={state.selection}
+                dispatch={dispatch}
+              />
+            ) : (
+              <History
+                versions={versions}
+                onRestore={async (versionId) => {
+                  const restored = await onRestore(versionId);
+                  dispatch({ type: "loadLayout", layout: restored });
+                  setTab("settings");
+                  setMessage("Version restored into the draft — publish to make it live");
+                }}
+              />
+            )}
           </aside>
         </div>
       </DndContext>

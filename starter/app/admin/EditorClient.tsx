@@ -4,6 +4,7 @@ import { Editor } from "@mimnets/admin";
 import type { PageLayout } from "@mimnets/core";
 
 import { registry } from "../../blocks.config";
+import type { PageVersionSummary } from "./actions";
 
 /**
  * The registry holds React components and Zod schemas, so it cannot be serialised across
@@ -13,11 +14,27 @@ import { registry } from "../../blocks.config";
 export function EditorClient({
   layout,
   pageTitle,
+  versions,
   onSave,
+  onPublish,
+  onRestore,
 }: {
   layout: PageLayout;
   pageTitle: string;
+  versions: PageVersionSummary[];
   onSave: (layout: PageLayout) => Promise<void>;
+  onPublish: (layout: PageLayout) => Promise<PageVersionSummary[]>;
+  onRestore: (versionId: string) => Promise<PageLayout>;
 }) {
-  return <Editor layout={layout} registry={registry} pageTitle={pageTitle} onSave={onSave} />;
+  return (
+    <Editor
+      layout={layout}
+      registry={registry}
+      pageTitle={pageTitle}
+      versions={versions}
+      onSave={onSave}
+      onPublish={onPublish}
+      onRestore={onRestore}
+    />
+  );
 }

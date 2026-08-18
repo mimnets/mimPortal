@@ -285,3 +285,271 @@
   color: #b00020;
   border-color: #e6c3c9;
 }
+
+/* ---- Visual controls -------------------------------------------------------
+   Icon buttons, the Block picker and the Column-layout chooser. Text labels
+   like "2-1" and "✕" told an Author nothing; a drawn proportion and a glyph do. */
+
+.mn-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #6b6b78;
+  cursor: pointer;
+}
+
+.mn-icon-button:hover {
+  background: #f0f0f3;
+  color: #111;
+}
+
+.mn-icon-button-danger:hover {
+  background: #fdecef;
+  border-color: #f2c9d1;
+  color: #b00020;
+}
+
+.mn-ed-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #55555f;
+}
+
+.mn-ed-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mn-ed-slot-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.mn-ed-state.is-dirty {
+  color: #9a6b00;
+}
+
+/* Block picker */
+
+.mn-picker {
+  position: relative;
+  margin-top: auto;
+}
+
+.mn-picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  font: inherit;
+  font-size: 0.75rem;
+  color: #55555f;
+  background: #fff;
+  border: 1px dashed #d2d2da;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.mn-picker-trigger:hover {
+  border-color: #3b6cf6;
+  color: #3b6cf6;
+}
+
+.mn-picker-menu {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  padding: 0.25rem;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.1);
+}
+
+.mn-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mn-picker-item:hover {
+  background: #f0f4ff;
+  color: #3b6cf6;
+}
+
+.mn-picker-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+  background: #f2f2f5;
+  color: #55555f;
+}
+
+/* Column-layout chooser */
+
+.mn-layouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.mn-layouts.is-compact {
+  margin-left: auto;
+  margin-right: 0.25rem;
+}
+
+.mn-layout {
+  display: flex;
+  gap: 2px;
+  width: 2.75rem;
+  height: 1.5rem;
+  padding: 3px;
+  background: #fff;
+  border: 1px solid #dcdce2;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mn-layouts.is-compact .mn-layout {
+  width: 2.25rem;
+  height: 1.25rem;
+}
+
+.mn-layout:hover {
+  border-color: #b9c6f2;
+}
+
+.mn-layout.is-active {
+  border-color: #3b6cf6;
+  box-shadow: 0 0 0 2px rgb(59 108 246 / 0.15);
+}
+
+.mn-layout-bar {
+  display: block;
+  background: #c9c9d2;
+  border-radius: 2px;
+}
+
+.mn-layout.is-active .mn-layout-bar {
+  background: #3b6cf6;
+}
+
+.mn-button-ghost {
+  width: 100%;
+  color: #55555f;
+  border-style: dashed;
+}
+
+.mn-button-ghost:hover {
+  border-color: #3b6cf6;
+  color: #3b6cf6;
+}
+
+.mn-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+/* ---- Tabs and version history --------------------------------------------- */
+
+.mn-ed-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e2e6;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 5;
+}
+
+.mn-ed-tab {
+  flex: 1;
+  padding: 0.625rem 0.5rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: #6b6b78;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.mn-ed-tab.is-active {
+  color: #3b6cf6;
+  border-bottom-color: #3b6cf6;
+}
+
+.mn-ed-state.is-error {
+  color: #b00020;
+}
+
+.mn-ed-error {
+  margin: 0;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.8125rem;
+  color: #b00020;
+  background: #fdecef;
+  border: 1px solid #f2c9d1;
+  border-radius: 4px;
+}
+
+.mn-versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mn-version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid #e2e2e6;
+  border-radius: 5px;
+}
+
+.mn-version span {
+  display: flex;
+  flex-direction: column;
+}
+
+.mn-version strong {
+  font-size: 0.8125rem;
+}
+
+.mn-version time {
+  font-size: 0.75rem;
+  color: #8a8a96;
+}
