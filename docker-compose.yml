@@ -1,0 +1,45 @@
+# Two ways to use this file:
+#
+#   docker compose up -d db          → Postgres only, for local development (pnpm dev on the host)
+#   docker compose --profile full up → the whole Site, app and database, self-hosted
+#
+# The second form is what runs on a VPS (ADR-0008). The first is the everyday dev database.
+
+# Each Site on a shared host needs its own project name, so this is overridable:
+#   COMPOSE_PROJECT_NAME=client-a docker compose up -d db
+name: ${COMPOSE_PROJECT_NAME:-mimnets-multisite}
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mimnets
+      POSTGRES_PASSWORD: mimnets
+      POSTGRES_DB: mimnets
+    ports:
+      - "5432:5432"
+    volumes:
+      - mimnets-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mimnets -d mimnets"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    profiles: ["full"]
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://mimnets:mimnets@db:5432/mimnets
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mimnets-db:

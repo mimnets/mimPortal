@@ -1,0 +1,27 @@
+{
+  "name": "mimnets",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A TypeScript product for building websites you hand to clients",
+  "packageManager": "pnpm@11.17.0",
+  "scripts": {
+    "setup": "pnpm --filter starter run setup",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter starter db:generate",
+    "db:migrate": "pnpm --filter starter db:migrate",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.0",
+    "dotenv": "^17.4.2",
+    "turbo": "^2.10.10",
+    "typescript": "^7.0.2"
+  }
+}

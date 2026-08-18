@@ -1,0 +1,16 @@
+{
+  "name": "@mimnets/blocks",
+  "version": "0.0.0",
+  "description": "Standard Block Types",
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
