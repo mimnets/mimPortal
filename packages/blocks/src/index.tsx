@@ -1,12 +1,12 @@
 import { defineBlock, field } from "@mimnets/core";
 
 /**
- * The standard Block library. Three Blocks is enough to prove the interface at M1; the
- * library grows to roughly twenty at M8.5, which is what makes generated Presets look
- * genuinely different from one another (ADR-0007).
+ * The standard Block library. The library grows to roughly twenty at M8.5, which is what
+ * makes generated Presets look genuinely different from one another (ADR-0007).
  *
- * Blocks are styled with class names only. Never hardcode a colour or a font here — a Site's
- * Theme supplies those, and that is what lets one library look like five brands.
+ * Blocks are styled with class names and Theme tokens only. Never hardcode a colour or a
+ * font here — a Site's theme.ts supplies those, and that is what lets one library look like
+ * five brands.
  */
 
 export const headingBlock = defineBlock({
@@ -14,11 +14,7 @@ export const headingBlock = defineBlock({
   label: "Heading",
   fields: {
     text: field.text({ label: "Heading text", default: "Heading" }),
-    level: field.select({
-      label: "Level",
-      options: ["h1", "h2", "h3"],
-      default: "h2",
-    }),
+    level: field.select({ label: "Level", options: ["h1", "h2", "h3"], default: "h2" }),
     align: field.select({
       label: "Alignment",
       options: ["left", "center", "right"],
@@ -74,5 +70,74 @@ export const imageBlock = defineBlock({
   },
 });
 
+export const logoBlock = defineBlock({
+  name: "logo",
+  label: "Logo",
+  fields: {
+    image: field.image({ label: "Logo image", help: "Leave empty to use text instead" }),
+    text: field.text({ label: "Text logo", default: "" }),
+    href: field.text({ label: "Links to", default: "/" }),
+  },
+  render: ({ image, text, href }, context) => (
+    <a className="mn-logo" href={href || "/"}>
+      {image.url ? (
+        <img src={image.url} alt={image.alt || text || context.siteName} />
+      ) : (
+        <span className="mn-logo-text">{text || context.siteName}</span>
+      )}
+    </a>
+  ),
+});
+
+/**
+ * Renders a Menu by slug rather than holding its own copy of the links, so editing the Menu
+ * updates the Header and the Footer together.
+ *
+ * The mobile drawer is a checkbox and CSS, with no JavaScript: navigation is the one thing
+ * on a Site that has to work before anything else has loaded.
+ */
+export const menuBlock = defineBlock({
+  name: "menu",
+  label: "Menu",
+  fields: {
+    slug: field.text({ label: "Menu", default: "main", help: "Which Menu to show" }),
+    align: field.select({ label: "Alignment", options: ["start", "center", "end"], default: "end" }),
+  },
+  render: ({ slug, align }, context) => {
+    const items = context.menus[slug] ?? [];
+    const toggleId = `mn-nav-${slug}`;
+
+    if (items.length === 0) {
+      return <nav className="mn-nav" data-empty="true" aria-label="Navigation" />;
+    }
+
+    return (
+      <nav className="mn-nav" style={{ justifyContent: align }} aria-label="Navigation">
+        <input type="checkbox" id={toggleId} className="mn-nav-toggle" />
+        <label htmlFor={toggleId} className="mn-nav-button" aria-label="Menu">
+          <span />
+          <span />
+          <span />
+        </label>
+
+        <ul className="mn-nav-list">
+          {items.map((item) => (
+            <li key={item.id}>
+              <a
+                href={item.href}
+                target={item.newTab ? "_blank" : undefined}
+                rel={item.newTab ? "noreferrer" : undefined}
+                aria-current={item.href === context.currentPath ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    );
+  },
+});
+
 /** Registered by a Site in its blocks.config.ts, alongside any Blocks of its own. */
-export const standardBlocks = [headingBlock, textBlock, imageBlock];
+export const standardBlocks = [headingBlock, textBlock, imageBlock, logoBlock, menuBlock];

@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Dispatch } from "react";
 
 import type {
+  RenderContext,
   BlockInstance,
   BlockRegistry,
   ColumnLayout,
@@ -14,7 +15,7 @@ import type {
   SectionNode,
   SlotName,
 } from "@mimnets/core";
-import { columnTemplate, SLOT_NAMES, SlotView } from "@mimnets/core";
+import { columnTemplate, emptyContext, SLOT_NAMES, SlotView } from "@mimnets/core";
 
 import { BlockIcon, GripIcon, ICONS_BY_BLOCK, LockIcon, SlotIcon, TrashIcon } from "./icons";
 import { BlockPicker, LayoutPicker } from "./pickers";
@@ -30,6 +31,8 @@ interface Common {
   registry: BlockRegistry;
   selection: Selection;
   dispatch: Dispatch<EditorAction>;
+  /** Resolved once by the Site, so the preview shows real Menus rather than placeholders. */
+  context: RenderContext;
 }
 
 function isSelectedBlock(selection: Selection, path: BlockPath): boolean {
@@ -48,6 +51,7 @@ function BlockCard({
   registry,
   selection,
   dispatch,
+  context,
 }: Common & { block: BlockInstance; path: BlockPath }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
@@ -95,7 +99,7 @@ function BlockCard({
         </button>
       </div>
       <div className="mn-ed-block-body">
-        {blockType ? blockType.render(block.props) : <em>Unknown Block: {block.type}</em>}
+        {blockType ? blockType.render(block.props, context) : <em>Unknown Block: {block.type}</em>}
       </div>
     </div>
   );
@@ -109,6 +113,7 @@ function Column({
   registry,
   selection,
   dispatch,
+  context,
 }: Common & {
   column: ColumnNode;
   slot: SlotName;
@@ -128,6 +133,7 @@ function Column({
             registry={registry}
             selection={selection}
             dispatch={dispatch}
+            context={context}
           />
         ))}
       </SortableContext>
@@ -156,6 +162,7 @@ function Section({
   registry,
   selection,
   dispatch,
+  context,
 }: Common & { section: SectionNode; slot: SlotName; index: number }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `sec:${section.id}`,
@@ -223,6 +230,7 @@ function Section({
             registry={registry}
             selection={selection}
             dispatch={dispatch}
+            context={context}
           />
         ))}
       </div>
@@ -235,6 +243,7 @@ export function Preview({
   registry,
   selection,
   dispatch,
+  context,
   lockedSlots = [],
 }: Common & { layout: PageLayout; lockedSlots?: SlotName[] }) {
   return (
@@ -253,7 +262,7 @@ export function Preview({
               </span>
             </header>
             <div className="mn-ed-locked-body">
-              <SlotView layout={layout} slot={slot} registry={registry} />
+              <SlotView layout={layout} slot={slot} registry={registry} context={context} />
             </div>
           </div>
         ) : (
@@ -276,6 +285,7 @@ export function Preview({
                 registry={registry}
                 selection={selection}
                 dispatch={dispatch}
+                context={context}
               />
             ))}
           </SortableContext>

@@ -10,7 +10,8 @@ import {
 } from "@dnd-kit/core";
 import { useReducer, useState } from "react";
 
-import type { BlockRegistry, PageLayout, SlotName } from "@mimnets/core";
+import type { BlockRegistry, PageLayout, RenderContext, SlotName } from "@mimnets/core";
+import { emptyContext } from "@mimnets/core";
 
 import { History, type PageVersionSummary } from "./History";
 import { SaveIcon } from "./icons";
@@ -40,6 +41,8 @@ export interface EditorProps {
   versions: PageVersionSummary[];
   /** Slots this person may not change. Empty for an Owner. */
   lockedSlots?: SlotName[];
+  /** Menus and Site name, resolved by the server so the preview matches the public Site. */
+  context?: RenderContext;
   signedInAs?: string;
   onSignOut?: () => Promise<void>;
 }
@@ -55,6 +58,7 @@ export function Editor({
   onRestore,
   versions: initialVersions,
   lockedSlots = [],
+  context = emptyContext(),
   signedInAs,
   onSignOut,
 }: EditorProps) {
@@ -183,6 +187,7 @@ export function Editor({
             selection={state.selection}
             dispatch={dispatch}
             lockedSlots={lockedSlots}
+            context={context}
           />
 
           <aside className="mn-ed-panel">

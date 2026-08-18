@@ -58,3 +58,20 @@ export const pageVersions = pgTable(
 );
 
 export type PageVersionRow = typeof pageVersions.$inferSelect;
+
+/**
+ * A Menu: a named list of links, edited in one place and rendered wherever it is used.
+ *
+ * Menus are their own entity rather than fields on a Header Block, because the same links
+ * appear in the Header and the Footer and a client who edits one expects both to change.
+ * That is the single most common complaint about template-built sites.
+ */
+export const menus = pgTable("menus", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  items: jsonb("items").$type<unknown>().notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type MenuRow = typeof menus.$inferSelect;

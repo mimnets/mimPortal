@@ -92,7 +92,7 @@ looking at the UI.
 
 ---
 
-## M5 — Pages, Menus and Theme
+## M5 — Pages, Menus and Theme ✅
 
 Page CRUD with path-based routing. The Menu entity, edited in one place, rendered by the
 Menu Block in both Header and Footer. Responsive navigation with a mobile drawer.

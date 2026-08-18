@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { BlockRegistry } from "../blocks/registry";
+import { emptyContext, type RenderContext } from "./context";
 import {
   columnTemplate,
   type BlockInstance,
@@ -15,27 +16,55 @@ import {
  * Editor renders the same components, which is what makes the preview honest.
  */
 
-function BlockView({ block, registry }: { block: BlockInstance; registry: BlockRegistry }) {
+function BlockView({
+  block,
+  registry,
+  context,
+}: {
+  block: BlockInstance;
+  registry: BlockRegistry;
+  context: RenderContext;
+}) {
   const blockType = registry.get(block.type);
 
   // Unreachable through a validated layout, but a Site whose registry changed under an old
   // Page should show a gap rather than crash the request.
   if (!blockType) return null;
 
-  return <div className="mn-block" data-block={block.type}>{blockType.render(block.props)}</div>;
+  return (
+    <div className="mn-block" data-block={block.type}>
+      {blockType.render(block.props, context)}
+    </div>
+  );
 }
 
-function ColumnView({ column, registry }: { column: ColumnNode; registry: BlockRegistry }) {
+function ColumnView({
+  column,
+  registry,
+  context,
+}: {
+  column: ColumnNode;
+  registry: BlockRegistry;
+  context: RenderContext;
+}) {
   return (
     <div className="mn-column">
       {column.blocks.map((block) => (
-        <BlockView key={block.id} block={block} registry={registry} />
+        <BlockView key={block.id} block={block} registry={registry} context={context} />
       ))}
     </div>
   );
 }
 
-function SectionView({ section, registry }: { section: SectionNode; registry: BlockRegistry }) {
+function SectionView({
+  section,
+  registry,
+  context,
+}: {
+  section: SectionNode;
+  registry: BlockRegistry;
+  context: RenderContext;
+}) {
   return (
     <section className="mn-section" data-layout={section.layout}>
       <div
@@ -45,7 +74,7 @@ function SectionView({ section, registry }: { section: SectionNode; registry: Bl
         style={{ ["--mn-columns" as string]: columnTemplate(section.layout) }}
       >
         {section.columns.map((column) => (
-          <ColumnView key={column.id} column={column} registry={registry} />
+          <ColumnView key={column.id} column={column} registry={registry} context={context} />
         ))}
       </div>
     </section>
@@ -56,10 +85,12 @@ export function SlotView({
   layout,
   slot,
   registry,
+  context = emptyContext(),
 }: {
   layout: PageLayout;
   slot: SlotName;
   registry: BlockRegistry;
+  context?: RenderContext;
 }): ReactNode {
   const sections = layout.slots[slot];
   if (sections.length === 0) return null;
@@ -67,7 +98,7 @@ export function SlotView({
   return (
     <div className="mn-slot" data-slot={slot}>
       {sections.map((section) => (
-        <SectionView key={section.id} section={section} registry={registry} />
+        <SectionView key={section.id} section={section} registry={registry} context={context} />
       ))}
     </div>
   );

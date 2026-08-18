@@ -121,8 +121,23 @@ export const LockIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const MenuIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" />
+  </Icon>
+);
+
+export const LogoIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M5.5 9.5 8 5.5l2.5 4" />
+  </Icon>
+);
+
 export const ICONS_BY_BLOCK: Record<string, (props: IconProps) => React.JSX.Element> = {
   heading: HeadingIcon,
   text: TextIcon,
   image: ImageIcon,
+  menu: MenuIcon,
+  logo: LogoIcon,
 };

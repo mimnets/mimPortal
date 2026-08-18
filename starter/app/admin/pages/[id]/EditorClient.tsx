@@ -1,10 +1,10 @@
 "use client";
 
 import { Editor } from "@mimnets/admin";
-import type { PageLayout, SlotName } from "@mimnets/core";
+import type { PageLayout, RenderContext, SlotName } from "@mimnets/core";
 
-import { registry } from "../../blocks.config";
-import type { PageVersionSummary } from "./actions";
+import { registry } from "../../../../blocks.config";
+import type { PageVersionSummary } from "../../actions";
 
 /**
  * The registry holds React components and Zod schemas, so it cannot be serialised across
@@ -17,6 +17,7 @@ export function EditorClient({
   versions,
   lockedSlots,
   signedInAs,
+  context,
   onSave,
   onPublish,
   onRestore,
@@ -27,6 +28,7 @@ export function EditorClient({
   versions: PageVersionSummary[];
   lockedSlots: SlotName[];
   signedInAs: string;
+  context: RenderContext;
   onSave: (layout: PageLayout) => Promise<void>;
   onPublish: (layout: PageLayout) => Promise<PageVersionSummary[]>;
   onRestore: (versionId: string) => Promise<PageLayout>;
@@ -40,6 +42,7 @@ export function EditorClient({
       versions={versions}
       lockedSlots={lockedSlots}
       signedInAs={signedInAs}
+      context={context}
       onSave={onSave}
       onPublish={onPublish}
       onRestore={onRestore}

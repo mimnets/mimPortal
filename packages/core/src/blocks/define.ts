@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { z } from "zod";
 
+import type { RenderContext } from "../render/context";
 import { fieldsToSchema, type FieldsShape, type InferFields } from "./fields";
 
 export interface BlockTypeConfig<F extends FieldsShape> {
@@ -9,7 +10,11 @@ export interface BlockTypeConfig<F extends FieldsShape> {
   /** What an Author sees in the Editor's block picker. */
   label: string;
   fields: F;
-  render: (props: InferFields<F>) => ReactNode;
+  /**
+   * Blocks are pure functions of their own fields, plus whatever the Site resolved once for
+   * this request — Menus, the Site name, the current path. A Block never queries anything.
+   */
+  render: (props: InferFields<F>, context: RenderContext) => ReactNode;
 }
 
 export interface BlockType<F extends FieldsShape = FieldsShape> extends BlockTypeConfig<F> {

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Writes a hand-written layout document into the database, so M1 can be judged the way its
- * exit criterion says: paste JSON in by hand, see it render.
+ * Builds a small three-Page Site: a Header with a logo and the main Menu, a Footer, and
+ * enough content on each Page to see the Theme working.
  *
- * Nothing in the product depends on this script. The Editor replaces it at M2.
+ * Re-runnable, and it replaces the layout of the Pages it owns. Nothing in the product
+ * depends on this script — it exists so a fresh clone has something to look at.
  */
 import "dotenv/config";
 import postgres from "postgres";
@@ -14,7 +15,6 @@ if (!url) {
   process.exit(1);
 }
 
-// A tiny SVG so the image Block has something to show without reaching the network.
 const placeholder =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
@@ -25,143 +25,126 @@ const placeholder =
      </svg>`,
   );
 
-const layout = {
-  version: 1,
-  slots: {
-    header: [
-      {
-        id: "sec-header",
-        layout: "1",
-        columns: [
-          {
-            id: "col-header",
-            blocks: [
-              {
-                id: "blk-logo",
-                type: "heading",
-                props: { text: "Mimnets", level: "h3", align: "left" },
-              },
-            ],
-          },
-        ],
+const id = (prefix) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+
+const block = (type, props) => ({ id: id("blk"), type, props });
+const column = (blocks) => ({ id: id("col"), blocks });
+const section = (layout, columns) => ({ id: id("sec"), layout, columns });
+
+/** Every Page shares the same Header and Footer, which is what the Menu entity is for. */
+const header = () =>
+  section("2-1", [
+    column([block("logo", { image: { url: "", alt: "" }, text: "", href: "/" })]),
+    column([block("menu", { slug: "main", align: "end" })]),
+  ]);
+
+const footer = (text) =>
+  section("1", [column([block("text", { body: text })])]);
+
+function page(title, path, main) {
+  return {
+    title,
+    path,
+    layout: {
+      version: 1,
+      slots: {
+        header: [header()],
+        main,
+        sidebar: [],
+        footer: [footer("© Mimnets — every Page shares this Footer and its Menu.")],
       },
-    ],
-    main: [
-      {
-        id: "sec-hero",
-        layout: "2-1",
-        columns: [
-          {
-            id: "col-hero-text",
-            blocks: [
-              {
-                id: "blk-hero-heading",
-                type: "heading",
-                props: { text: "A Page is a tree, not a canvas", level: "h1", align: "left" },
-              },
-              {
-                id: "blk-hero-body",
-                type: "text",
-                props: {
-                  body:
-                    "This Page was written by hand as JSON and stored in one column. " +
-                    "The server read it and assembled what you are looking at.\n\n" +
-                    "These two Columns sit side by side on a wide screen and stack on a " +
-                    "narrow one. Nothing here was positioned; it was arranged.",
-                },
-              },
-            ],
-          },
-          {
-            id: "col-hero-image",
-            blocks: [
-              {
-                id: "blk-hero-image",
-                type: "image",
-                props: {
-                  image: { url: placeholder, alt: "Placeholder" },
-                  caption: "An image Block, until M6 makes uploads real",
-                },
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "sec-body",
-        layout: "1-1-1",
-        columns: [
-          {
-            id: "col-a",
-            blocks: [
-              { id: "blk-a-h", type: "heading", props: { text: "Slots", level: "h3", align: "left" } },
-              {
-                id: "blk-a-t",
-                type: "text",
-                props: { body: "Header, Main, Sidebar, Footer. Named regions of a Page." },
-              },
-            ],
-          },
-          {
-            id: "col-b",
-            blocks: [
-              { id: "blk-b-h", type: "heading", props: { text: "Sections", level: "h3", align: "left" } },
-              {
-                id: "blk-b-t",
-                type: "text",
-                props: { body: "Full-width bands, each divided into one to four Columns." },
-              },
-            ],
-          },
-          {
-            id: "col-c",
-            blocks: [
-              { id: "blk-c-h", type: "heading", props: { text: "Blocks", level: "h3", align: "left" } },
-              {
-                id: "blk-c-t",
-                type: "text",
-                props: { body: "The content itself, ordered inside a Column." },
-              },
-            ],
-          },
-        ],
-      },
-    ],
-    sidebar: [],
-    footer: [
-      {
-        id: "sec-footer",
-        layout: "1",
-        columns: [
-          {
-            id: "col-footer",
-            blocks: [
-              {
-                id: "blk-footer",
-                type: "text",
-                props: { body: "M1 — layout schema, defineBlock, renderer." },
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-};
+    },
+  };
+}
+
+const pages = [
+  page("Home", "/", [
+    section("2-1", [
+      column([
+        block("heading", { text: "A Page is a tree, not a canvas", level: "h1", align: "left" }),
+        block("text", {
+          body:
+            "This Page is a layout document in one database column. The server reads it and " +
+            "assembles what you are looking at.\n\nThe Header above is the same on every Page, " +
+            "and its links come from one Menu.",
+        }),
+      ]),
+      column([
+        block("image", {
+          image: { url: placeholder, alt: "Placeholder" },
+          caption: "An image Block, until M6 makes uploads real",
+        }),
+      ]),
+    ]),
+    section("1-1-1", [
+      column([
+        block("heading", { text: "Slots", level: "h3", align: "left" }),
+        block("text", { body: "Header, Main, Sidebar, Footer. Named regions of a Page." }),
+      ]),
+      column([
+        block("heading", { text: "Sections", level: "h3", align: "left" }),
+        block("text", { body: "Full-width bands, each divided into one to four Columns." }),
+      ]),
+      column([
+        block("heading", { text: "Blocks", level: "h3", align: "left" }),
+        block("text", { body: "The content itself, ordered inside a Column." }),
+      ]),
+    ]),
+  ]),
+
+  page("About", "/about", [
+    section("1", [
+      column([
+        block("heading", { text: "About", level: "h1", align: "left" }),
+        block("text", {
+          body:
+            "A second Page, served by the same catch-all route and rendered from its own " +
+            "layout document.\n\nThe navigation marks whichever Page you are on.",
+        }),
+      ]),
+    ]),
+  ]),
+
+  page("Contact", "/contact", [
+    section("1", [
+      column([
+        block("heading", { text: "Contact", level: "h1", align: "center" }),
+        block("text", {
+          body: "A working contact form arrives at M6.5, with the submissions stored and emailed.",
+        }),
+      ]),
+    ]),
+  ]),
+];
 
 const sql = postgres(url, { max: 1 });
 
 try {
-  const [row] = await sql`
-    insert into pages (path, title, locale, draft_layout, published_layout)
-    values ('/', 'Home', 'en', ${sql.json(layout)}, ${sql.json(layout)})
-    on conflict (path, locale) do update
-      set draft_layout = excluded.draft_layout,
-          published_layout = excluded.published_layout,
-          updated_at = now()
-    returning id, path
+  await sql`
+    insert into menus (slug, name, items)
+    values ('main', 'Main navigation', ${sql.json([
+      { id: "nav-home", label: "Home", href: "/", newTab: false },
+      { id: "nav-about", label: "About", href: "/about", newTab: false },
+      { id: "nav-contact", label: "Contact", href: "/contact", newTab: false },
+    ])})
+    on conflict (slug) do update set items = excluded.items, updated_at = now()
   `;
-  console.log(`Seeded ${row.path} (${row.id})`);
+
+  for (const entry of pages) {
+    // Seeded Pages are published, because a Page nobody published is not visible and the
+    // point of the seed is to have something to look at.
+    const [row] = await sql`
+      insert into pages (path, title, locale, draft_layout, published_layout)
+      values (${entry.path}, ${entry.title}, 'en', ${sql.json(entry.layout)}, ${sql.json(entry.layout)})
+      on conflict (path, locale) do update
+        set title = excluded.title,
+            draft_layout = excluded.draft_layout,
+            published_layout = excluded.published_layout,
+            updated_at = now()
+      returning path
+    `;
+    console.log(`Seeded ${row.path}`);
+  }
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;
