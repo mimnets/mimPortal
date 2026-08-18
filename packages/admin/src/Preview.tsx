@@ -14,9 +14,9 @@ import type {
   SectionNode,
   SlotName,
 } from "@mimnets/core";
-import { columnTemplate, SLOT_NAMES } from "@mimnets/core";
+import { columnTemplate, SLOT_NAMES, SlotView } from "@mimnets/core";
 
-import { BlockIcon, GripIcon, ICONS_BY_BLOCK, SlotIcon, TrashIcon } from "./icons";
+import { BlockIcon, GripIcon, ICONS_BY_BLOCK, LockIcon, SlotIcon, TrashIcon } from "./icons";
 import { BlockPicker, LayoutPicker } from "./pickers";
 import type { BlockPath, EditorAction, Selection } from "./state";
 
@@ -235,10 +235,28 @@ export function Preview({
   registry,
   selection,
   dispatch,
-}: Common & { layout: PageLayout }) {
+  lockedSlots = [],
+}: Common & { layout: PageLayout; lockedSlots?: SlotName[] }) {
   return (
     <div className="mn-ed-preview" onClick={() => dispatch({ type: "select", selection: null })}>
-      {SLOT_NAMES.map((slot) => (
+      {SLOT_NAMES.map((slot) =>
+        lockedSlots.includes(slot) ? (
+          // A locked Slot renders through the public renderer: an Author sees exactly what a
+          // visitor sees, with no handles to grab and nothing to delete.
+          <div key={slot} className="mn-ed-slot is-locked" data-slot={slot}>
+            <header className="mn-ed-slot-label">
+              <SlotIcon slot={slot} />
+              <span>{slot}</span>
+              <span className="mn-ed-lock">
+                <LockIcon />
+                Locked by the Owner
+              </span>
+            </header>
+            <div className="mn-ed-locked-body">
+              <SlotView layout={layout} slot={slot} registry={registry} />
+            </div>
+          </div>
+        ) : (
         <div key={slot} className="mn-ed-slot" data-slot={slot}>
           <header className="mn-ed-slot-label">
             <SlotIcon slot={slot} />
@@ -273,7 +291,8 @@ export function Preview({
             + Add Section
           </button>
         </div>
-      ))}
+        ),
+      )}
     </div>
   );
 }

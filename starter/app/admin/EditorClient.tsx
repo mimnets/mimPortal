@@ -1,7 +1,7 @@
 "use client";
 
 import { Editor } from "@mimnets/admin";
-import type { PageLayout } from "@mimnets/core";
+import type { PageLayout, SlotName } from "@mimnets/core";
 
 import { registry } from "../../blocks.config";
 import type { PageVersionSummary } from "./actions";
@@ -15,16 +15,22 @@ export function EditorClient({
   layout,
   pageTitle,
   versions,
+  lockedSlots,
+  signedInAs,
   onSave,
   onPublish,
   onRestore,
+  onSignOut,
 }: {
   layout: PageLayout;
   pageTitle: string;
   versions: PageVersionSummary[];
+  lockedSlots: SlotName[];
+  signedInAs: string;
   onSave: (layout: PageLayout) => Promise<void>;
   onPublish: (layout: PageLayout) => Promise<PageVersionSummary[]>;
   onRestore: (versionId: string) => Promise<PageLayout>;
+  onSignOut: () => Promise<void>;
 }) {
   return (
     <Editor
@@ -32,9 +38,12 @@ export function EditorClient({
       registry={registry}
       pageTitle={pageTitle}
       versions={versions}
+      lockedSlots={lockedSlots}
+      signedInAs={signedInAs}
       onSave={onSave}
       onPublish={onPublish}
       onRestore={onRestore}
+      onSignOut={onSignOut}
     />
   );
 }

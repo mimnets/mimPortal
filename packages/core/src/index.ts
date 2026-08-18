@@ -30,4 +30,6 @@ export type {
   SlotName,
 } from "./layout/schema";
 
+export { assertLockedSlotsUnchanged, lockedSlotViolation } from "./layout/locking";
+
 export { SlotView } from "./render/render";

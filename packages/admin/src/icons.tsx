@@ -114,6 +114,13 @@ export const SlotIcon = ({ slot, ...props }: IconProps & { slot: string }) => {
   );
 };
 
+export const LockIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="3.5" y="7" width="9" height="6" rx="1.5" />
+    <path d="M5.75 7V5.25a2.25 2.25 0 0 1 4.5 0V7" />
+  </Icon>
+);
+
 export const ICONS_BY_BLOCK: Record<string, (props: IconProps) => React.JSX.Element> = {
   heading: HeadingIcon,
   text: TextIcon,

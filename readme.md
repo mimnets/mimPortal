@@ -7,9 +7,9 @@ versioned packages plus a Starter app. You clone the Starter once per client, an
 clone is a complete website with a Dashboard where content, layout and theme are changed
 without touching code. Fixes made here reach every Site through a dependency upgrade.
 
-> **Status: M3 complete.** Foundations, layout engine, Editor, and draft/publish with
-> version history all work. M4 — auth, roles and the web installer — is next. See
-> [docs/ROADMAP.md](./docs/ROADMAP.md).
+> **Status: M4 complete.** Foundations, layout engine, Editor, draft/publish with version
+> history, and auth with Owner/Author roles, Slot locking and a web installer. M5 — Pages,
+> Menus and Theme — is next. See [docs/ROADMAP.md](./docs/ROADMAP.md).
 
 ## Installation
 

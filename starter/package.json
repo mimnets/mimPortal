@@ -18,6 +18,7 @@
     "@mimnets/admin": "workspace:*",
     "@mimnets/blocks": "workspace:*",
     "@mimnets/core": "workspace:*",
+    "better-auth": "^1.6.29",
     "drizzle-orm": "^0.45.2",
     "next": "^16.3.1",
     "postgres": "^3.4.9",

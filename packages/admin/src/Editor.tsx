@@ -10,7 +10,7 @@ import {
 } from "@dnd-kit/core";
 import { useReducer, useState } from "react";
 
-import type { BlockRegistry, PageLayout } from "@mimnets/core";
+import type { BlockRegistry, PageLayout, SlotName } from "@mimnets/core";
 
 import { History, type PageVersionSummary } from "./History";
 import { SaveIcon } from "./icons";
@@ -38,6 +38,10 @@ export interface EditorProps {
   /** Loads an old version back into the draft. */
   onRestore: (versionId: string) => Promise<PageLayout>;
   versions: PageVersionSummary[];
+  /** Slots this person may not change. Empty for an Owner. */
+  lockedSlots?: SlotName[];
+  signedInAs?: string;
+  onSignOut?: () => Promise<void>;
 }
 
 type Tab = "settings" | "history";
@@ -50,6 +54,9 @@ export function Editor({
   onPublish,
   onRestore,
   versions: initialVersions,
+  lockedSlots = [],
+  signedInAs,
+  onSignOut,
 }: EditorProps) {
   const [state, dispatch] = useReducer(editorReducer, layout, initialState);
   const [status, setStatus] = useState<"idle" | "saving" | "publishing">("idle");
@@ -138,6 +145,8 @@ export function Editor({
           {status === "saving" ? "Saving…" : "Save draft"}
         </button>
 
+        {signedInAs ? <span className="mn-ed-who">{signedInAs}</span> : null}
+
         <button
           type="button"
           className="mn-button mn-button-primary"
@@ -151,6 +160,12 @@ export function Editor({
         >
           {status === "publishing" ? "Publishing…" : "Publish"}
         </button>
+
+        {onSignOut ? (
+          <button type="button" className="mn-button" onClick={() => void onSignOut()}>
+            Sign out
+          </button>
+        ) : null}
       </header>
 
       {/* A fixed id keeps the aria-describedby ids dnd-kit generates stable between the
@@ -167,6 +182,7 @@ export function Editor({
             registry={registry}
             selection={state.selection}
             dispatch={dispatch}
+            lockedSlots={lockedSlots}
           />
 
           <aside className="mn-ed-panel">

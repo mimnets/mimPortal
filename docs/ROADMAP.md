@@ -75,7 +75,7 @@ restore a version from three publishes ago.
 
 ---
 
-## M4 — Auth and roles
+## M4 — Auth and roles ✅
 
 Better Auth. Owner and Author roles. A `locked` flag per Slot, defaulting to locked for
 Header and Footer. Every mutation checks the role server-side — the Editor hiding a button

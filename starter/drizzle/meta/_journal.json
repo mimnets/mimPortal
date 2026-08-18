@@ -15,6 +15,13 @@
       "when": 1787047519098,
       "tag": "0001_nifty_union_jack",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787048298117,
+      "tag": "0002_smart_monster_badoon",
+      "breakpoints": true
     }
   ]
 }

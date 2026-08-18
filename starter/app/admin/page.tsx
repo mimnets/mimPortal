@@ -1,17 +1,22 @@
 import { and, eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import type { SlotName } from "@mimnets/core";
 import { createDatabase, pages } from "@mimnets/core/db";
 
 import { registry } from "../../blocks.config";
+import { requireDatabaseUrl } from "../../lib/env";
+import { currentUser, lockedSlotsFor } from "../../lib/session";
 import { listVersions, publishPage, restoreVersion, saveDraft } from "./actions";
 import { EditorClient } from "./EditorClient";
+import { signOut } from "./sign-out";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditorPage() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL is not set. Run `pnpm setup`.");
+  const person = await currentUser();
+  if (!person) redirect("/admin/sign-in");
 
-  const db = createDatabase(url);
+  const db = createDatabase(requireDatabaseUrl());
   const [page] = await db
     .select()
     .from(pages)
@@ -31,16 +36,18 @@ export default async function EditorPage() {
   // An unparseable draft opens as an empty Page rather than a crash, and History is where
   // the Author recovers from it.
   const { layout } = registry.safeParseLayout(page.draftLayout ?? page.publishedLayout);
-  const versions = await listVersions(page.id);
 
   return (
     <EditorClient
       layout={layout}
       pageTitle={page.title}
-      versions={versions}
+      versions={await listVersions(page.id)}
+      lockedSlots={(await lockedSlotsFor(person)) as SlotName[]}
+      signedInAs={`${person.name} · ${person.role}`}
       onSave={saveDraft}
       onPublish={publishPage}
       onRestore={restoreVersion}
+      onSignOut={signOut}
     />
   );
 }

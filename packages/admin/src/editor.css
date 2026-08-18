@@ -553,3 +553,65 @@
   font-size: 0.75rem;
   color: #8a8a96;
 }
+
+/* ---- Sign-in, installer and locked Slots ---------------------------------- */
+
+.mn-auth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background: #f4f4f6;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #111;
+}
+
+.mn-auth-card {
+  width: 100%;
+  max-width: 26rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
+}
+
+.mn-auth-card h1 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.mn-ed-who {
+  font-size: 0.75rem;
+  color: #8a8a96;
+}
+
+.mn-ed-slot.is-locked {
+  opacity: 0.85;
+}
+
+.mn-ed-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.6875rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #6b6b78;
+  background: #ececf0;
+  border-radius: 999px;
+}
+
+.mn-ed-locked-body {
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+  padding: 0.5rem;
+  pointer-events: none;
+}
