@@ -30,7 +30,7 @@ string), applies the migration and verifies the connection before writing `.env`
 
 ---
 
-## M1 — The vertical slice
+## M1 — The vertical slice ✅
 
 The risky part, on its own, with everything else faked. The layout Zod schema
 (Slot → Section → Column → Block). The `defineBlock` API and the field helpers. Three Block
@@ -50,7 +50,7 @@ real page at `/`, with two columns side by side on desktop and stacked on mobile
 
 ---
 
-## M2 — The Editor
+## M2 — The Editor ✅
 
 Split view: live preview left, settings panel right. Click a Block, its form appears —
 generated from the Block Type's field declarations, never hand-written. Drag Blocks between
@@ -115,6 +115,24 @@ social share image. Generated `sitemap.xml` (published Pages only) and `robots.t
 
 ---
 
+## M6.5 — Forms and email
+
+A brochure Site without a working contact form is not deliverable, which is why this sits
+inside v1 rather than after it.
+
+The contact Block, a `form_submissions` table, and spam protection that does not punish real
+people: a honeypot field, a timing check, and per-IP rate limiting rather than a CAPTCHA.
+Submissions are readable in the Dashboard, so a lost email is never a lost enquiry.
+
+Email delivery goes behind an `EmailAdapter` — the same shape as the StorageAdapter — with a
+transactional provider as the default and SMTP as the self-hosted fallback. M4's password
+resets use it too, so building it once here serves both.
+
+**Done when:** a visitor submits the contact form on a published Site, the Owner gets an
+email, the submission is visible in the Dashboard, and a bot posting the form directly is
+rejected.
+
+---
 ## M7 — AI writing assistant
 
 Write, rewrite, shorten, generate alt text, draft an SEO description — acting on the
@@ -151,7 +169,15 @@ below is informed by what that reveals.
 ## M8.5 — Grow the Block library
 
 Roughly fifteen to twenty Block Types: hero variants, feature grids, testimonial, logo
-strip, CTA band, pricing table, accordion, gallery, contact form, embed. Each one is a
+strip, CTA band, pricing table, accordion, embed, and the three that were asked for by name —
+an **image gallery** (a repeater of images with a lightbox), a **carousel**, and a **location
+map**. The map Block defaults to an OpenStreetMap embed, which needs no API key and sets no
+third-party cookies; a Site that wants Google Maps supplies its own key and accepts the
+consent-banner consequences.
+
+ lands here too, with a sanitising renderer
+([ADR-0011](./adr/0011-markdown-for-prose-json-for-layout.md)) — prose Blocks and, later,
+blog posts store Markdown rather than plain strings or HTML. Each one is a
 `defineBlock` call and a component — if this stage is slow, the M1 interface was wrong and
 that is the real finding.
 
@@ -182,8 +208,12 @@ Page they liked better before can restore it in one click.
 
 In the order they are most likely to earn their place:
 
-1. **Collections** — structured content types per Site with an auto-generated admin UI, and
-   Blocks that query them. The thing that makes this more than a page builder.
+1. **Collections, and the blog that comes with them** — structured content types per Site
+   (Blog Post, Product, Team Member) with an auto-generated admin UI, plus the Blocks that
+   query them. A modern blog is the first thing built on top: Markdown bodies, a listing
+   Block with pagination, per-post routing, tags, an RSS feed, and reading time. This is the
+   thing that makes the product more than a page builder, and it is a milestone in its own
+   right rather than a feature.
 2. **Inline text editing** in the Editor preview, for text Blocks only.
 3. **Redirects and JSON-LD.**
 4. **Translation UI** — the `locale` column is already waiting.

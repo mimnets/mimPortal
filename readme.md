@@ -238,6 +238,7 @@ was considered and rejected for a reason.
 8. [One deployable, host-agnostic](./docs/adr/0008-one-deployable-host-agnostic.md)
 9. [Plain Postgres, Neon as the default managed host](./docs/adr/0009-plain-postgres-neon-as-default-host.md)
 10. [The web installer has two modes](./docs/adr/0010-web-installer-two-modes.md)
+11. [Markdown for prose, JSON for layout](./docs/adr/0011-markdown-for-prose-json-for-layout.md)
 
 ## Build order
 
