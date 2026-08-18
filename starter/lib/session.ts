@@ -1,8 +1,10 @@
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
-import { createDatabase, siteSettings, user, type Role } from "@mimnets/core/db";
+import type { SlotName } from "@mimnets/core";
+import { createDatabase, user, type Role } from "@mimnets/core/db";
 
 import { auth } from "./auth";
+import { lockedSlotsForRole } from "./permissions";
 import { requireDatabaseUrl } from "./env";
 
 export interface CurrentUser {
@@ -46,15 +48,6 @@ export async function requireOwner(): Promise<CurrentUser> {
 }
 
 /** Slots an Author may not change. Owners are never restricted. */
-export async function lockedSlotsFor(person: CurrentUser): Promise<string[]> {
-  if (person.role === "owner") return [];
-
-  const db = createDatabase(requireDatabaseUrl());
-  const [settings] = await db
-    .select({ lockedSlots: siteSettings.lockedSlots })
-    .from(siteSettings)
-    .where(eq(siteSettings.id, "singleton"))
-    .limit(1);
-
-  return settings?.lockedSlots ?? ["header", "footer"];
+export async function lockedSlotsFor(person: CurrentUser): Promise<SlotName[]> {
+  return lockedSlotsForRole(person.role, requireDatabaseUrl());
 }
