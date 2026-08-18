@@ -5,12 +5,22 @@
   "license": "UNLICENSED",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "dependencies": {
+    "@mimnets/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "react": "^19.2.8"
   }
 }

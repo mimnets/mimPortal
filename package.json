@@ -13,7 +13,8 @@
     "db:migrate": "pnpm --filter starter db:migrate",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "seed": "pnpm --filter starter run seed"
   },
   "engines": {
     "node": ">=20"

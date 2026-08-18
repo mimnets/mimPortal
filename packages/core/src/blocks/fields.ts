@@ -1,0 +1,146 @@
+import { z } from "zod";
+
+/**
+ * A Block Type declares its editable fields once. The Editor generates its settings form
+ * from these declarations, and the same schema validates what is written to the database
+ * and anything a model generates (ADR-0007). There is no second, hand-written form.
+ */
+export type FieldKind =
+  | "text"
+  | "textarea"
+  | "select"
+  | "number"
+  | "boolean"
+  | "image"
+  | "link"
+  | "repeater";
+
+export interface Field<TSchema extends z.ZodType = z.ZodType> {
+  kind: FieldKind;
+  label: string;
+  help?: string;
+  schema: TSchema;
+  /** Present only on repeaters, so the Editor can build a sub-form per item. */
+  fields?: FieldsShape;
+  /** Present only on selects, so the Editor can render the choices. */
+  options?: readonly string[];
+}
+
+export type FieldsShape = Record<string, Field>;
+
+/** The props a Block's `render` receives, derived from its field declarations. */
+export type InferFields<F extends FieldsShape> = {
+  [K in keyof F]: z.infer<F[K]["schema"]>;
+};
+
+type SchemaShape<F extends FieldsShape> = { [K in keyof F]: F[K]["schema"] };
+
+export function fieldsToShape<F extends FieldsShape>(fields: F): SchemaShape<F> {
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, field]) => [key, field.schema]),
+  ) as SchemaShape<F>;
+}
+
+/** The object schema for a whole set of fields — a Block's props schema. */
+export function fieldsToSchema<F extends FieldsShape>(fields: F) {
+  return z.object(fieldsToShape(fields));
+}
+
+function makeField<TSchema extends z.ZodType>(
+  kind: FieldKind,
+  label: string,
+  schema: TSchema,
+  extra: Omit<Field, "kind" | "label" | "schema"> = {},
+): Field<TSchema> {
+  return { kind, label, schema, ...extra };
+}
+
+/** An image is a URL and its alt text until M6 makes uploads real. */
+const imageSchema = z.object({
+  url: z.string().default(""),
+  alt: z.string().default(""),
+});
+
+const linkSchema = z.object({
+  label: z.string().default(""),
+  href: z.string().default(""),
+  newTab: z.boolean().default(false),
+});
+
+export const field = {
+  text(options: { label?: string; help?: string; default?: string } = {}) {
+    return makeField("text", options.label ?? "Text", z.string().default(options.default ?? ""), {
+      help: options.help,
+    });
+  },
+
+  textarea(options: { label?: string; help?: string; default?: string } = {}) {
+    return makeField(
+      "textarea",
+      options.label ?? "Text",
+      z.string().default(options.default ?? ""),
+      { help: options.help },
+    );
+  },
+
+  select<const T extends readonly [string, ...string[]]>(options: {
+    label?: string;
+    help?: string;
+    options: T;
+    default?: T[number];
+  }) {
+    return makeField(
+      "select",
+      options.label ?? "Choice",
+      z.enum(options.options).default(options.default ?? options.options[0]),
+      { help: options.help, options: options.options },
+    );
+  },
+
+  number(options: { label?: string; help?: string; default?: number } = {}) {
+    return makeField(
+      "number",
+      options.label ?? "Number",
+      z.number().default(options.default ?? 0),
+      { help: options.help },
+    );
+  },
+
+  boolean(options: { label?: string; help?: string; default?: boolean } = {}) {
+    return makeField(
+      "boolean",
+      options.label ?? "Yes or no",
+      z.boolean().default(options.default ?? false),
+      { help: options.help },
+    );
+  },
+
+  image(options: { label?: string; help?: string } = {}) {
+    return makeField("image", options.label ?? "Image", imageSchema.default({ url: "", alt: "" }), {
+      help: options.help,
+    });
+  },
+
+  link(options: { label?: string; help?: string } = {}) {
+    return makeField(
+      "link",
+      options.label ?? "Link",
+      linkSchema.default({ label: "", href: "", newTab: false }),
+      { help: options.help },
+    );
+  },
+
+  /**
+   * A repeating group of fields — a carousel's slides, a testimonial strip's quotes.
+   * Blocks never contain other Blocks: nested drag-and-drop inside drag-and-drop is where
+   * page builders go to die, so repeating content is a field, not a nesting rule.
+   */
+  repeater<F extends FieldsShape>(options: { label?: string; help?: string; fields: F }) {
+    return makeField(
+      "repeater",
+      options.label ?? "Items",
+      z.array(fieldsToSchema(options.fields)).default([]),
+      { help: options.help, fields: options.fields },
+    );
+  },
+};

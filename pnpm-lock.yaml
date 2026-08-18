@@ -23,7 +23,18 @@ importers:
 
   packages/admin: {}
 
-  packages/blocks: {}
+  packages/blocks:
+    dependencies:
+      '@mimnets/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.18
+        version: 19.2.18
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
 
   packages/core:
     dependencies:
@@ -36,6 +47,13 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.18
+        version: 19.2.18
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
 
   starter:
     dependencies:
@@ -48,6 +66,9 @@ importers:
       '@mimnets/core':
         specifier: workspace:*
         version: link:../packages/core
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(postgres@3.4.9)
       next:
         specifier: ^16.3.1
         version: 16.3.1(@types/node@26.2.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
