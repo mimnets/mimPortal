@@ -13,6 +13,13 @@ export interface Theme {
     muted: string;
     primary: string;
     onPrimary: string;
+    /**
+     * A second colour, for the things that should not all be primary: an eyebrow above a
+     * heading, a statistic, a secondary button. A palette of one colour is what makes a
+     * Site look like a template with the hue changed.
+     */
+    accent: string;
+    onAccent: string;
     border: string;
   };
   fonts: {
@@ -41,6 +48,8 @@ export const defaultTheme: Theme = {
     muted: "#6b6b78",
     primary: "#3b6cf6",
     onPrimary: "#ffffff",
+    accent: "#f0568c",
+    onAccent: "#ffffff",
     border: "#e4e4e9",
   },
   fonts: {

@@ -2,13 +2,28 @@
 
 import type { Dispatch } from "react";
 
-import type { BlockRegistry, FieldsShape, PageLayout } from "@mimnets/core";
-import type { ColumnLayout } from "@mimnets/core";
+import type {
+  BlockRegistry,
+  FieldsShape,
+  PageLayout,
+  SectionPadding,
+  SectionTone,
+} from "@mimnets/core";
+import { field, type ColumnLayout } from "@mimnets/core";
 
 import { FieldInput } from "./FieldInput";
 import { BlockIcon, ICONS_BY_BLOCK, TrashIcon } from "./icons";
 import { LayoutPicker } from "./pickers";
 import { blockAt, blockTypeFor, type EditorAction, type Selection } from "./state";
+
+/**
+ * A Section background reuses the image field, so it opens the same media library an image
+ * Block does. Declared once out here rather than rebuilt on every render.
+ */
+const backgroundField = field.image({
+  label: "Background image",
+  help: "Optional. A band with a photograph behind it is the one place a Page can be loud.",
+});
 
 /**
  * The Editor's right-hand side. Forms here are generated from a Block Type's field
@@ -83,6 +98,93 @@ export function SettingsPanel({
             last one.
           </small>
         </div>
+        <label className="mn-field" htmlFor="section-tone">
+          <span>Background</span>
+          <select
+            id="section-tone"
+            value={section.tone}
+            onChange={(event) =>
+              dispatch({
+                type: "setSectionStyle",
+                path: selection.path,
+                style: { tone: event.target.value as SectionTone },
+              })
+            }
+          >
+            <option value="default">Page background</option>
+            <option value="surface">Tinted</option>
+            <option value="primary">Primary colour</option>
+            <option value="dark">Dark</option>
+          </select>
+          <small>
+            A Section is a full-width band, so this paints the whole width. Alternating bands
+            down a Page is what stops it reading as one long document.
+          </small>
+        </label>
+
+        <label className="mn-field" htmlFor="section-padding">
+          <span>Height</span>
+          <select
+            id="section-padding"
+            value={section.padding}
+            onChange={(event) =>
+              dispatch({
+                type: "setSectionStyle",
+                path: selection.path,
+                style: { padding: event.target.value as SectionPadding },
+              })
+            }
+          >
+            <option value="normal">Normal</option>
+            <option value="large">Tall</option>
+            <option value="flush">No space</option>
+          </select>
+        </label>
+
+        <FieldInput
+          name="section-background"
+          field={backgroundField}
+          value={{ key: section.background.key, alt: "" }}
+          onChange={(value) =>
+            dispatch({
+              type: "setSectionStyle",
+              path: selection.path,
+              style: {
+                background: {
+                  ...section.background,
+                  key: String((value as { key?: unknown }).key ?? ""),
+                },
+              },
+            })
+          }
+        />
+
+        {section.background.key ? (
+          <label className="mn-field" htmlFor="section-overlay">
+            <span>Darken the image ({Math.round(section.background.overlay * 100)}%)</span>
+            <input
+              id="section-overlay"
+              type="range"
+              min={0}
+              max={100}
+              value={Math.round(section.background.overlay * 100)}
+              onChange={(event) =>
+                dispatch({
+                  type: "setSectionStyle",
+                  path: selection.path,
+                  style: {
+                    background: {
+                      ...section.background,
+                      overlay: Number(event.target.value) / 100,
+                    },
+                  },
+                })
+              }
+            />
+            <small>Text over a photograph is unreadable somewhere in every photograph.</small>
+          </label>
+        ) : null}
+
         <button
           type="button"
           className="mn-button mn-button-danger"

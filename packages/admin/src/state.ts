@@ -8,7 +8,7 @@ import type {
   SectionNode,
   SlotName,
 } from "@mimnets/core";
-import { columnCount } from "@mimnets/core";
+import { columnCount, sectionDefaults } from "@mimnets/core";
 
 export interface BlockPath {
   slot: SlotName;
@@ -50,6 +50,7 @@ export type EditorAction =
   | { type: "deleteSection"; path: SectionPath }
   | { type: "moveSection"; slot: SlotName; from: number; to: number }
   | { type: "setSectionLayout"; path: SectionPath; layout: ColumnLayout }
+  | { type: "setSectionStyle"; path: SectionPath; style: Partial<SectionStyle> }
   | { type: "loadLayout"; layout: PageLayout }
   | { type: "saved" };
 
@@ -61,11 +62,15 @@ function emptyColumn(): ColumnNode {
   return { id: newId("col"), blocks: [] };
 }
 
+/** The three properties that decide how a Section is painted, editable together. */
+export type SectionStyle = Pick<SectionNode, "tone" | "padding" | "background">;
+
 export function newSection(layout: ColumnLayout): SectionNode {
   return {
     id: newId("sec"),
     layout,
     columns: Array.from({ length: columnCount(layout) }, emptyColumn),
+    ...sectionDefaults(),
   };
 }
 
@@ -236,6 +241,15 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         dirty: true,
         selection: { kind: "section", path: { slot: action.slot, section: action.to } },
       };
+    }
+
+    case "setSectionStyle": {
+      const layout = structuredClone(state.layout);
+      const section = sectionAt(layout, action.path);
+      if (!section) return state;
+
+      Object.assign(section, action.style);
+      return { ...state, layout, dirty: true };
     }
 
     case "setSectionLayout": {

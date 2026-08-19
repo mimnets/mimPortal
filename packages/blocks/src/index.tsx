@@ -1,5 +1,9 @@
 import { defineBlock, field, FORM_FIELDS, FORM_RESULT_PARAM } from "@mimnets/core";
 
+import { designBlocks } from "./design";
+
+export * from "./design";
+
 /**
  * The standard Block library. The library grows to roughly twenty at M8.5, which is what
  * makes generated Presets look genuinely different from one another (ADR-0007).
@@ -252,9 +256,12 @@ export const contactBlock = defineBlock({
 
 /** Registered by a Site in its blocks.config.ts, alongside any Blocks of its own. */
 export const standardBlocks = [
+  // Content first, composition second: this is the order they appear in the Editor picker,
+  // and an Author reaches for a heading far more often than for a pricing plan.
   headingBlock,
   textBlock,
   imageBlock,
+  ...designBlocks,
   logoBlock,
   menuBlock,
   contactBlock,

@@ -13,8 +13,12 @@ code — they are waiting on somebody being logged in, which nobody has been. Tw
    on a Page with the image Block and publish. That is the last clause of M6.
 3. **Enquiries.** Submit the form on `/contact` as a visitor first, then look at that screen
    while signed in. That is the last clause of M6.5.
-4. Then either put the thing in front of a real client — which is what v1 was for — or start
-   **M7, the AI writing assistant** ([docs/ROADMAP.md](./docs/ROADMAP.md)).
+4. Look at the Site. It is not the austere cream-and-serif thing it was — the demo is now a
+   landing page with a dark hero, a jade statistics band and a call to action, and the
+   Editor can set a Section's tone, height and background image.
+5. Then either put it in front of a real client — which is what v1 was for — or pick up
+   **M7, the AI writing assistant**, or finish **M8.5**'s remaining six Block Types
+   ([docs/ROADMAP.md](./docs/ROADMAP.md)).
 
 If you want the notification email to actually arrive while testing, point the Site at the
 local mail container: `docker compose --profile mail up -d mail`, then the SMTP block from
@@ -23,8 +27,8 @@ http://localhost:8025. Real setup, for a real Site, is in [docs/EMAIL.md](./docs
 
 ## What exists today
 
-Eight milestones, each verified against a running Site and a real database rather than
-assumed. The last two carry a warning rather than a tick, for the reason above.
+Nine milestones, each verified against a running Site and a real database rather than
+assumed. Three carry a warning rather than a tick.
 
 | | Milestone | What it means |
 | --- | --- | --- |
@@ -36,6 +40,7 @@ assumed. The last two carry a warning rather than a tick, for the reason above.
 | ✅ | **M5** Pages, Menus, Theme | Path routing, the Menu entity, `theme.ts` → CSS variables, responsive navigation |
 | ⚠️ | **M6** Media and SEO | StorageAdapter, uploads, media library, per-Page SEO, sitemap, robots — one clause unverified |
 | ⚠️ | **M6.5** Forms and email | Contact Block, enquiries in the Dashboard, pluggable spam checks, EmailAdapter — one clause unverified |
+| ⚠️ | **M8.5** Block library | Eight composition Blocks, Section tones, a Theme built around them — started early, six Blocks still missing |
 
 ### Proven, not assumed
 
@@ -67,7 +72,16 @@ Yesterday's list still holds. Added today:
 - **The form endpoint is not an open redirect.** It was one: `mn_return` is a hidden field,
   so anybody could post an absolute URL and have the Site itself bounce the visitor onto
   their domain. Spotted by watching a redirect during testing, fixed, and pinned by tests.
-- 105 tests pass, 16 of them against a real database, a real S3 server or a real mail server.
+- **Every request used to leak two database connections.** `createDatabase` opened a pool
+  per call and closed none, and Postgres refused everything at 100 — mid-session, with psql
+  locked out too. Pooled now, and verified by hammering four routes with sixty requests:
+  connections held at three, where the old behaviour would have opened about ninety.
+- **The Site looks designed.** Eight composition Blocks, Sections that carry a tone and a
+  background, and a Theme built around them. Checked at 1280px and at 390px, on all three
+  Pages, by looking at the rendered result rather than at the stylesheet — which is how the
+  broken logo strip, the muddy hero crop, the 130-character line length and the aside
+  floating halfway down the contact form were all found.
+- 108 tests pass, 16 of them against a real database, a real S3 server or a real mail server.
 
 ## Decisions you made today
 
@@ -86,6 +100,12 @@ Yesterday's list still holds. Added today:
    mechanisms, which is a different kind of risk from signing a request. Setup for both,
    including the DNS records Resend needs, is in [docs/EMAIL.md](./docs/EMAIL.md).
 
+4. **AI is not what makes a Site look good, and doing it first would have been a mistake.**
+   The question was whether a good-looking Site comes from AI. It does not: a generated
+   Preset can only arrange the Block Types that exist, so six of them produce six variations
+   of the same plain page. M8.5 says exactly this, and it is the prerequisite for M9 being
+   worth anything. Blocks and a Theme first; Presets on top.
+
 ## Not finished
 
 Honest list. None of it is hidden behind a green tick.
@@ -103,6 +123,12 @@ Honest list. None of it is hidden behind a green tick.
 - **An invalid layout still fails whole.** One bad Block renders an empty Page with an error
   instead of dropping the offending Block and rendering the rest. Fine while you are the only
   Author; wrong for a client Site. Worth fixing before the first handover.
+- **Six Block Types from M8.5 are still missing**: accordion, embed, image gallery,
+  carousel, location map, and Markdown prose with its sanitising renderer. The eight that
+  exist are enough for a landing page; a gallery is the first one a real client will ask for.
+- **The emoji in a feature grid are whatever the visitor's platform draws.** Seating each in
+  a tinted square makes the row read as a set, which is what lets the Block take an emoji
+  instead of shipping an icon font — but they are still not a designed icon set.
 - **A form's fields are fixed**: name, email, message. Enough for a brochure Site's contact
   page and not enough for anything else. Making them editable is a repeater field on the
   Block, and belongs with the rest of the Block work at M8.5.
@@ -110,9 +136,6 @@ Honest list. None of it is hidden behind a green tick.
   time is refused every time but never accumulates, so it costs a database read per attempt.
   Fine behind any host doing connection-level limiting; worth revisiting if a Site is ever
   genuinely targeted.
-- **The mobile Header is tall and mostly empty.** The logo and the hamburger stack into two
-  grid rows below 720px, so roughly 160px of the first screen is blank. It works, and it was
-  not bad enough to block anything, but it is the first thing a client will mention.
 - **Deleting a file leaves the Pages that used it pointing at nothing.** Deliberate, and
   argued in ADR-0012. There is no "where is this used?" view, which is the thing that would
   make the confirmation dialog honest.
@@ -128,8 +151,11 @@ a UI on the new Page settings screen, and M6.5 exists.
 
 ## Next up
 
-**v1 is feature-complete.** M6.5 was the last thing standing between this and a Site you
-could hand to a paying client, and it is built. What remains before M7 is not code:
+**A Site is now deliverable.** M6.5 was the last thing standing between this and something
+you could hand to a paying client, and it is built. v1 itself is not finished — M7 and M8
+are still inside it, and the roadmap only says "v1 ends here" after M8.
+
+What is worth doing before either is not code:
 
 - The two sign-in checks at the top of this file.
 - Use it on something real. The roadmap has said since M0 that v1 ends before M8 and that a
@@ -175,7 +201,7 @@ behind `@mimnets/core/db`, and server actions are the boundary rather than the E
 docker compose up -d db                        # Postgres, stack name mimnets-multisite
 pnpm dev                                       # http://localhost:3000
 pnpm seed                                      # three demo Pages, the main Menu, a placeholder image, a contact form
-pnpm test                                      # 105 tests
+pnpm test                                      # 108 tests
 pnpm typecheck                                 # 4 packages, strict
 pnpm build                                     # must stay warning-free
 
@@ -186,7 +212,7 @@ docker compose --profile mail up -d mail       # Mailpit, SMTP on :1025, inbox o
 Those last two back the tests that would otherwise have been mocks. Both suites skip rather
 than fail when their container is not running, so a green suite without Docker means twelve
 fewer tests rather than twelve passing ones — `pnpm test` prints the count, and it should say
-105.
+108.
 
 One trap worth knowing: running `pnpm build` while `pnpm dev` is running leaves the dev
 server serving a broken shell, because the production build overwrites the `.next` directory

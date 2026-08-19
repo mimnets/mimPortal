@@ -194,7 +194,7 @@ below is informed by what that reveals.
 
 ---
 
-## M8.5 — Grow the Block library
+## M8.5 — Grow the Block library ⚠️
 
 Roughly fifteen to twenty Block Types: hero variants, feature grids, testimonial, logo
 strip, CTA band, pricing table, accordion, embed, and the three that were asked for by name —
@@ -215,6 +215,21 @@ Block Types all look like the same Site.
 
 **Done when:** you can build a plausible landing page for three different industries
 without writing a custom Block.
+
+**Started early, and out of order.** Eight composition Blocks exist — eyebrow, button,
+feature grid, statistics, testimonials, logo strip, call to action and pricing plan — taking
+the library to fourteen. Sections gained a tone, a height and a background image
+([ADR-0013](./adr/0013-the-band-is-the-sections-job.md)), which is what turns a stack of
+content into a page that looks composed, and the Starter's Theme was rewritten around it.
+
+The reason for jumping the queue: the honest answer to "how do we make this look good?" is
+not AI. A generated Preset can only arrange the Blocks that exist, so six Block Types
+produce six variations of the same plain page — which this milestone's own text has said
+since it was written. Presets get built on top of this, not instead of it.
+
+**Still missing** from the list above: accordion, embed, image gallery, carousel, location
+map, and Markdown prose with its sanitising renderer
+([ADR-0011](./adr/0011-markdown-for-prose-json-for-layout.md)).
 
 ---
 

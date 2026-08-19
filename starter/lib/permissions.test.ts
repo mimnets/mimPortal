@@ -1,6 +1,11 @@
 import "dotenv/config";
 
-import { assertLockedSlotsUnchanged, emptyLayout, type PageLayout } from "@mimnets/core";
+import {
+  assertLockedSlotsUnchanged,
+  emptyLayout,
+  sectionDefaults,
+  type PageLayout,
+} from "@mimnets/core";
 import { describe, expect, it } from "vitest";
 
 import { lockedSlotsForRole } from "./permissions";
@@ -20,6 +25,7 @@ function layoutWithHeader(text: string): PageLayout {
       id: "sec-h",
       layout: "1",
       columns: [{ id: "col-h", blocks: [{ id: "blk-h", type: "text", props: { body: text } }] }],
+      ...sectionDefaults(),
     },
   ];
   return layout;

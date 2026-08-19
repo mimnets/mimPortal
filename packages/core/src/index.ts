@@ -15,18 +15,24 @@ export type { BlockRegistry } from "./blocks/registry";
 
 export {
   COLUMN_LAYOUTS,
+  SECTION_PADDINGS,
+  SECTION_TONES,
   SLOT_NAMES,
   buildLayoutSchema,
   columnCount,
   columnTemplate,
   emptyLayout,
+  sectionDefaults,
 } from "./layout/schema";
 export type {
   BlockInstance,
   ColumnLayout,
   ColumnNode,
   PageLayout,
+  SectionBackground,
   SectionNode,
+  SectionPadding,
+  SectionTone,
   SlotName,
 } from "./layout/schema";
 

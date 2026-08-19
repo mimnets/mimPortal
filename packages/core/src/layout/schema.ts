@@ -32,6 +32,31 @@ export function columnCount(layout: ColumnLayout): number {
   return COLUMN_LAYOUTS[layout].length;
 }
 
+/**
+ * How a Section is painted.
+ *
+ * A Section is already "a full-width horizontal band", so the band is where a background
+ * belongs — not on a Block, which is constrained to its Column and would need a CSS breakout
+ * hack to reach the edges. Alternating tones down a Page is most of what separates a
+ * designed layout from a wall of text.
+ */
+export const SECTION_TONES = ["default", "surface", "primary", "dark"] as const;
+export type SectionTone = (typeof SECTION_TONES)[number];
+
+/** Vertical breathing room. A hero wants "large"; a band between two wants "flush". */
+export const SECTION_PADDINGS = ["normal", "large", "flush"] as const;
+export type SectionPadding = (typeof SECTION_PADDINGS)[number];
+
+export interface SectionBackground {
+  /** A storage key, like every other image in a layout. Empty means no image. */
+  key: string;
+  /**
+   * How much dark is laid over the image, 0 to 1. Text over an unmoderated photograph is
+   * unreadable at some point in every photograph, so this is not optional in practice.
+   */
+  overlay: number;
+}
+
 export interface BlockInstance {
   id: string;
   type: string;
@@ -47,6 +72,9 @@ export interface SectionNode {
   id: string;
   layout: ColumnLayout;
   columns: ColumnNode[];
+  tone: SectionTone;
+  padding: SectionPadding;
+  background: SectionBackground;
 }
 
 export interface PageLayout {
@@ -70,6 +98,15 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
       id: z.string().min(1),
       layout: z.enum(COLUMN_LAYOUT_NAMES),
       columns: z.array(column),
+      // Defaulted, so every Page written before Sections could be painted still parses.
+      tone: z.enum(SECTION_TONES).default("default"),
+      padding: z.enum(SECTION_PADDINGS).default("normal"),
+      background: z
+        .object({
+          key: z.string().default(""),
+          overlay: z.number().min(0).max(1).default(0.45),
+        })
+        .default({ key: "", overlay: 0.45 }),
     })
     .refine((value) => value.columns.length === columnCount(value.layout), {
       message: "Section has a different number of Columns than its layout allows",
@@ -87,6 +124,16 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
       footer: sections,
     }),
   });
+}
+
+/**
+ * How a Section starts out: unpainted, normal spacing, no photograph.
+ *
+ * A factory rather than three literals repeated wherever a Section is built, so adding a
+ * fourth property later is one edit instead of a hunt through the Editor and three tests.
+ */
+export function sectionDefaults(): Pick<SectionNode, "tone" | "padding" | "background"> {
+  return { tone: "default", padding: "normal", background: { key: "", overlay: 0.45 } };
 }
 
 /** An empty Page, used when creating one and as the fallback for an unparseable draft. */

@@ -65,8 +65,29 @@ function SectionView({
   registry: BlockRegistry;
   context: RenderContext;
 }) {
+  const image = section.background.key
+    ? `${context.mediaBaseUrl}/${section.background.key}`
+    : null;
+
   return (
-    <section className="mn-section" data-layout={section.layout}>
+    <section
+      className="mn-section"
+      data-layout={section.layout}
+      data-tone={section.tone}
+      data-padding={section.padding}
+      data-has-image={image ? "true" : undefined}
+      style={
+        image
+          ? {
+              // The gradient is the overlay: two identical stops make a flat wash, and
+              // stacking it above the image in one property keeps this to a single layer.
+              backgroundImage:
+                `linear-gradient(rgb(0 0 0 / ${section.background.overlay}), ` +
+                `rgb(0 0 0 / ${section.background.overlay})), url("${image}")`,
+            }
+          : undefined
+      }
+    >
       <div
         className="mn-columns"
         // The template is a custom property so the stylesheet's media query can collapse
