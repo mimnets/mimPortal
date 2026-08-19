@@ -6,3 +6,6 @@ dist/
 .env
 .env.local
 .DS_Store
+
+# Uploaded media, when a Site runs on the local disk rather than a bucket.
+.media/

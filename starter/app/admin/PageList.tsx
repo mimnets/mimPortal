@@ -48,6 +48,10 @@ export function PageList({ pages, canManage }: { pages: PageSummary[]; canManage
               {page.isPublished ? "Published" : "Draft only"}
             </span>
 
+            <Link className="mn-button" href={`/admin/pages/${page.id}/settings`}>
+              Settings
+            </Link>
+
             <a className="mn-button" href={page.path} target="_blank" rel="noreferrer">
               View
             </a>

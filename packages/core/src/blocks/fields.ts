@@ -55,10 +55,22 @@ function makeField<TSchema extends z.ZodType>(
   return { kind, label, schema, ...extra };
 }
 
-/** An image is a URL and its alt text until M6 makes uploads real. */
+/**
+ * An image is a storage key, never a URL.
+ *
+ * The key is what survives a Site moving from its own disk to a bucket, or a bucket gaining
+ * a CDN domain: the Block composes its URL from `context.mediaBaseUrl` at render time. A
+ * layout full of absolute URLs would have to be rewritten Page by Page instead.
+ *
+ * Width and height are copied in when the image is chosen so the renderer can reserve space
+ * before the file arrives. They never change for a given key, so a stale copy is not
+ * possible — a new upload is a new key.
+ */
 const imageSchema = z.object({
-  url: z.string().default(""),
+  key: z.string().default(""),
   alt: z.string().default(""),
+  width: z.number().nullable().default(null),
+  height: z.number().nullable().default(null),
 });
 
 const linkSchema = z.object({
@@ -116,7 +128,8 @@ export const field = {
   },
 
   image(options: { label?: string; help?: string } = {}) {
-    return makeField("image", options.label ?? "Image", imageSchema.default({ url: "", alt: "" }), {
+    const empty = { key: "", alt: "", width: null, height: null };
+    return makeField("image", options.label ?? "Image", imageSchema.default(empty), {
       help: options.help,
     });
   },

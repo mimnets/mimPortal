@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from "react";
+
 import type { Field, FieldsShape } from "@mimnets/core";
+
+import { MediaBrowser, useMedia } from "./media";
 
 /**
  * Renders one editable field from its declaration. This is the only place a Block's form
@@ -101,31 +105,8 @@ export function FieldInput({ field, name, value, onChange }: FieldInputProps) {
         </label>
       );
 
-    case "image": {
-      const image = asRecord(value);
-      return (
-        <fieldset className="mn-field-group">
-          <legend>{field.label}</legend>
-          <label className="mn-field" htmlFor={`${id}-url`}>
-            <span>URL</span>
-            <input
-              id={`${id}-url`}
-              value={String(image.url ?? "")}
-              placeholder="https://…"
-              onChange={(event) => onChange({ ...image, url: event.target.value })}
-            />
-          </label>
-          <label className="mn-field" htmlFor={`${id}-alt`}>
-            <span>Alt text</span>
-            <input
-              id={`${id}-alt`}
-              value={String(image.alt ?? "")}
-              onChange={(event) => onChange({ ...image, alt: event.target.value })}
-            />
-          </label>
-        </fieldset>
-      );
-    }
+    case "image":
+      return <ImageField field={field} id={id} value={value} onChange={onChange} />;
 
     case "link": {
       const link = asRecord(value);
@@ -240,4 +221,100 @@ export function FieldInput({ field, name, value, onChange }: FieldInputProps) {
         </label>
       );
   }
+}
+
+/**
+ * An image is chosen from the Site's library, not typed as a URL.
+ *
+ * Pasting a URL was fine while images lived somewhere else; now that a Site owns its files,
+ * a text box would only invite links to images that vanish. When no library is wired up the
+ * field falls back to showing the raw key, so the Editor still works in isolation.
+ */
+function ImageField({
+  field,
+  id,
+  value,
+  onChange,
+}: {
+  field: Field;
+  id: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const media = useMedia();
+  const [browsing, setBrowsing] = useState(false);
+  const image = asRecord(value);
+  const key = String(image.key ?? "");
+
+  return (
+    <fieldset className="mn-field-group">
+      <legend>{field.label}</legend>
+
+      {key ? (
+        <div className="mn-image-chosen">
+          <img src={`${media?.baseUrl ?? "/media"}/${key}`} alt="" />
+          <span className="mn-media-meta">
+            {typeof image.width === "number" && typeof image.height === "number"
+              ? `${image.width}×${image.height}`
+              : "size unknown"}
+          </span>
+        </div>
+      ) : (
+        <p className="mn-media-empty">No image chosen.</p>
+      )}
+
+      {media ? (
+        <div className="mn-image-actions">
+          <button type="button" className="mn-button" onClick={() => setBrowsing(true)}>
+            {key ? "Replace" : "Choose image"}
+          </button>
+          {key ? (
+            <button
+              type="button"
+              className="mn-button"
+              onClick={() => onChange({ key: "", alt: "", width: null, height: null })}
+            >
+              Remove
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <label className="mn-field" htmlFor={`${id}-key`}>
+          <span>Storage key</span>
+          <input
+            id={`${id}-key`}
+            value={key}
+            onChange={(event) => onChange({ ...image, key: event.target.value })}
+          />
+        </label>
+      )}
+
+      <label className="mn-field" htmlFor={`${id}-alt`}>
+        <span>Alt text</span>
+        <input
+          id={`${id}-alt`}
+          value={String(image.alt ?? "")}
+          onChange={(event) => onChange({ ...image, alt: event.target.value })}
+        />
+        <small>Describe what the image shows. Leave empty only if it is decorative.</small>
+      </label>
+
+      {browsing ? (
+        <MediaBrowser
+          onClose={() => setBrowsing(false)}
+          onPick={(item) => {
+            // The library's description is the starting point, not a replacement for one the
+            // Author has already written for this particular placement.
+            onChange({
+              key: item.key,
+              alt: String(image.alt ?? "") || item.alt,
+              width: item.width,
+              height: item.height,
+            });
+            setBrowsing(false);
+          }}
+        />
+      ) : null}
+    </fieldset>
+  );
 }

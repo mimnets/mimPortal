@@ -74,6 +74,10 @@ _Avoid_: unpublished, working copy
 The state of a Page that public visitors see.
 _Avoid_: live, released
 
+**Media library**:
+Every image a Site has uploaded, listed in the Dashboard and shared by all its Pages.
+_Avoid_: assets, uploads, files, gallery
+
 ### People
 
 **Owner**:

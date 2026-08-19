@@ -1,6 +1,6 @@
 "use client";
 
-import { Editor } from "@mimnets/admin";
+import { Editor, type MediaItem } from "@mimnets/admin";
 import type { PageLayout, RenderContext, SlotName } from "@mimnets/core";
 
 import { registry } from "../../../../blocks.config";
@@ -22,6 +22,9 @@ export function EditorClient({
   onPublish,
   onRestore,
   onSignOut,
+  onListMedia,
+  onUploadMedia,
+  mediaBaseUrl,
 }: {
   layout: PageLayout;
   pageTitle: string;
@@ -33,6 +36,9 @@ export function EditorClient({
   onPublish: (layout: PageLayout) => Promise<PageVersionSummary[]>;
   onRestore: (versionId: string) => Promise<PageLayout>;
   onSignOut: () => Promise<void>;
+  onListMedia: () => Promise<MediaItem[]>;
+  onUploadMedia: (form: FormData) => Promise<MediaItem>;
+  mediaBaseUrl: string;
 }) {
   return (
     <Editor
@@ -47,6 +53,7 @@ export function EditorClient({
       onPublish={onPublish}
       onRestore={onRestore}
       onSignOut={onSignOut}
+      media={{ list: onListMedia, upload: onUploadMedia, baseUrl: mediaBaseUrl }}
     />
   );
 }

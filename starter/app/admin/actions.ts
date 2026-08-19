@@ -76,6 +76,40 @@ export async function renamePage(input: {
   revalidatePath("/admin");
 }
 
+/**
+ * What search engines and link previews show for a Page.
+ *
+ * This is content rather than structure, so an Author owns it: the person writing the Page
+ * is the person who can describe it. Renaming the Page or moving its path stays with the
+ * Owner, because those change the Site's shape.
+ *
+ * All three are optional and stored as given. An empty seoTitle falls back to the Page
+ * title at render time rather than being filled in here, so a later rename is reflected
+ * instead of leaving a stale copy behind.
+ */
+export async function savePageSeo(input: {
+  pageId: string;
+  seoTitle: string;
+  seoDescription: string;
+  seoImageKey: string;
+}): Promise<void> {
+  await requireUser();
+
+  const [page] = await database()
+    .update(pages)
+    .set({
+      seoTitle: input.seoTitle.trim() || null,
+      seoDescription: input.seoDescription.trim() || null,
+      seoImageKey: input.seoImageKey.trim() || null,
+      updatedAt: new Date(),
+    })
+    .where(eq(pages.id, input.pageId))
+    .returning({ path: pages.path });
+
+  if (page) revalidatePath(page.path);
+  revalidatePath("/admin");
+}
+
 /* ---- Layout ------------------------------------------------------------ */
 
 export async function listVersions(pageId: string): Promise<PageVersionSummary[]> {

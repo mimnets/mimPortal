@@ -27,6 +27,27 @@ services:
       timeout: 5s
       retries: 10
 
+  # An S3-compatible bucket on the machine, so the S3 adapter is tested against a real
+  # server that verifies real signatures rather than against a mock of one:
+  #   docker compose --profile storage up -d storage
+  storage:
+    profiles: ["storage"]
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: mimnets
+      MINIO_ROOT_PASSWORD: mimnets-secret
+    ports:
+      - "9000:9000"
+    volumes:
+      - mimnets-storage:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   app:
     profiles: ["full"]
     build:
@@ -43,3 +64,4 @@ services:
 
 volumes:
   mimnets-db:
+  mimnets-storage:

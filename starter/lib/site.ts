@@ -3,6 +3,7 @@ import { menuItemsSchema, type RenderContext } from "@mimnets/core";
 import { createDatabase, menus, siteSettings } from "@mimnets/core/db";
 
 import { requireDatabaseUrl } from "./env";
+import { storage } from "./storage";
 
 /**
  * Resolves everything a Page's Blocks can read, once per request.
@@ -33,5 +34,7 @@ export async function renderContext(currentPath: string): Promise<RenderContext>
     siteName: settings?.siteName ?? "",
     menus: resolved,
     currentPath,
+    // Blocks hold storage keys; this is what turns one into something a browser can fetch.
+    mediaBaseUrl: storage().baseUrl,
   };
 }

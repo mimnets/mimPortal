@@ -732,3 +732,159 @@
 .mn-menu-bar {
   justify-content: space-between;
 }
+
+/* ---- Media -----------------------------------------------------------------
+   The library, and the image field that opens it. Thumbnails are the whole
+   point: an Author choosing a photograph should be looking at photographs, not
+   at a list of filenames. */
+
+.mn-media-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.75rem;
+}
+
+.mn-media-tile {
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.5rem;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mn-media-tile:hover,
+.mn-media-tile:focus-visible {
+  border-color: #3b6cf6;
+}
+
+.mn-media-tile img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  /* contain, not cover: a logo that is mostly whitespace must not be cropped to
+     look like a photograph of its middle. */
+  object-fit: contain;
+  background: #f4f4f6;
+  border-radius: 4px;
+}
+
+.mn-media-name {
+  font-size: 0.8125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mn-media-meta {
+  font-size: 0.75rem;
+  color: #6b6b76;
+}
+
+.mn-media-empty {
+  margin: 0;
+  padding: 1rem 0;
+  font-size: 0.8125rem;
+  color: #6b6b76;
+}
+
+.mn-media-error {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #b00020;
+  background: #fdf2f4;
+  border: 1px solid #e6c3c9;
+  border-radius: 4px;
+}
+
+.mn-media-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgb(0 0 0 / 0.4);
+}
+
+.mn-media-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(48rem, 100%);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 1rem;
+  background: #f4f4f6;
+  border-radius: 8px;
+}
+
+.mn-media-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mn-media-head strong {
+  margin-right: auto;
+}
+
+/* A file input styled as a button: the native control cannot be, and "Upload"
+   has to sit next to "Close" without looking like a different species. */
+.mn-media-head label.mn-button {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.mn-image-chosen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mn-image-chosen img {
+  width: 100%;
+  max-height: 8rem;
+  object-fit: contain;
+  background: #f4f4f6;
+  border: 1px solid #e2e2e6;
+  border-radius: 4px;
+}
+
+.mn-image-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mn-media-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+}
+
+.mn-media-row img {
+  width: 4rem;
+  height: 3rem;
+  object-fit: contain;
+  background: #f4f4f6;
+  border-radius: 4px;
+}
+
+.mn-media-row .mn-field {
+  flex: 1;
+  min-width: 0;
+}

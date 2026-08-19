@@ -1,4 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Core has a server half — the database and the StorageAdapter read files and sign
+    // requests — so Node's types are needed even though the layout schema and renderer
+    // are shared with the browser.
+    "types": ["node"]
+  },
   "include": ["src"]
 }

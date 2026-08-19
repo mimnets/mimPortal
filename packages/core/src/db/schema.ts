@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -27,6 +28,13 @@ export const pages = pgTable(
     locale: text("locale").notNull().default("en"),
     draftLayout: jsonb("draft_layout").$type<unknown>(),
     publishedLayout: jsonb("published_layout").$type<unknown>(),
+    // What search engines and a link preview show. All three are optional: an empty
+    // seoTitle falls back to the Page title rather than publishing a blank <title>, which
+    // is the failure mode of every CMS that stores these as required fields.
+    seoTitle: text("seo_title"),
+    seoDescription: text("seo_description"),
+    /** A storage key, not a URL, for the same reason the media table holds one. */
+    seoImageKey: text("seo_image_key"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -75,3 +83,34 @@ export const menus = pgTable("menus", {
 });
 
 export type MenuRow = typeof menus.$inferSelect;
+
+/**
+ * An uploaded file, as the Dashboard knows it.
+ *
+ * The row holds a storage key, never a URL. Which bucket or directory that key resolves to
+ * is the StorageAdapter’s business, so a Site can move from a disk to R2 without rewriting
+ * every Page that used an image.
+ *
+ * `alt` is the description offered whenever the file is placed. The Block keeps its own
+ * copy, because the same photograph is sometimes decorative and sometimes the point — but
+ * an Author never starts from an empty box, which is how Sites end up with no alt text.
+ */
+export const media = pgTable(
+  "media",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: text("key").notNull().unique(),
+    filename: text("filename").notNull(),
+    contentType: text("content_type").notNull(),
+    size: integer("size").notNull(),
+    // Null when the format hides its size behind a full decode (AVIF) or has none (SVG).
+    width: integer("width"),
+    height: integer("height"),
+    alt: text("alt").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("media_created_idx").on(table.createdAt)],
+);
+
+export type MediaRow = typeof media.$inferSelect;
+export type NewMediaRow = typeof media.$inferInsert;

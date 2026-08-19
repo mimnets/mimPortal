@@ -7,7 +7,9 @@ import { registry } from "../../../../blocks.config";
 import { requireDatabaseUrl } from "../../../../lib/env";
 import { currentUser, lockedSlotsFor } from "../../../../lib/session";
 import { renderContext } from "../../../../lib/site";
+import { storage } from "../../../../lib/storage";
 import { listVersions, publishPage, restoreVersion, saveDraft } from "../../actions";
+import { listMedia, uploadMedia } from "../../media-actions";
 import { signOut } from "../../sign-out";
 import { EditorClient } from "./EditorClient";
 
@@ -38,6 +40,9 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
       onPublish={publishPage.bind(null, page.id)}
       onRestore={restoreVersion.bind(null, page.id)}
       onSignOut={signOut}
+      onListMedia={listMedia}
+      onUploadMedia={uploadMedia}
+      mediaBaseUrl={storage().baseUrl}
     />
   );
 }

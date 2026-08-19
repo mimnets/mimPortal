@@ -28,8 +28,14 @@ export interface RenderContext {
   menus: Record<string, MenuItem[]>;
   /** The path being rendered, so navigation can mark the current page. */
   currentPath: string;
+  /**
+   * Where uploaded files are served from. An image Block stores a storage key and builds
+   * its URL from this, so moving a Site from its disk to a bucket with a CDN domain changes
+   * one environment variable and no Page at all.
+   */
+  mediaBaseUrl: string;
 }
 
 export function emptyContext(): RenderContext {
-  return { siteName: "", menus: {}, currentPath: "/" };
+  return { siteName: "", menus: {}, currentPath: "/", mediaBaseUrl: "/media" };
 }

@@ -14,6 +14,7 @@ import type { BlockRegistry, PageLayout, RenderContext, SlotName } from "@mimnet
 import { emptyContext } from "@mimnets/core";
 
 import { History, type PageVersionSummary } from "./History";
+import { MediaProvider, type MediaBridge } from "./media";
 import { SaveIcon } from "./icons";
 import { Preview } from "./Preview";
 import { SettingsPanel } from "./SettingsPanel";
@@ -45,6 +46,11 @@ export interface EditorProps {
   context?: RenderContext;
   signedInAs?: string;
   onSignOut?: () => Promise<void>;
+  /**
+   * The Site's media library. Absent in isolation — the image field then shows a storage
+   * key instead of a picker — and wired to server actions in a real Dashboard.
+   */
+  media?: MediaBridge;
 }
 
 type Tab = "settings" | "history";
@@ -61,6 +67,7 @@ export function Editor({
   context = emptyContext(),
   signedInAs,
   onSignOut,
+  media,
 }: EditorProps) {
   const [state, dispatch] = useReducer(editorReducer, layout, initialState);
   const [status, setStatus] = useState<"idle" | "saving" | "publishing">("idle");
@@ -126,113 +133,115 @@ export function Editor({
   const busy = status !== "idle";
 
   return (
-    <div className="mn-ed">
-      <header className="mn-ed-bar">
-        <strong>{pageTitle}</strong>
+    <MediaProvider value={media ?? null}>
+      <div className="mn-ed">
+        <header className="mn-ed-bar">
+          <strong>{pageTitle}</strong>
 
-        <span className={`mn-ed-state${error ? " is-error" : state.dirty ? " is-dirty" : ""}`}>
-          {error ?? message ?? (state.dirty ? "Unsaved changes" : "All changes saved")}
-        </span>
+          <span className={`mn-ed-state${error ? " is-error" : state.dirty ? " is-dirty" : ""}`}>
+            {error ?? message ?? (state.dirty ? "Unsaved changes" : "All changes saved")}
+          </span>
 
-        <button
-          type="button"
-          className="mn-button"
-          disabled={busy || !state.dirty}
-          onClick={() =>
-            run("saving", async () => {
-              await onSave(state.layout);
-              return "Draft saved";
-            })
-          }
-        >
-          <SaveIcon />
-          {status === "saving" ? "Saving…" : "Save draft"}
-        </button>
-
-        {signedInAs ? <span className="mn-ed-who">{signedInAs}</span> : null}
-
-        <button
-          type="button"
-          className="mn-button mn-button-primary"
-          disabled={busy}
-          onClick={() =>
-            run("publishing", async () => {
-              setVersions(await onPublish(state.layout));
-              return "Published";
-            })
-          }
-        >
-          {status === "publishing" ? "Publishing…" : "Publish"}
-        </button>
-
-        {onSignOut ? (
-          <button type="button" className="mn-button" onClick={() => void onSignOut()}>
-            Sign out
+          <button
+            type="button"
+            className="mn-button"
+            disabled={busy || !state.dirty}
+            onClick={() =>
+              run("saving", async () => {
+                await onSave(state.layout);
+                return "Draft saved";
+              })
+            }
+          >
+            <SaveIcon />
+            {status === "saving" ? "Saving…" : "Save draft"}
           </button>
-        ) : null}
-      </header>
 
-      {/* A fixed id keeps the aria-describedby ids dnd-kit generates stable between the
-          server render and hydration; without it React reports a mismatch on every handle. */}
-      <DndContext
-        id="mimnets-editor"
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="mn-ed-split">
-          <Preview
-            layout={state.layout}
-            registry={registry}
-            selection={state.selection}
-            dispatch={dispatch}
-            lockedSlots={lockedSlots}
-            context={context}
-          />
+          {signedInAs ? <span className="mn-ed-who">{signedInAs}</span> : null}
 
-          <aside className="mn-ed-panel">
-            <div className="mn-ed-tabs" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === "settings"}
-                className={`mn-ed-tab${tab === "settings" ? " is-active" : ""}`}
-                onClick={() => setTab("settings")}
-              >
-                Settings
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === "history"}
-                className={`mn-ed-tab${tab === "history" ? " is-active" : ""}`}
-                onClick={() => setTab("history")}
-              >
-                History{versions.length > 0 ? ` (${versions.length})` : ""}
-              </button>
-            </div>
+          <button
+            type="button"
+            className="mn-button mn-button-primary"
+            disabled={busy}
+            onClick={() =>
+              run("publishing", async () => {
+                setVersions(await onPublish(state.layout));
+                return "Published";
+              })
+            }
+          >
+            {status === "publishing" ? "Publishing…" : "Publish"}
+          </button>
 
-            {tab === "settings" ? (
-              <SettingsPanel
-                layout={state.layout}
-                registry={registry}
-                selection={state.selection}
-                dispatch={dispatch}
-              />
-            ) : (
-              <History
-                versions={versions}
-                onRestore={async (versionId) => {
-                  const restored = await onRestore(versionId);
-                  dispatch({ type: "loadLayout", layout: restored });
-                  setTab("settings");
-                  setMessage("Version restored into the draft — publish to make it live");
-                }}
-              />
-            )}
-          </aside>
-        </div>
-      </DndContext>
-    </div>
+          {onSignOut ? (
+            <button type="button" className="mn-button" onClick={() => void onSignOut()}>
+              Sign out
+            </button>
+          ) : null}
+        </header>
+
+        {/* A fixed id keeps the aria-describedby ids dnd-kit generates stable between the
+            server render and hydration; without it React reports a mismatch on every handle. */}
+        <DndContext
+          id="mimnets-editor"
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="mn-ed-split">
+            <Preview
+              layout={state.layout}
+              registry={registry}
+              selection={state.selection}
+              dispatch={dispatch}
+              lockedSlots={lockedSlots}
+              context={context}
+            />
+
+            <aside className="mn-ed-panel">
+              <div className="mn-ed-tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === "settings"}
+                  className={`mn-ed-tab${tab === "settings" ? " is-active" : ""}`}
+                  onClick={() => setTab("settings")}
+                >
+                  Settings
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === "history"}
+                  className={`mn-ed-tab${tab === "history" ? " is-active" : ""}`}
+                  onClick={() => setTab("history")}
+                >
+                  History{versions.length > 0 ? ` (${versions.length})` : ""}
+                </button>
+              </div>
+
+              {tab === "settings" ? (
+                <SettingsPanel
+                  layout={state.layout}
+                  registry={registry}
+                  selection={state.selection}
+                  dispatch={dispatch}
+                />
+              ) : (
+                <History
+                  versions={versions}
+                  onRestore={async (versionId) => {
+                    const restored = await onRestore(versionId);
+                    dispatch({ type: "loadLayout", layout: restored });
+                    setTab("settings");
+                    setMessage("Version restored into the draft — publish to make it live");
+                  }}
+                />
+              )}
+            </aside>
+          </div>
+        </DndContext>
+      </div>
+    </MediaProvider>
   );
 }

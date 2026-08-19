@@ -47,6 +47,39 @@ seat covers many Sites. Render, Fly and Railway have no equivalent restriction; 
 free web services sleep when idle, which is fine for staging and unacceptable for a client's
 live site.
 
+## Uploaded images: the disk, until they matter
+
+A Site stores uploads on its own disk by default, so a fresh clone accepts an image with no
+account anywhere ([ADR-0012](./adr/0012-local-disk-is-the-default-storage.md)). What that
+means for each path above is not the same thing, and it is the easiest way to lose a client's
+files.
+
+**Path A.** The directory is on the VPS. Mount it as a volume so rebuilding the container
+does not take the uploads with it, and include it in the same backup as the database — a
+database full of storage keys pointing at files nobody kept is worse than either loss alone.
+
+**Path B.** Vercel's filesystem is ephemeral and read-only at runtime, so the local disk is
+not an option at all: uploads either fail or vanish at the next deploy. A managed host needs
+a bucket, configured before the first upload rather than after.
+
+**The bucket.** Cloudflare R2 is the recommendation: S3-compatible, no egress fees, works
+from any host. Four variables switch a Site over:
+
+```
+S3_BUCKET=my-site-media
+S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+```
+
+Set `S3_PUBLIC_BASE_URL` to a custom domain to serve files directly; leave it unset and the
+bucket stays private with the Site proxying reads through `/media`. Amazon S3, MinIO and
+Backblaze B2 work with the same four variables and their own endpoint.
+
+Switching later is safe: a Page stores a storage key, never a URL, so nothing that was
+already published has to be edited. Copying the existing files across is a manual step —
+Mimnets does not migrate them for you.
+
 ## Database: Neon, not Supabase
 
 The decision turns on one database per Site, so read the cost per *additional Site*.

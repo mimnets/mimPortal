@@ -4,8 +4,9 @@ import { SlotView } from "@mimnets/core";
 import { createDatabase, pages } from "@mimnets/core/db";
 
 import { registry } from "../../blocks.config";
-import { requireDatabaseUrl } from "../../lib/env";
+import { baseUrl, requireDatabaseUrl } from "../../lib/env";
 import { renderContext } from "../../lib/site";
+import { storage } from "../../lib/storage";
 
 // Pages are rendered from data on request (ADR-0002). Caching arrives with the first Site
 // that needs it; correctness first.
@@ -17,14 +18,53 @@ function pathFrom(segments: string[] | undefined): string {
 
 export async function generateMetadata({ params }: { params: Promise<{ path?: string[] }> }) {
   const { path } = await params;
+  const currentPath = pathFrom(path);
+
   const db = createDatabase(requireDatabaseUrl());
   const [page] = await db
-    .select({ title: pages.title })
+    .select({
+      title: pages.title,
+      seoTitle: pages.seoTitle,
+      seoDescription: pages.seoDescription,
+      seoImageKey: pages.seoImageKey,
+      published: pages.publishedLayout,
+    })
     .from(pages)
-    .where(and(eq(pages.path, pathFrom(path)), eq(pages.locale, "en")))
+    .where(and(eq(pages.path, currentPath), eq(pages.locale, "en")))
     .limit(1);
 
-  return { title: page?.title };
+  // An unpublished Page is a 404 to a visitor, and a 404 describes nothing.
+  if (!page?.published) return {};
+
+  // The Page title is the fallback rather than a value copied into seoTitle when it was
+  // left empty, so renaming a Page updates its search result too.
+  const title = page.seoTitle || page.title;
+  const description = page.seoDescription ?? undefined;
+
+  // Social previews need an absolute URL; a share image is fetched by a server that has no
+  // idea what this Site's origin is.
+  const image = page.seoImageKey
+    ? new URL(storage().url(page.seoImageKey), baseUrl()).toString()
+    : undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: new URL(currentPath, baseUrl()).toString() },
+    openGraph: {
+      title,
+      description,
+      url: new URL(currentPath, baseUrl()).toString(),
+      type: "website",
+      images: image ? [image] : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
 }
 
 export default async function PublicPage({ params }: { params: Promise<{ path?: string[] }> }) {

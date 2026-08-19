@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./db": "./src/db/index.ts",
-    "./auth": "./src/auth/index.ts"
+    "./auth": "./src/auth/index.ts",
+    "./storage": "./src/storage/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
@@ -25,6 +26,7 @@
     "react": ">=19"
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "react": "^19.2.8"
   }

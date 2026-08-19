@@ -19,6 +19,7 @@ export default async function DashboardPage() {
         <strong>Pages</strong>
         <nav className="mn-dash-nav">
           <Link href="/admin/menus">Menus</Link>
+          <Link href="/admin/media">Media</Link>
           <Link href="/">View Site</Link>
         </nav>
         <span className="mn-ed-who">

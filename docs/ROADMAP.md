@@ -104,7 +104,7 @@ six values in `theme.ts` visibly rebrands every page without touching a Block.
 
 ---
 
-## M6 — Media and SEO
+## M6 — Media and SEO ⚠️
 
 The `StorageAdapter` interface with an S3/R2 implementation and a local-disk implementation.
 Real image uploads with a media library in the Dashboard. Per-Page title, description and
@@ -112,6 +112,18 @@ social share image. Generated `sitemap.xml` (published Pages only) and `robots.t
 
 **Done when:** you upload an image in the Dashboard, it appears on the published page, and
 `/sitemap.xml` lists exactly the published Pages.
+
+**Built, and all but one clause verified.** The disk is the default and a bucket is the
+upgrade ([ADR-0012](./adr/0012-local-disk-is-the-default-storage.md)). `sitemap.xml` was
+checked against a Site with a deliberately unpublished Page and listed exactly the three
+published ones. An image stored as a key renders on the published Page through `/media`,
+and three path-traversal attempts against that route were refused. The S3 adapter signs its
+own requests and is tested against a real S3-compatible server.
+
+**Not yet done by hand:** nobody has clicked Upload in the Dashboard while signed in. Every
+layer beneath that click is tested — the rules that accept or reject a file, the key, the
+write, the row, the render — but the milestone's own standard is a browser, so it is not
+ticked.
 
 ---
 

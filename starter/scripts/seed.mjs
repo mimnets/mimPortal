@@ -6,6 +6,9 @@
  * Re-runnable, and it replaces the layout of the Pages it owns. Nothing in the product
  * depends on this script — it exists so a fresh clone has something to look at.
  */
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+
 import "dotenv/config";
 import postgres from "postgres";
 
@@ -15,26 +18,54 @@ if (!url) {
   process.exit(1);
 }
 
-const placeholder =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420">
-       <rect width="640" height="420" fill="#e8e8ee"/>
-       <text x="320" y="220" text-anchor="middle" font-family="sans-serif"
-             font-size="28" fill="#77778a">image block</text>
-     </svg>`,
-  );
+/**
+ * The placeholder is seeded as a real file in the media library rather than inlined as a
+ * data URI, because an image Block now holds a storage key. A fresh clone therefore starts
+ * with one file it can see in the Dashboard, replace, and delete — the same path an
+ * Author's own uploads take.
+ */
+const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420">
+  <rect width="640" height="420" fill="#e8e8ee"/>
+  <text x="320" y="220" text-anchor="middle" font-family="sans-serif"
+        font-size="28" fill="#77778a">image block</text>
+</svg>`;
+
+// A fixed key, so re-running the seed replaces the placeholder instead of adding another.
+const placeholderKey = "seed/placeholder.svg";
+
+async function seedPlaceholder(sql) {
+  // Only the local-disk default can be written to from a script; a Site already on a bucket
+  // keeps whatever is there rather than having a seed reach into its storage.
+  if (process.env.S3_BUCKET) {
+    console.log("Storage is a bucket — leaving the media library alone.");
+    return;
+  }
+
+  const directory = resolve(process.env.MEDIA_DIR ?? ".media");
+  const file = join(directory, placeholderKey);
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, placeholderSvg, "utf8");
+
+  await sql`
+    insert into media (key, filename, content_type, size, width, height, alt)
+    values (${placeholderKey}, 'placeholder.svg', 'image/svg+xml',
+            ${Buffer.byteLength(placeholderSvg)}, null, null, 'A grey placeholder')
+    on conflict (key) do update set size = excluded.size
+  `;
+}
 
 const id = (prefix) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
 const block = (type, props) => ({ id: id("blk"), type, props });
+
+const emptyImage = () => ({ key: "", alt: "", width: null, height: null });
 const column = (blocks) => ({ id: id("col"), blocks });
 const section = (layout, columns) => ({ id: id("sec"), layout, columns });
 
 /** Every Page shares the same Header and Footer, which is what the Menu entity is for. */
 const header = () =>
   section("2-1", [
-    column([block("logo", { image: { url: "", alt: "" }, text: "", href: "/" })]),
+    column([block("logo", { image: emptyImage(), text: "", href: "/" })]),
     column([block("menu", { slug: "main", align: "end" })]),
   ]);
 
@@ -71,8 +102,8 @@ const pages = [
       ]),
       column([
         block("image", {
-          image: { url: placeholder, alt: "Placeholder" },
-          caption: "An image Block, until M6 makes uploads real",
+          image: { key: placeholderKey, alt: "A grey placeholder", width: null, height: null },
+          caption: "Replace this from the media library in the Dashboard",
         }),
       ]),
     ]),
@@ -120,6 +151,8 @@ const pages = [
 const sql = postgres(url, { max: 1 });
 
 try {
+  await seedPlaceholder(sql);
+
   await sql`
     insert into menus (slug, name, items)
     values ('main', 'Main navigation', ${sql.json([

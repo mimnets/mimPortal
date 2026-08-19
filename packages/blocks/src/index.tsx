@@ -58,12 +58,20 @@ export const imageBlock = defineBlock({
     image: field.image({ label: "Image" }),
     caption: field.text({ label: "Caption", default: "" }),
   },
-  render: ({ image, caption }) => {
-    if (!image.url) return null;
+  render: ({ image, caption }, context) => {
+    if (!image.key) return null;
     return (
       <figure className="mn-image">
-        {/* A plain <img> until M6 introduces uploads and knows an image's dimensions. */}
-        <img src={image.url} alt={image.alt} />
+        {/* width and height are what stop the text below shifting as the image arrives;
+            they are absent only for formats that hide their size (AVIF) or have none (SVG). */}
+        <img
+          src={`${context.mediaBaseUrl}/${image.key}`}
+          alt={image.alt}
+          width={image.width ?? undefined}
+          height={image.height ?? undefined}
+          loading="lazy"
+          decoding="async"
+        />
         {caption ? <figcaption>{caption}</figcaption> : null}
       </figure>
     );
@@ -80,8 +88,13 @@ export const logoBlock = defineBlock({
   },
   render: ({ image, text, href }, context) => (
     <a className="mn-logo" href={href || "/"}>
-      {image.url ? (
-        <img src={image.url} alt={image.alt || text || context.siteName} />
+      {image.key ? (
+        <img
+          src={`${context.mediaBaseUrl}/${image.key}`}
+          alt={image.alt || text || context.siteName}
+          width={image.width ?? undefined}
+          height={image.height ?? undefined}
+        />
       ) : (
         <span className="mn-logo-text">{text || context.siteName}</span>
       )}
