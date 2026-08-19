@@ -48,3 +48,6 @@ export { SlotView } from "./render/render";
 
 export { FORM_FIELDS, FORM_RESULT_PARAM } from "./forms/shared";
 export type { FormResult } from "./forms/shared";
+
+export { ASSIST_ACTION_LIST, assistActionsFor, isAssistAction } from "./ai/actions";
+export type { AssistAction, AssistActionInfo } from "./ai/actions";

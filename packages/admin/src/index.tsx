@@ -6,3 +6,6 @@ export { editorReducer, initialState } from "./state";
 export type { BlockPath, EditorAction, EditorState, Selection } from "./state";
 export { MediaProvider, MediaBrowser, useMedia, formatBytes } from "./media";
 export type { MediaBridge, MediaItem } from "./media";
+export { Assist } from "./Assist";
+export { AssistProvider, useAssist } from "./assist-context";
+export type { AssistSettings } from "./assist-context";

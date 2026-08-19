@@ -10,7 +10,8 @@
     "./auth": "./src/auth/index.ts",
     "./storage": "./src/storage/index.ts",
     "./email": "./src/email/index.ts",
-    "./forms": "./src/forms/index.ts"
+    "./forms": "./src/forms/index.ts",
+    "./ai": "./src/ai/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
@@ -19,6 +20,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
     "better-auth": "^1.6.29",
     "drizzle-orm": "^0.45.2",
     "nodemailer": "^9.0.5",

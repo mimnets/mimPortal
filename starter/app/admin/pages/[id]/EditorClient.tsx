@@ -1,6 +1,7 @@
 "use client";
 
-import { Editor, type MediaItem } from "@mimnets/admin";
+import { Editor, type AssistSettings, type MediaItem } from "@mimnets/admin";
+import type { ReactNode } from "react";
 import type { PageLayout, RenderContext, SlotName } from "@mimnets/core";
 
 import { registry } from "../../../../blocks.config";
@@ -25,6 +26,8 @@ export function EditorClient({
   onListMedia,
   onUploadMedia,
   mediaBaseUrl,
+  nav,
+  assist,
 }: {
   layout: PageLayout;
   pageTitle: string;
@@ -39,6 +42,8 @@ export function EditorClient({
   onListMedia: () => Promise<MediaItem[]>;
   onUploadMedia: (form: FormData) => Promise<MediaItem>;
   mediaBaseUrl: string;
+  nav: ReactNode;
+  assist: AssistSettings;
 }) {
   return (
     <Editor
@@ -54,6 +59,8 @@ export function EditorClient({
       onRestore={onRestore}
       onSignOut={onSignOut}
       media={{ list: onListMedia, upload: onUploadMedia, baseUrl: mediaBaseUrl }}
+      nav={nav}
+      assist={assist}
     />
   );
 }

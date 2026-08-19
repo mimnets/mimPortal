@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import type { Field, FieldsShape } from "@mimnets/core";
 
+import { Assist } from "./Assist";
+import { useAssist } from "./assist-context";
 import { MediaBrowser, useMedia } from "./media";
 
 /**
@@ -62,6 +64,7 @@ export function FieldInput({ field, name, value, onChange }: FieldInputProps) {
             onChange={(event) => onChange(event.target.value)}
           />
           {field.help ? <small>{field.help}</small> : null}
+          <AssistRow kind="textarea" field={field} value={value} onChange={onChange} />
         </label>
       );
 
@@ -218,6 +221,7 @@ export function FieldInput({ field, name, value, onChange }: FieldInputProps) {
             onChange={(event) => onChange(event.target.value)}
           />
           {field.help ? <small>{field.help}</small> : null}
+          <AssistRow kind="text" field={field} value={value} onChange={onChange} />
         </label>
       );
   }
@@ -316,5 +320,35 @@ function ImageField({
         />
       ) : null}
     </fieldset>
+  );
+}
+
+/**
+ * Draws the assistant under a field, or nothing at all when the Site has no provider
+ * configured. A button that always fails is worse than no button.
+ */
+function AssistRow({
+  kind,
+  field,
+  value,
+  onChange,
+}: {
+  kind: "text" | "textarea";
+  field: Field;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const assist = useAssist();
+  if (!assist?.enabled) return null;
+
+  return (
+    <Assist
+      kind={kind}
+      value={String(value ?? "")}
+      fieldLabel={field.label}
+      pageTitle={assist.pageTitle}
+      siteName={assist.siteName}
+      onChange={onChange}
+    />
   );
 }

@@ -8,12 +8,13 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { useReducer, useState } from "react";
+import { useReducer, useState, type ReactNode } from "react";
 
 import type { BlockRegistry, PageLayout, RenderContext, SlotName } from "@mimnets/core";
 import { emptyContext } from "@mimnets/core";
 
 import { History, type PageVersionSummary } from "./History";
+import { AssistProvider, type AssistSettings } from "./assist-context";
 import { MediaProvider, type MediaBridge } from "./media";
 import { SaveIcon } from "./icons";
 import { Preview } from "./Preview";
@@ -51,6 +52,19 @@ export interface EditorProps {
    * key instead of a picker — and wired to server actions in a real Dashboard.
    */
   media?: MediaBridge;
+  /**
+   * Links back to the rest of the Dashboard.
+   *
+   * Passed in rather than built here, because the admin package does not know a Site's
+   * routes. Without it the Editor is a room with no door: opening a Page left the browser's
+   * back button as the only way to reach Pages, Media or anything else.
+   */
+  nav?: ReactNode;
+  /**
+   * Whether this Site has an AI provider configured. Absent or disabled hides the
+   * assistant's buttons — one that always fails is worse than none.
+   */
+  assist?: AssistSettings;
 }
 
 type Tab = "settings" | "history";
@@ -68,6 +82,8 @@ export function Editor({
   signedInAs,
   onSignOut,
   media,
+  nav,
+  assist,
 }: EditorProps) {
   const [state, dispatch] = useReducer(editorReducer, layout, initialState);
   const [status, setStatus] = useState<"idle" | "saving" | "publishing">("idle");
@@ -134,9 +150,12 @@ export function Editor({
 
   return (
     <MediaProvider value={media ?? null}>
+      <AssistProvider value={assist ?? null}>
       <div className="mn-ed">
         <header className="mn-ed-bar">
           <strong>{pageTitle}</strong>
+
+          {nav ? <nav className="mn-dash-nav">{nav}</nav> : null}
 
           <span className={`mn-ed-state${error ? " is-error" : state.dirty ? " is-dirty" : ""}`}>
             {error ?? message ?? (state.dirty ? "Unsaved changes" : "All changes saved")}
@@ -242,6 +261,7 @@ export function Editor({
           </div>
         </DndContext>
       </div>
+      </AssistProvider>
     </MediaProvider>
   );
 }

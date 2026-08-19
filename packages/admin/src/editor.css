@@ -931,3 +931,63 @@
 .mn-dash-bar form {
   display: flex;
 }
+
+/* ---- The assistant ---------------------------------------------------------
+   A row under a field. Quiet until hovered: these are offers, not the primary
+   way to edit a field, and a row of loud buttons under every input would make
+   the panel look like the assistant is the point. */
+
+.mn-assist {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.375rem;
+}
+
+.mn-assist-button {
+  font-size: 0.75rem;
+  padding: 0.1875rem 0.5rem;
+  color: #6b6b76;
+  border-color: #ececf1;
+}
+
+.mn-assist-button:hover:not(:disabled) {
+  color: #3b6cf6;
+  border-color: #c7d4fb;
+}
+
+.mn-assist-cancel {
+  font-size: 0.75rem;
+  padding: 0.1875rem 0.5rem;
+  color: #b00020;
+  border-color: #e6c3c9;
+}
+
+.mn-assist-error {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  color: #b00020;
+}
+
+/* The Page switcher in the Editor bar. A native select, because it is a list of
+   Pages and every platform already knows how to show one of those well. */
+.mn-page-switch select {
+  font: inherit;
+  font-size: 0.8125rem;
+  max-width: 14rem;
+  padding: 0.25rem 0.5rem;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #dcdce2;
+  border-radius: 4px;
+}
+
+.mn-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
