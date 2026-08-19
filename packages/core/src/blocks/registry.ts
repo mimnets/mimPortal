@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 import {
+  BLOCK_ANIMATIONS,
+  BLOCK_FONTS,
+  BLOCK_TONES,
   buildLayoutSchema,
   emptyLayout,
   type BlockInstance,
@@ -39,11 +42,21 @@ export function createRegistry(blocks: AnyBlockType[]): BlockRegistry {
 
   const byName = new Map(blocks.map((block) => [block.name, block]));
 
+  // Defaulted, so every Block written before Blocks could be styled still parses.
+  const style = z
+    .object({
+      tone: z.enum(BLOCK_TONES).default("default"),
+      font: z.enum(BLOCK_FONTS).default("default"),
+      animate: z.enum(BLOCK_ANIMATIONS).default("none"),
+    })
+    .default({ tone: "default", font: "default", animate: "none" });
+
   const variants = blocks.map((block) =>
     z.object({
       id: z.string().min(1),
       type: z.literal(block.name),
       props: block.propsSchema,
+      style,
     }),
   ) as unknown as [z.ZodObject<z.ZodRawShape>, ...z.ZodObject<z.ZodRawShape>[]];
 

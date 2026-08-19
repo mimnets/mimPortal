@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import {
   assertLockedSlotsUnchanged,
+  blockStyleDefaults,
   emptyLayout,
   sectionDefaults,
   type PageLayout,
@@ -24,7 +25,7 @@ function layoutWithHeader(text: string): PageLayout {
     {
       id: "sec-h",
       layout: "1",
-      columns: [{ id: "col-h", blocks: [{ id: "blk-h", type: "text", props: { body: text } }] }],
+      columns: [{ id: "col-h", blocks: [{ id: "blk-h", type: "text", props: { body: text }, style: blockStyleDefaults() }] }],
       ...sectionDefaults(),
     },
   ];

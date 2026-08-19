@@ -8,7 +8,8 @@ import type {
   SectionNode,
   SlotName,
 } from "@mimnets/core";
-import { columnCount, sectionDefaults } from "@mimnets/core";
+import { blockStyleDefaults, columnCount, sectionDefaults } from "@mimnets/core";
+import type { BlockStyle } from "@mimnets/core";
 
 export interface BlockPath {
   slot: SlotName;
@@ -43,6 +44,7 @@ export interface EditorState {
 export type EditorAction =
   | { type: "select"; selection: Selection }
   | { type: "setProp"; path: BlockPath; key: string; value: unknown }
+  | { type: "setBlockStyle"; path: BlockPath; style: Partial<BlockStyle> }
   | { type: "addBlock"; target: Omit<DropTarget, "index">; blockType: AnyBlockType }
   | { type: "deleteBlock"; path: BlockPath }
   | { type: "moveBlock"; from: BlockPath; to: DropTarget }
@@ -78,6 +80,7 @@ export function newSection(layout: ColumnLayout): SectionNode {
 export function newBlock(blockType: AnyBlockType): BlockInstance {
   return {
     id: newId("blk"),
+    style: blockStyleDefaults(),
     type: blockType.name,
     props: blockType.propsSchema.parse({}) as Record<string, unknown>,
   };
@@ -241,6 +244,15 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         dirty: true,
         selection: { kind: "section", path: { slot: action.slot, section: action.to } },
       };
+    }
+
+    case "setBlockStyle": {
+      const layout = structuredClone(state.layout);
+      const block = blockAt(layout, action.path);
+      if (!block) return state;
+
+      block.style = { ...blockStyleDefaults(), ...block.style, ...action.style };
+      return { ...state, layout, dirty: true };
     }
 
     case "setSectionStyle": {

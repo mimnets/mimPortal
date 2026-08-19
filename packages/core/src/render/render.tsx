@@ -32,7 +32,15 @@ function BlockView({
   if (!blockType) return null;
 
   return (
-    <div className="mn-block" data-block={block.type}>
+    <div
+      className="mn-block"
+      data-block={block.type}
+      // Every value here is a Theme token, resolved in CSS. Nothing inline, so a Block
+      // cannot carry a colour the Theme does not know about.
+      data-tone={block.style?.tone !== "default" ? block.style?.tone : undefined}
+      data-font={block.style?.font !== "default" ? block.style?.font : undefined}
+      data-animate={block.style?.animate !== "none" ? block.style?.animate : undefined}
+    >
       {blockType.render(block.props, context)}
     </div>
   );
