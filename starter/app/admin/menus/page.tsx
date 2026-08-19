@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { menuItemsSchema } from "@mimnets/core";
+
+import { DashboardBar } from "../DashboardBar";import { menuItemsSchema } from "@mimnets/core";
 import { createDatabase, menus } from "@mimnets/core/db";
 
 import { requireDatabaseUrl } from "../../../lib/env";
@@ -23,16 +23,7 @@ export default async function MenusPage() {
 
   return (
     <main className="mn-dash">
-      <header className="mn-dash-bar">
-        <strong>Menus</strong>
-        <nav className="mn-dash-nav">
-          <Link href="/admin">Pages</Link>
-          <Link href="/">View Site</Link>
-        </nav>
-        <span className="mn-ed-who">
-          {person.name} · {person.role}
-        </span>
-      </header>
+      <DashboardBar title="Menus" person={person} />
 
       <MenuEditor
         slug={MAIN_MENU}

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { DashboardBar } from "../DashboardBar";
 import { currentUser } from "../../../lib/session";
 import { email } from "../../../lib/email";
 import { deleteEnquiry, listEnquiries, markEnquiryRead } from "../enquiry-actions";
@@ -16,18 +16,7 @@ export default async function EnquiriesPage() {
 
   return (
     <main className="mn-dash">
-      <header className="mn-dash-bar">
-        <strong>Enquiries</strong>
-        <nav className="mn-dash-nav">
-          <Link href="/admin">Pages</Link>
-          <Link href="/admin/menus">Menus</Link>
-          <Link href="/admin/media">Media</Link>
-          <Link href="/">View Site</Link>
-        </nav>
-        <span className="mn-ed-who">
-          {person.name} · {person.role}
-        </span>
-      </header>
+      <DashboardBar title="Enquiries" person={person} />
 
       <EnquiryList
         enquiries={await listEnquiries()}

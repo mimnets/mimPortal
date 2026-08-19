@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createDatabase, pages } from "@mimnets/core/db";
+
+import { DashboardBar } from "../../../DashboardBar";import { createDatabase, pages } from "@mimnets/core/db";
 
 import { requireDatabaseUrl } from "../../../../../lib/env";
 import { currentUser } from "../../../../../lib/session";
@@ -23,17 +24,11 @@ export default async function PageSettingsRoute({ params }: { params: Promise<{ 
 
   return (
     <main className="mn-dash">
-      <header className="mn-dash-bar">
-        <strong>{page.title}</strong>
-        <nav className="mn-dash-nav">
-          <Link href="/admin">Pages</Link>
-          <Link href={`/admin/pages/${page.id}`}>Editor</Link>
-          <Link href="/admin/media">Media</Link>
-        </nav>
-        <span className="mn-ed-who">
-          {person.name} · {person.role}
-        </span>
-      </header>
+      <DashboardBar
+        title={page.title}
+        person={person}
+        extra={<Link href={`/admin/pages/${page.id}`}>Editor</Link>}
+      />
 
       <PageSettings
         pageId={page.id}

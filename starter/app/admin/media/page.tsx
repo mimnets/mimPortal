@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { DashboardBar } from "../DashboardBar";
 import { currentUser } from "../../../lib/session";
 import { storage } from "../../../lib/storage";
 import { deleteMedia, listMedia, setMediaAlt, uploadMedia } from "../media-actions";
@@ -14,17 +14,7 @@ export default async function MediaPage() {
 
   return (
     <main className="mn-dash">
-      <header className="mn-dash-bar">
-        <strong>Media</strong>
-        <nav className="mn-dash-nav">
-          <Link href="/admin">Pages</Link>
-          <Link href="/admin/menus">Menus</Link>
-          <Link href="/">View Site</Link>
-        </nav>
-        <span className="mn-ed-who">
-          {person.name} · {person.role}
-        </span>
-      </header>
+      <DashboardBar title="Media" person={person} />
 
       <MediaLibrary
         items={await listMedia()}

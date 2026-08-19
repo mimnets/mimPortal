@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { DashboardBar } from "./DashboardBar";
 import { currentUser } from "../../lib/session";
 import { listPages } from "./actions";
 import { PageList } from "./PageList";
@@ -15,18 +15,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="mn-dash">
-      <header className="mn-dash-bar">
-        <strong>Pages</strong>
-        <nav className="mn-dash-nav">
-          <Link href="/admin/menus">Menus</Link>
-          <Link href="/admin/media">Media</Link>
-          <Link href="/admin/enquiries">Enquiries</Link>
-          <Link href="/">View Site</Link>
-        </nav>
-        <span className="mn-ed-who">
-          {person.name} · {person.role}
-        </span>
-      </header>
+      <DashboardBar title="Pages" person={person} />
 
       <PageList
         canManage={person.role === "owner"}

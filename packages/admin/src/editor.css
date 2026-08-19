@@ -926,3 +926,8 @@
   font-size: 0.9375rem;
   line-height: 1.55;
 }
+
+/* The bar's own controls sit after the "who" label, which takes the free space. */
+.mn-dash-bar form {
+  display: flex;
+}
