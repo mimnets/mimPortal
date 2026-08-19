@@ -48,6 +48,23 @@ services:
       timeout: 5s
       retries: 10
 
+  # A real SMTP server that accepts everything and delivers nothing, so the EmailAdapter is
+  # tested against a mail server rather than against a mock of one. Its inbox is at
+  # http://localhost:8025 — useful for eyeballing what a client will actually receive:
+  #   docker compose --profile mail up -d mail
+  mail:
+    profiles: ["mail"]
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # inbox and API
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   app:
     profiles: ["full"]
     build:

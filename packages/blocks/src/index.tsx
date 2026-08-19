@@ -1,4 +1,4 @@
-import { defineBlock, field } from "@mimnets/core";
+import { defineBlock, field, FORM_FIELDS, FORM_RESULT_PARAM } from "@mimnets/core";
 
 /**
  * The standard Block library. The library grows to roughly twenty at M8.5, which is what
@@ -154,5 +154,108 @@ export const menuBlock = defineBlock({
   },
 });
 
+/**
+ * A contact form that works before any JavaScript has loaded.
+ *
+ * It is a plain <form method="post"> that posts to a route and redirects back, for the same
+ * reason the mobile drawer is a checkbox: an enquiry is the thing a brochure Site exists to
+ * produce, and it should not depend on a bundle having arrived. That constraint is also what
+ * makes the result message a query parameter rather than component state.
+ *
+ * The spam protection a visitor meets is nothing: a hidden field they cannot see, and a
+ * check that they took more than two seconds. There is no CAPTCHA, and adding one is a
+ * change to `lib/spam.ts` rather than to this markup.
+ */
+export const contactBlock = defineBlock({
+  name: "contact",
+  label: "Contact form",
+  fields: {
+    heading: field.text({ label: "Heading", default: "Get in touch" }),
+    intro: field.textarea({ label: "Intro", default: "" }),
+    recipient: field.text({
+      label: "Send enquiries to",
+      help: "Leave empty to use the Site's own address.",
+      default: "",
+    }),
+    buttonLabel: field.text({ label: "Button", default: "Send" }),
+    successMessage: field.text({
+      label: "Thank-you message",
+      default: "Thank you — your message has been sent.",
+    }),
+    slug: field.text({
+      label: "Form name",
+      help: "Groups submissions in the Dashboard. Use one per form.",
+      default: "contact",
+    }),
+  },
+  render: ({ heading, intro, recipient, buttonLabel, successMessage, slug }, context) => {
+    const result = context.query[FORM_RESULT_PARAM];
+
+    // The result belongs to this form, not to whichever form rendered first on the Page.
+    if (result === slug) {
+      return (
+        <div className="mn-form mn-form-done" role="status">
+          {heading ? <h2 className="mn-heading">{heading}</h2> : null}
+          <p>{successMessage}</p>
+        </div>
+      );
+    }
+
+    return (
+      <form className="mn-form" method="post" action="/api/forms">
+        {heading ? <h2 className="mn-heading">{heading}</h2> : null}
+        {intro ? <p className="mn-form-intro">{intro}</p> : null}
+
+        {result === `${slug}:error` ? (
+          <p className="mn-form-error" role="alert">
+            That message could not be sent. Please check the form and try again.
+          </p>
+        ) : null}
+
+        <input type="hidden" name={FORM_FIELDS.slug} value={slug} />
+        <input type="hidden" name={FORM_FIELDS.renderedAt} value={context.formToken} />
+        <input type="hidden" name={FORM_FIELDS.returnTo} value={context.currentPath} />
+        <input type="hidden" name="recipient" value={recipient} />
+
+        {/* The bait. Positioned off-screen rather than display:none, because some bots skip
+            what is explicitly hidden, and hidden from assistive technology and the tab order
+            so no person is ever offered it. */}
+        <div className="mn-form-trap" aria-hidden="true">
+          <label>
+            Website
+            <input type="text" name={FORM_FIELDS.honeypot} tabIndex={-1} autoComplete="off" />
+          </label>
+        </div>
+
+        <label className="mn-form-field">
+          <span>Your name</span>
+          <input type="text" name="name" required autoComplete="name" />
+        </label>
+
+        <label className="mn-form-field">
+          <span>Your email</span>
+          <input type="email" name="email" required autoComplete="email" />
+        </label>
+
+        <label className="mn-form-field">
+          <span>Message</span>
+          <textarea name="message" rows={6} required />
+        </label>
+
+        <button type="submit" className="mn-form-submit">
+          {buttonLabel || "Send"}
+        </button>
+      </form>
+    );
+  },
+});
+
 /** Registered by a Site in its blocks.config.ts, alongside any Blocks of its own. */
-export const standardBlocks = [headingBlock, textBlock, imageBlock, logoBlock, menuBlock];
+export const standardBlocks = [
+  headingBlock,
+  textBlock,
+  imageBlock,
+  logoBlock,
+  menuBlock,
+  contactBlock,
+];

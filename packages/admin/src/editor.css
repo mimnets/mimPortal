@@ -888,3 +888,41 @@
   flex: 1;
   min-width: 0;
 }
+
+/* ---- Enquiries -------------------------------------------------------------
+   What the Site's forms collected. Unread is marked on the row rather than in a
+   badge column, because the list is read top to bottom. */
+
+.mn-enquiry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+}
+
+.mn-enquiry.is-unread {
+  border-left: 3px solid #3b6cf6;
+}
+
+.mn-enquiry-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mn-enquiry-head a {
+  font-size: 0.8125rem;
+  color: #3b6cf6;
+}
+
+.mn-enquiry-message {
+  margin: 0;
+  /* The message arrived as typed, so its line breaks are part of what was said. */
+  white-space: pre-wrap;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}

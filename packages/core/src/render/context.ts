@@ -34,8 +34,28 @@ export interface RenderContext {
    * one environment variable and no Page at all.
    */
   mediaBaseUrl: string;
+  /**
+   * A signed stamp of when this Page was rendered, embedded by any Block with a form.
+   *
+   * It is what the timing check measures against. Signed, because an unsigned timestamp in a
+   * hidden field is a suggestion — anything that can read it can also set it.
+   */
+  formToken: string;
+  /**
+   * The request's query string. A form Block reads it to know whether to show "thank you",
+   * which is how a result survives the redirect that follows a submission without needing
+   * any JavaScript to have loaded.
+   */
+  query: Record<string, string>;
 }
 
 export function emptyContext(): RenderContext {
-  return { siteName: "", menus: {}, currentPath: "/", mediaBaseUrl: "/media" };
+  return {
+    siteName: "",
+    menus: {},
+    currentPath: "/",
+    mediaBaseUrl: "/media",
+    formToken: "",
+    query: {},
+  };
 }

@@ -114,3 +114,42 @@ export const media = pgTable(
 
 export type MediaRow = typeof media.$inferSelect;
 export type NewMediaRow = typeof media.$inferInsert;
+
+/**
+ * An enquiry from a Site's contact form.
+ *
+ * The row is written before the notification is attempted, and the submission is accepted
+ * even when sending fails. A brochure Site exists to produce these; losing one because a
+ * mail server was briefly unreachable is the worst outcome available, and the Dashboard is
+ * the backstop that makes a lost email merely annoying.
+ *
+ * `senderHash` is a salted hash of the IP, not the address. Telling senders apart is enough
+ * for a rate limit, and a table of addresses beside people's messages is a thing a client
+ * would have to disclose.
+ */
+export const formSubmissions = pgTable(
+  "form_submissions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Which form, so one Site can have more than a contact page. */
+    slug: text("slug").notNull(),
+    /** The Page it was sent from, for context in the Dashboard. */
+    path: text("path").notNull().default(""),
+    name: text("name").notNull().default(""),
+    email: text("email").notNull().default(""),
+    message: text("message").notNull().default(""),
+    senderHash: text("sender_hash").notNull().default(""),
+    /** Null while unread; set when an Owner or Author opens it. */
+    readAt: timestamp("read_at", { withTimezone: true }),
+    /** Null when the notification sent, or the reason it did not. */
+    deliveryError: text("delivery_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("form_submissions_created_idx").on(table.createdAt),
+    // The rate limit counts recent submissions per sender, which is this index's whole job.
+    index("form_submissions_sender_idx").on(table.senderHash, table.createdAt),
+  ],
+);
+
+export type FormSubmissionRow = typeof formSubmissions.$inferSelect;

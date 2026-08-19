@@ -127,7 +127,7 @@ ticked.
 
 ---
 
-## M6.5 — Forms and email
+## M6.5 — Forms and email ⚠️
 
 A brochure Site without a working contact form is not deliverable, which is why this sits
 inside v1 rather than after it.
@@ -143,6 +143,22 @@ resets use it too, so building it once here serves both.
 **Done when:** a visitor submits the contact form on a published Site, the Owner gets an
 email, the submission is visible in the Dashboard, and a bot posting the form directly is
 rejected.
+
+**Built, and three of the four clauses verified.** A visitor submitted the seeded contact
+form in a real browser and was thanked; the notification arrived at the Owner's address
+through a real SMTP server, with reply-to set to the person who wrote in; and four bot
+attempts were refused — no timestamp, honeypot filled, submitted instantly, and a forged
+timestamp — none of which reached the database.
+
+Spam protection is a list a Site edits in `lib/spam.ts`, not three conditions inside the
+Block. Adding a CAPTCHA means appending one signal.
+
+Also proven: an enquiry submitted while the mail server was unreachable was still saved and
+still thanked, with the delivery failure recorded on the row. That is the whole argument for
+storing before sending.
+
+**Not yet done by hand:** nobody has looked at the Enquiries screen while signed in. This is
+the same missing sign-in that leaves M6 unticked, and one session covers both.
 
 ---
 ## M7 — AI writing assistant

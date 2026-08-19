@@ -141,7 +141,19 @@ const pages = [
       column([
         block("heading", { text: "Contact", level: "h1", align: "center" }),
         block("text", {
-          body: "A working contact form arrives at M6.5, with the submissions stored and emailed.",
+          body:
+            "This form works with JavaScript switched off. Submissions are stored in the " +
+            "Dashboard whether or not the notification email goes out.",
+        }),
+        block("contact", {
+          heading: "Get in touch",
+          intro: "",
+          // Empty, so it falls back to CONTACT_RECIPIENT rather than seeding an address
+          // that belongs to whoever cloned this.
+          recipient: "",
+          buttonLabel: "Send",
+          successMessage: "Thank you — your message has been sent.",
+          slug: "contact",
         }),
       ]),
     ]),

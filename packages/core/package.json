@@ -8,7 +8,9 @@
     ".": "./src/index.ts",
     "./db": "./src/db/index.ts",
     "./auth": "./src/auth/index.ts",
-    "./storage": "./src/storage/index.ts"
+    "./storage": "./src/storage/index.ts",
+    "./email": "./src/email/index.ts",
+    "./forms": "./src/forms/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
@@ -19,6 +21,7 @@
   "dependencies": {
     "better-auth": "^1.6.29",
     "drizzle-orm": "^0.45.2",
+    "nodemailer": "^9.0.5",
     "postgres": "^3.4.9",
     "zod": "^4.4.3"
   },
@@ -27,6 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.18",
     "react": "^19.2.8"
   }

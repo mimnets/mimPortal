@@ -80,6 +80,18 @@ Switching later is safe: a Page stores a storage key, never a URL, so nothing th
 already published has to be edited. Copying the existing files across is a manual step —
 Mimnets does not migrate them for you.
 
+## Email: a provider, not the box
+
+A Site sends contact-form notifications and password resets. It can do neither until email is
+configured, and until then every enquiry is still collected in the Dashboard — losing a
+notification is survivable, losing the enquiry is not.
+
+Send through Resend rather than through the VPS. Mail from a general-purpose host lands in
+spam often enough that a client will notice, and diagnosing that is worse than the ten
+minutes the DNS records take. SMTP is there for when a provider is genuinely not an option.
+
+[docs/EMAIL.md](./EMAIL.md) has the setup for both, including the SPF and DKIM records.
+
 ## Database: Neon, not Supabase
 
 The decision turns on one database per Site, so read the cost per *additional Site*.

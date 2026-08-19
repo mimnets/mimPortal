@@ -2,7 +2,9 @@ import { eq } from "drizzle-orm";
 import { menuItemsSchema, type RenderContext } from "@mimnets/core";
 import { createDatabase, menus, siteSettings } from "@mimnets/core/db";
 
-import { requireDatabaseUrl } from "./env";
+import { signRenderedAt } from "@mimnets/core/forms";
+
+import { authSecret, requireDatabaseUrl } from "./env";
 import { storage } from "./storage";
 
 /**
@@ -11,7 +13,10 @@ import { storage } from "./storage";
  * Blocks never query anything themselves — a Menu Block holds a slug, not a copy of the
  * links — so this is where Menus stop being rows and start being renderable.
  */
-export async function renderContext(currentPath: string): Promise<RenderContext> {
+export async function renderContext(
+  currentPath: string,
+  query: Record<string, string> = {},
+): Promise<RenderContext> {
   const db = createDatabase(requireDatabaseUrl());
 
   const [settings] = await db
@@ -36,5 +41,8 @@ export async function renderContext(currentPath: string): Promise<RenderContext>
     currentPath,
     // Blocks hold storage keys; this is what turns one into something a browser can fetch.
     mediaBaseUrl: storage().baseUrl,
+    // Stamped per request, so the timing check measures this render rather than a cached one.
+    formToken: signRenderedAt(Date.now(), authSecret()),
+    query,
   };
 }

@@ -67,9 +67,22 @@ export async function generateMetadata({ params }: { params: Promise<{ path?: st
   };
 }
 
-export default async function PublicPage({ params }: { params: Promise<{ path?: string[] }> }) {
+export default async function PublicPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ path?: string[] }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { path } = await params;
   const currentPath = pathFrom(path);
+
+  // A form Block reads this to know whether to say thank you, which is how a result
+  // survives the redirect after a submission without any JavaScript having loaded.
+  const rawQuery = await searchParams;
+  const query = Object.fromEntries(
+    Object.entries(rawQuery).map(([key, value]) => [key, Array.isArray(value) ? (value[0] ?? "") : (value ?? "")]),
+  );
 
   const db = createDatabase(requireDatabaseUrl());
   const [page] = await db
@@ -83,7 +96,7 @@ export default async function PublicPage({ params }: { params: Promise<{ path?: 
   if (!page?.publishedLayout) notFound();
 
   const { layout } = registry.safeParseLayout(page.publishedLayout);
-  const context = await renderContext(currentPath);
+  const context = await renderContext(currentPath, query);
 
   return (
     <>
