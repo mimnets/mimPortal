@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { createPage, deletePage } from "./actions";
+import { createPage, deletePage, renamePage } from "./actions";
 
 interface PageSummary {
   id: string;
@@ -18,6 +18,8 @@ export function PageList({ pages, canManage }: { pages: PageSummary[]; canManage
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Which row's name is being edited. Only one at a time. */
+  const [renaming, setRenaming] = useState<string | null>(null);
 
   async function run(work: () => Promise<void>) {
     setBusy(true);
@@ -39,14 +41,52 @@ export function PageList({ pages, canManage }: { pages: PageSummary[]; canManage
       <ul className="mn-page-list">
         {pages.map((page) => (
           <li key={page.id} className="mn-page-row">
-            <Link href={`/admin/pages/${page.id}`} className="mn-page-main">
-              <strong>{page.title}</strong>
+            {/* The name is the name. Clicking it renames the Page rather than navigating
+                somewhere — Edit and Settings are their own buttons, so the row no longer
+                has to overload its title with "open this". */}
+            <span className="mn-page-main">
+              {renaming === page.id ? (
+                <input
+                  className="mn-page-rename"
+                  autoFocus
+                  defaultValue={page.title}
+                  onBlur={(event) => {
+                    const title = event.target.value.trim();
+                    setRenaming(null);
+                    if (!title || title === page.title) return;
+                    void run(() => renamePage({ pageId: page.id, title, path: page.path }));
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") event.currentTarget.blur();
+                    // Escape abandons the edit, which blurring would otherwise save.
+                    if (event.key === "Escape") {
+                      event.currentTarget.value = page.title;
+                      event.currentTarget.blur();
+                    }
+                  }}
+                />
+              ) : canManage ? (
+                <button
+                  type="button"
+                  className="mn-page-name"
+                  title="Click to rename"
+                  onClick={() => setRenaming(page.id)}
+                >
+                  {page.title}
+                </button>
+              ) : (
+                <strong>{page.title}</strong>
+              )}
               <code>{page.path}</code>
-            </Link>
+            </span>
 
             <span className={`mn-badge${page.isPublished ? " is-live" : ""}`}>
               {page.isPublished ? "Published" : "Draft only"}
             </span>
+
+            <Link className="mn-button" href={`/admin/pages/${page.id}`}>
+              Edit
+            </Link>
 
             <Link className="mn-button" href={`/admin/pages/${page.id}/settings`}>
               Settings

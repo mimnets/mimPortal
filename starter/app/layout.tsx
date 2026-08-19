@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, IBM_Plex_Sans } from "next/font/google";
 import { themeToCss } from "@mimnets/core";
 
 import { theme } from "../theme";
+import { activeTheme } from "../lib/theme";
 import "./globals.css";
 
 /**
@@ -35,13 +36,18 @@ export const metadata = {
   description: "A Site built with Mimnets",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+// Read per request, because a Preset can change it while the Site is running.
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const active = await activeTheme(theme);
+
   return (
     <html lang="en" className={`${display.variable} ${text.variable}`}>
       <head>
         {/* Theme tokens as custom properties. A <style> element rather than inline styles,
             so the values cascade into everything — including Blocks inside the Editor. */}
-        <style dangerouslySetInnerHTML={{ __html: themeToCss(theme) }} />
+        <style dangerouslySetInnerHTML={{ __html: themeToCss(active) }} />
       </head>
       <body>{children}</body>
     </html>

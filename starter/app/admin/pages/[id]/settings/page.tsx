@@ -10,6 +10,8 @@ import { storage } from "../../../../../lib/storage";
 import { copyPageStructure, listPages, renamePage, savePageSeo } from "../../../actions";
 import { listMedia, uploadMedia } from "../../../media-actions";
 import { applySlotsToAllPages, setPageSlots } from "../../../slot-actions";
+import { generatePageLayout } from "../../../preset-actions";
+import { aiConfigured } from "../../../../../lib/ai";
 import { listSharedSlots } from "../../../../../lib/slots";
 import { PageSettings } from "./PageSettings";
 
@@ -27,7 +29,23 @@ export default async function PageSettingsRoute({ params }: { params: Promise<{ 
   const [sharedSlots, allPages] = await Promise.all([listSharedSlots(), listPages()]);
 
   return (
-    <DashboardShell current="pages" person={person} title={page.title}>
+    <DashboardShell
+      current="pages"
+      person={person}
+      title={page.title}
+      actions={
+        <>
+          {/* Settings and the Editor are two views of one Page, so each has to reach the
+              other. Moving this screen into the shell dropped that link for a while. */}
+          <Link className="mn-button mn-button-primary" href={`/admin/pages/${page.id}`}>
+            Open Editor
+          </Link>
+          <a className="mn-button" href={page.path} target="_blank" rel="noreferrer">
+            View Page
+          </a>
+        </>
+      }
+    >
 
       <PageSettings
         pageId={page.id}
@@ -56,6 +74,8 @@ export default async function PageSettingsRoute({ params }: { params: Promise<{ 
         onSetSlots={setPageSlots}
         onApplyToAll={applySlotsToAllPages}
         onCopyStructure={copyPageStructure}
+        aiEnabled={aiConfigured()}
+        onGeneratePage={generatePageLayout}
       />
     </DashboardShell>
   );

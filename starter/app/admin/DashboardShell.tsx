@@ -22,6 +22,7 @@ export type DashboardSection =
   | "enquiries"
   | "menus"
   | "slots"
+  | "design"
   | "settings";
 
 interface NavItem {
@@ -48,6 +49,10 @@ const STRUCTURE: NavItem[] = [
     ownerOnly: true,
     icon: <SlotIcon />,
   },
+];
+
+const DESIGN: NavItem[] = [
+  { section: "design", href: "/admin/design", label: "Design", ownerOnly: true, icon: <WandIcon /> },
 ];
 
 const SETTINGS: NavItem[] = [
@@ -113,6 +118,7 @@ export function DashboardShell({
         <nav className="mn-shell-nav">
           {group(CONTENT, "Content")}
           {group(STRUCTURE, "Structure")}
+          {group(DESIGN, "Design")}
           {group(SETTINGS, "Settings")}
         </nav>
 
@@ -194,6 +200,16 @@ function SlotIcon() {
     <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.4">
       <rect x="2" y="2.5" width="12" height="11" rx="1.5" />
       <path d="M2 6h12M2 10.5h12" />
+    </svg>
+  );
+}
+
+function WandIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <path d="M3 13l7-7" strokeLinecap="round" />
+      <path d="M11.5 2.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z" />
+      <path d="M4.5 3l.4 1 1 .4-1 .4-.4 1-.4-1-1-.4 1-.4z" />
     </svg>
   );
 }

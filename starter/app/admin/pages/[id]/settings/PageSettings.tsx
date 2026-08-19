@@ -29,6 +29,8 @@ export function PageSettings({
   onSetSlots,
   onApplyToAll,
   onCopyStructure,
+  aiEnabled,
+  onGeneratePage,
 }: {
   pageId: string;
   title: string;
@@ -58,6 +60,8 @@ export function PageSettings({
   }) => Promise<void>;
   onApplyToAll: (pageId: string) => Promise<number>;
   onCopyStructure: (input: { pageId: string; fromPageId: string }) => Promise<unknown>;
+  aiEnabled: boolean;
+  onGeneratePage: (input: { pageId: string; brief: string }) => Promise<unknown>;
 }) {
   const [seoTitle, setSeoTitle] = useState(initialSeoTitle);
   const [seoDescription, setSeoDescription] = useState(initialSeoDescription);
@@ -67,6 +71,7 @@ export function PageSettings({
   const [headerSlotId, setHeaderSlotId] = useState(initialHeader);
   const [footerSlotId, setFooterSlotId] = useState(initialFooter);
   const [copyFrom, setCopyFrom] = useState("");
+  const [pageBrief, setPageBrief] = useState("");
   const [browsing, setBrowsing] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -222,6 +227,45 @@ export function PageSettings({
             </div>
           ) : null}
         </section>
+
+        {aiEnabled ? (
+          <section className="mn-field-group">
+            <legend>Rewrite this Page with AI</legend>
+            <p className="mn-media-meta">
+              Replaces this Page’s Blocks with a generated arrangement, written into the
+              draft. What is published now is snapshotted first, so History has it — if the
+              result is worse than what was there, restore the previous version and nothing
+              was lost. The Header and Footer are left alone.
+            </p>
+
+            <label className="mn-field">
+              <span>What should this Page say?</span>
+              <textarea
+                rows={3}
+                value={pageBrief}
+                placeholder="An about page for a family law firm in Leeds. Emphasise that we have been here since 1994."
+                onChange={(event) => setPageBrief(event.target.value)}
+              />
+            </label>
+
+            <div className="mn-image-actions">
+              <button
+                type="button"
+                className="mn-button"
+                disabled={pageBrief.trim().length < 3}
+                onClick={() => {
+                  if (!confirm("Replace this Page's draft with a generated one?")) return;
+                  void run(
+                    () => onGeneratePage({ pageId, brief: pageBrief }).then(() => undefined),
+                    "Generated into the draft. Open the Editor to review and publish it.",
+                  );
+                }}
+              >
+                Generate this Page
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         {canRename && otherPages.length > 0 ? (
           <section className="mn-field-group">

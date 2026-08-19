@@ -76,6 +76,17 @@ export const siteSettings = pgTable("site_settings", {
   id: text("id").primaryKey().default("singleton"),
   siteName: text("site_name").notNull().default("My Site"),
   lockedSlots: jsonb("locked_slots").$type<string[]>().notNull().default(["header", "footer"]),
+  /**
+   * A Theme chosen from a generated Preset, overriding the one in `theme.ts`.
+   *
+   * The file stays the Site's default and its version-controlled starting point. This exists
+   * because a Preset has to be applied at runtime and `theme.ts` is code — a host with a
+   * read-only filesystem cannot be asked to rewrite it, and a Site that could rewrite its own
+   * source at runtime would be a different kind of product.
+   *
+   * Null means "use the file", which is what every Site starts as.
+   */
+  theme: jsonb("theme").$type<unknown>(),
   installToken: text("install_token"),
   installedAt: timestamp("installed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

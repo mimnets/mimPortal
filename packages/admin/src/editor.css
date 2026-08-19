@@ -1191,3 +1191,85 @@
   font-size: 0.9375rem;
   font-weight: 600;
 }
+
+/* ---- Generated designs -----------------------------------------------------
+   Presets are chosen by looking, so the palette and the type are shown rather
+   than described. */
+
+.mn-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mn-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  font-size: 0.6875rem;
+}
+
+.mn-swatch > span {
+  width: 3.5rem;
+  height: 2.25rem;
+  border: 1px solid #e2e2e6;
+  border-radius: 5px;
+}
+
+.mn-swatch small {
+  color: #9a9aa6;
+}
+
+.mn-preset-type {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+}
+
+.mn-preset-type span {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #6b6b76;
+}
+
+.mn-preset-status {
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.8125rem;
+  background: #edf7ee;
+  border: 1px solid #c6e3c9;
+  border-radius: 5px;
+}
+
+/* The Page name in the list is a rename control, not a link — Edit and Settings
+   are their own buttons, so the title does not have to mean "open this" too. */
+.mn-page-name {
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: none;
+  border-bottom: 1px dashed transparent;
+  cursor: text;
+}
+
+.mn-page-name:hover,
+.mn-page-name:focus-visible {
+  border-bottom-color: #b9b9c4;
+}
+
+.mn-page-rename {
+  font: inherit;
+  font-weight: 700;
+  padding: 0.125rem 0.25rem;
+  border: 1px solid #3b6cf6;
+  border-radius: 4px;
+}

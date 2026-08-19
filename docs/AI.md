@@ -28,30 +28,82 @@ Restart the Site. The buttons appear under text fields in the Editor.
 ## Option 1 — OpenRouter (free, recommended starting point)
 
 [OpenRouter](https://openrouter.ai) fronts a catalogue from many vendors, including models
-served at no cost.
+served at no cost. This is the whole setup, start to finish.
 
-1. Sign up at [openrouter.ai](https://openrouter.ai).
-2. **Keys → Create Key.** No payment method is needed for the free tier.
-3. Put it in `starter/.env` as `OPENROUTER_API_KEY`.
+### 1. Create an account
 
-The Starter tries these free models in order, moving on when one is unavailable:
+Go to [openrouter.ai](https://openrouter.ai) and click **Sign in** (top right). You can sign
+up with Google, GitHub, or an email address. **No payment method is required** — the free
+tier works on a bare account.
 
-```
-deepseek/deepseek-chat-v3.1:free
-meta-llama/llama-3.3-70b-instruct:free
-qwen/qwen-2.5-72b-instruct:free
-```
+### 2. Create an API key
 
-**This list goes stale.** OpenRouter retires free models regularly. When these stop working,
-check [openrouter.ai/models?max_price=0](https://openrouter.ai/models?max_price=0) and
-override the list — no code change needed:
+1. Click your avatar (top right) → **Keys**, or go to
+   [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
+2. Click **Create Key**.
+3. Give it a name — the Site it belongs to, e.g. `acme-website`. This is only a label.
+4. Leave **Credit limit** empty. On a free-tier account there is nothing to spend; setting a
+   limit of 0 will make paid models fail later in a way that is confusing to debug.
+5. Click **Create**, then **copy the key immediately** — it starts `sk-or-v1-` and OpenRouter
+   shows it once. If you lose it, delete the key and make another; there is no way to view it
+   again.
+
+### 3. Put it in the Site
+
+Open `starter/.env` — create it by copying `starter/.env.example` if it does not exist — and add:
 
 ```bash
-AI_FREE_MODELS=some-vendor/some-model:free,another/model:free
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
 ```
 
-Free models are rate limited per account, and shared. Expect them to be slower and
-occasionally unavailable — which is what the paid fallbacks below are for.
+Restart the Site (`pnpm dev`). Keys are read once at boot, so a running Site will not pick up
+a new one.
+
+### 4. Check it worked
+
+Sign in to the Dashboard and open **Design**. If the key is working you get a brief box and a
+model picker; if it is not, you get a line saying no provider is configured. You can also
+open any Page in the Editor — small **Rewrite** / **Shorten** buttons appear under text
+fields.
+
+### Which free models
+
+The Starter tries these in order, and they are verified against the live API by
+`packages/core/src/ai/openrouter.test.ts`:
+
+```
+nvidia/nemotron-3-super-120b-a12b:free
+google/gemma-4-26b-a4b-it:free
+openrouter/free
+```
+
+`openrouter/free` is OpenRouter’s own router across whatever is currently free. It sits last
+rather than first: it cannot go stale, but it picks a different model on each call and some of
+those return nothing.
+
+**This list will go out of date.** OpenRouter retires free models without notice — the first
+three names shipped here had already been retired when the live test was written, which is
+why that test exists. To find current ones:
+
+1. Go to [openrouter.ai/models](https://openrouter.ai/models).
+2. Set **Prompt pricing** to **FREE** (or use
+   [this filter](https://openrouter.ai/models?max_price=0)).
+3. Prefer a general instruction-tuned model with a large context. Avoid ones named for a
+   narrow job — `content-safety`, `code`, `note`, `clip` — they are classifiers and media
+   models, not writers.
+4. Copy the model ID exactly, including the `:free` suffix, and set:
+
+```bash
+AI_FREE_MODELS=vendor/model-a:free,vendor/model-b:free
+```
+
+Then run `pnpm test` — the live test will tell you whether they actually answer.
+
+### What the free tier costs you
+
+Nothing in money. It costs reliability: free models are shared, rate-limited per account, and
+slower. Expect the occasional failure. That is precisely what the paid fallbacks below are
+for, and why the chain exists.
 
 ### A paid OpenRouter model
 

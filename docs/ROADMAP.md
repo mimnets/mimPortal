@@ -233,7 +233,7 @@ map, and Markdown prose with its sanitising renderer
 
 ---
 
-## M9 — Presets
+## M9 — Presets ✅
 
 Generate a Theme plus starting Page layouts as one coherent Preset, offer three or four
 options, apply the chosen one. Output is validated against the Block Zod schemas and
@@ -244,6 +244,24 @@ a single Page, writing to that Page's Draft with a version snapshot taken first
 **Done when:** scaffolding a new Site with the prompt "law firm" and the prompt "skate shop"
 produces two Sites nobody would guess share a codebase — and an Author who regenerates a
 Page they liked better before can restore it in one click.
+
+**Built, and the exit criterion is a test.** "A family law firm in Leeds" and "a skate shop
+in Bristol" are generated against a real free model and asserted to differ in palette and in
+copy — each written about its own business rather than filled with generic sentences. An
+Author regenerating a Page writes to the draft with a snapshot taken first, so History is
+the one-click undo.
+
+Generated output is validated against the registry's own Zod schemas, and the prompt is
+generated *from* the registry — which is what turns validation from the thing that catches
+failures into the thing that confirms successes. A model cannot invent a Block Type.
+
+Two findings worth keeping. Free models drop keys from a described object every time, so
+the Theme requires only its palette and everything else is defaulted — including the two
+contrast colours, which are derived from luminance rather than asked for, because a model
+guessing at contrast produces unreadable text. And a generated Theme is stored in the
+database rather than written to `theme.ts`: applying a Preset has to work at runtime, and a
+Site that rewrites its own source is a different product. `theme.ts` stays the default and
+"Reset" returns to it.
 
 ---
 

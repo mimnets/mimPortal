@@ -38,8 +38,8 @@ export type {
 
 export { assertLockedSlotsUnchanged, lockedSlotViolation } from "./layout/locking";
 
-export { defaultTheme, defineTheme, themeToCss } from "./theme/index";
-export type { Theme } from "./theme/index";
+export { defaultTheme, defineTheme, themeToCss, themeSchema, completeTheme, readableOn } from "./theme/index";
+export type { Theme, ThemeInput } from "./theme/index";
 
 export { emptyContext, menuItemSchema, menuItemsSchema } from "./render/context";
 export type { MenuItem, RenderContext } from "./render/context";

@@ -38,9 +38,38 @@ const DEFAULT_FREE_MODELS = [
   "openrouter/free",
 ];
 
+/**
+ * Every provider this Site has configured, in the order the chain tries them.
+ *
+ * Exposed so the Dashboard can show what is available and let an Owner pick one for a
+ * particular job — generating a whole Site is worth a better model than rewriting a heading,
+ * and an Owner who has paid for both should be able to say which.
+ */
+export function aiProviders(): AiProvider[] {
+  if (built !== undefined) return built;
+  built = buildProviders();
+  return built;
+}
+
+let built: AiProvider[] | undefined;
+
+/** One named provider, for when an Owner has chosen. Falls back to the whole chain. */
+export function aiProviderNamed(name: string | null | undefined): AiProvider | null {
+  if (!name) return aiProvider();
+  const found = aiProviders().find((provider) => provider.name === name);
+  // A name that no longer matches anything means the environment changed under a saved
+  // choice. The chain is the right answer then, not an error.
+  return found ?? aiProvider();
+}
+
 export function aiProvider(): AiProvider | null {
   if (cached !== undefined) return cached;
+  const providers = aiProviders();
+  cached = providers.length > 0 ? providerChain(providers) : null;
+  return cached;
+}
 
+function buildProviders(): AiProvider[] {
   const providers: AiProvider[] = [];
   const openRouterKey = process.env.OPENROUTER_API_KEY;
 
@@ -140,8 +169,7 @@ export function aiProvider(): AiProvider | null {
     );
   }
 
-  cached = providers.length > 0 ? providerChain(providers) : null;
-  return cached;
+  return providers;
 }
 
 /** Whether the Editor should offer the assistant at all. */

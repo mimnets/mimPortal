@@ -14,3 +14,12 @@ export type { AiProvider, AiRequest } from "./provider";
 export { ASSIST_ACTIONS, ASSIST_SYSTEM, assistPrompt } from "./assist";
 export type { AssistContext } from "./assist";
 export type { AssistAction } from "./actions";
+export {
+  generatePreset,
+  presetSchema,
+  presetPageSchema,
+  extractJson,
+  PRESET_DIRECTIONS,
+} from "./preset";
+export type { GeneratedPreset, GenerateOptions, PresetInput } from "./preset";
+export { describeRegistry, describeLayoutRules, describeComposition } from "./registry-prompt";

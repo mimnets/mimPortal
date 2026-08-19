@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * A Site's visual identity, as tokens.
  *
@@ -95,4 +97,108 @@ export function themeToCss(theme: Theme): string {
 
 function kebab(value: string): string {
   return value.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
+/** A CSS colour a model is allowed to produce: a hex value, and nothing else. */
+const colour = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, "Colours must be six-digit hex, for example #0b6b62");
+
+/** A font stack. Punctuation that could close a CSS declaration is refused. */
+const stack = z.string().min(1).max(200).regex(/^[^;{}()@]+$/, "A font stack, not a declaration");
+
+/**
+ * The schema a generated Theme is checked against.
+ *
+ * Presets are model output, which makes this a validation boundary rather than a
+ * convenience (ADR-0007). It is deliberately strict about colour: a Theme is compiled
+ * straight into CSS custom properties, so an unconstrained string here would be a way to
+ * write arbitrary CSS into every Page of a Site.
+ */
+export const themeSchema = z.object({
+  colors: z.object({
+    background: colour,
+    surface: colour,
+    text: colour,
+    muted: colour,
+    primary: colour,
+    accent: colour,
+    border: colour,
+    /**
+     * Optional, and derived when absent.
+     *
+     * These are the two colours text is set in over a coloured band, so getting them wrong
+     * means unreadable text. Asking a model to work out contrast is asking for that bug —
+     * in testing, free models simply omitted them. Luminance decides it correctly every
+     * time, so the model is not asked.
+     */
+    onPrimary: colour.optional(),
+    onAccent: colour.optional(),
+  }),
+  /**
+   * Everything below is optional, and defaulted when absent.
+   *
+   * Only colour is required. A Theme’s identity is overwhelmingly its palette, and small
+   * free models reliably drop the rest — in testing they omitted `fonts.body` and both
+   * spacing values on every attempt, throwing away otherwise good designs. Requiring what
+   * a model will not produce is a way of not shipping the feature.
+   */
+  fonts: z
+    .object({
+      // A font stack, not a URL — a Theme cannot make a Site fetch anything.
+      body: stack.optional(),
+      heading: stack.optional(),
+    })
+    .optional(),
+  radius: z.object({ base: z.string().regex(/^\d{1,3}(px|rem)$/) }).optional(),
+  spacing: z
+    .object({
+      section: z.string().regex(/^\d{1,2}(\.\d)?rem$/).optional(),
+      gutter: z.string().regex(/^\d{1,2}(\.\d)?rem$/).optional(),
+    })
+    .optional(),
+  measure: z.string().regex(/^\d{2,3}rem$/).optional(),
+});
+
+export type ThemeInput = z.infer<typeof themeSchema>;
+
+/**
+ * Black or white, whichever is readable on the given colour.
+ *
+ * The sRGB relative-luminance formula from WCAG. The 0.55 threshold is a shade above the
+ * mathematical midpoint because white text on a mid-tone reads worse than black does.
+ */
+export function readableOn(hex: string): string {
+  const channel = (pair: string) => {
+    const value = parseInt(pair, 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  };
+
+  const r = channel(hex.slice(1, 3));
+  const g = channel(hex.slice(3, 5));
+  const b = channel(hex.slice(5, 7));
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+  return luminance > 0.55 ? "#111111" : "#ffffff";
+}
+
+/** Fills in the colours a generated Theme is allowed to leave out. */
+export function completeTheme(input: ThemeInput, base: Theme = defaultTheme): Theme {
+  return defineTheme({
+    colors: {
+      ...input.colors,
+      onPrimary: input.colors.onPrimary ?? readableOn(input.colors.primary),
+      onAccent: input.colors.onAccent ?? readableOn(input.colors.accent),
+    },
+    fonts: {
+      body: input.fonts?.body ?? base.fonts.body,
+      heading: input.fonts?.heading ?? input.fonts?.body ?? base.fonts.heading,
+    },
+    radius: { base: input.radius?.base ?? base.radius.base },
+    spacing: {
+      section: input.spacing?.section ?? base.spacing.section,
+      gutter: input.spacing?.gutter ?? base.spacing.gutter,
+    },
+    measure: input.measure ?? base.measure,
+  });
 }
