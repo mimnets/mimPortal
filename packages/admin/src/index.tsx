@@ -9,3 +9,5 @@ export type { MediaBridge, MediaItem } from "./media";
 export { Assist } from "./Assist";
 export { AssistProvider, useAssist } from "./assist-context";
 export type { AssistSettings } from "./assist-context";
+export { readImageForDesign } from "./image-palette";
+export type { ReadImageResult } from "./image-palette";

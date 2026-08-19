@@ -62,10 +62,27 @@ function buildPrompt(options: {
   registry: BlockRegistry;
   /** Nudges each option away from the last, so four choices are four designs. */
   direction?: string;
+  /** Present when there is a design to work from. */
+  image?: string;
 }): string {
   return [
-    `Design a website for: ${options.brief}`,
-    options.direction ? `\nTake this direction: ${options.direction}` : "",
+    // Working from a picture is a different job from inventing a design, so it is a
+    // different instruction rather than the same one with a note appended.
+    options.image
+      ? [
+          "You are looking at a design. Rebuild it as a website using the blocks below.",
+          "",
+          "Match its ARRANGEMENT and its TONE: how many bands it has, what each one is doing,",
+          "whether it is dense or airy, formal or loud. Where it uses something this library",
+          "has no block for, use the closest one — do not invent a block.",
+          "",
+          "Do not attempt to name its colours. They are read from the image's pixels",
+          "separately and will replace whatever you return, so spend no effort on them.",
+          "",
+          `What the site is for: ${options.brief || "infer it from the design"}`,
+        ].join("\n")
+      : `Design a website for: ${options.brief}`,
+    options.direction && !options.image ? `\nTake this direction: ${options.direction}` : "",
     "",
     describeRegistry(options.registry),
     "",
@@ -158,6 +175,20 @@ export interface GenerateOptions {
   /** Injected so generation is deterministic in tests. */
   newId?: (prefix: string) => string;
   signal?: AbortSignal;
+  /**
+   * A design to work from, as a data URL. The provider must report `vision`.
+   *
+   * What the model is asked for changes when this is present: it describes the arrangement
+   * it can see rather than inventing one.
+   */
+  image?: string;
+  /**
+   * Colours read from that image's pixels, which override whatever the model says.
+   *
+   * A vision model *describes* colour — it will call something "a deep forest green" and
+   * then produce a hex value that is approximately that. The pixels are exact, so they win.
+   */
+  palette?: Partial<z.infer<typeof themeSchema>["colors"]>;
 }
 
 /**
@@ -188,6 +219,7 @@ export async function generatePreset(
       json: true,
       maxTokens: 16000,
       signal: options.signal,
+      image: options.image,
     });
 
     try {
@@ -207,7 +239,11 @@ export async function generatePreset(
       return {
         name: parsed.name,
         description: parsed.description,
-        theme: completeTheme(parsed.theme),
+        // Pixels beat description: anything read from the image itself wins.
+        theme: completeTheme({
+          ...parsed.theme,
+          colors: { ...parsed.theme.colors, ...options.palette },
+        }),
         pages,
       };
     } catch (cause) {

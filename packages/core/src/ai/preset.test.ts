@@ -43,6 +43,7 @@ function scripted(...replies: string[]): AiProvider {
     name: "scripted",
     model: "scripted",
     free: true,
+    vision: false,
     async *stream() {
       yield replies[Math.min(index++, replies.length - 1)]!;
     },

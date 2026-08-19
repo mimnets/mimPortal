@@ -153,6 +153,78 @@ than the other two, and a reasonable last resort in the chain.
 
 ---
 
+## Option 3 — Your own endpoint
+
+Anything that speaks the OpenAI or the Anthropic wire format: a self-hosted model, a company
+gateway, Azure OpenAI, Together, Groq, Fireworks, an LLM proxy, or a vendor not listed above.
+
+```bash
+AI_CUSTOM_BASE_URL=https://your-endpoint.example/v1
+AI_CUSTOM_API_KEY=your-key
+AI_CUSTOM_MODEL=the-model-name
+AI_CUSTOM_FORMAT=openai          # "openai" (default) or "anthropic"
+AI_CUSTOM_NAME=Our gateway       # what it is called in the Dashboard
+```
+
+**Which format.** If the endpoint has a `/chat/completions` path, it is `openai`. If it has
+`/v1/messages`, it is `anthropic`. Most third-party services are OpenAI-compatible; the
+Anthropic setting exists for gateways in front of Claude.
+
+**The base URL includes the version segment and stops there.** Give the part before
+`/chat/completions`:
+
+| Service | `AI_CUSTOM_BASE_URL` | Format |
+| --- | --- | --- |
+| Together | `https://api.together.xyz/v1` | `openai` |
+| Groq | `https://api.groq.com/openai/v1` | `openai` |
+| Fireworks | `https://api.fireworks.ai/inference/v1` | `openai` |
+| Ollama (local) | `http://localhost:11434/v1` | `openai` |
+| LM Studio (local) | `http://localhost:1234/v1` | `openai` |
+| An Anthropic gateway | `https://your-gateway.example` | `anthropic` |
+
+A custom endpoint is tried **before** the named vendors below and after the free OpenRouter
+models — an Owner who configured one meant it. To use it first and skip the free tier, leave
+`OPENROUTER_API_KEY` unset, or pick it explicitly from the model list on the Design screen.
+
+A local model needs no key; set `AI_CUSTOM_API_KEY` to anything non-empty, or leave it out.
+
+---
+
+## Designing from an image
+
+The **Design** screen can work from a picture instead of a description: a screenshot, a photo
+of a brochure, or a Figma frame exported as PNG.
+
+The work is split deliberately:
+
+- **Colours come from the image’s pixels**, read in your browser with a canvas. They are
+  exact. A vision model *describes* colour — it will say "a deep forest green" and then give
+  a hex value that is approximately that — so it is not asked.
+- **The arrangement comes from a vision model**, which is the part pixels cannot answer.
+
+This needs a model that can read images. Not all can, including free ones. These free ones
+can, and are used automatically when present:
+
+```
+google/gemma-4-26b-a4b-it:free
+google/gemma-4-31b-it:free
+openrouter/free
+```
+
+Expect it to take around a minute on the free tier. Any paid Anthropic or OpenAI model reads
+images and is much faster.
+
+**A Figma link will not work.** A Figma URL is a JavaScript application — fetching it returns
+markup with no design in it. Open the frame in Figma and use **Export → PNG**, then upload
+that.
+
+**It approximates; it does not reproduce.** A Site can only be built from its registered Block
+Types, so the result matches the palette, the tone, and the section rhythm, and maps what it
+sees onto the closest Blocks available. A design using something the library has no Block for
+comes back as the nearest thing.
+
+---
+
 ## Recommended setups
 
 | Situation | Configure |
@@ -161,6 +233,7 @@ than the other two, and a reasonable last resort in the chain.
 | A client Site, cost-conscious | `OPENROUTER_API_KEY` + `DEEPSEEK_API_KEY` |
 | A client Site, quality matters | `OPENROUTER_API_KEY` + `ANTHROPIC_API_KEY` |
 | No free tier, one vendor | `ANTHROPIC_API_KEY` only |
+| Self-hosted or a gateway | `AI_CUSTOM_*` |
 
 ---
 

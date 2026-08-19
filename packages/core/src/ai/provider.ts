@@ -20,6 +20,13 @@ export interface AiRequest {
   signal?: AbortSignal;
   /** Ask for JSON only. Presets need it; rewriting a heading does not. */
   json?: boolean;
+  /**
+   * An image for the model to look at, as a data URL.
+   *
+   * Only providers reporting `vision` accept one. A model sent an image it cannot read
+   * either errors or, worse, quietly answers as though the image were not there.
+   */
+  image?: string;
 }
 
 export interface AiProvider {
@@ -28,6 +35,8 @@ export interface AiProvider {
   readonly model: string;
   /** Whether this provider costs money. The Dashboard says so before an Owner relies on it. */
   readonly free: boolean;
+  /** Whether it can be sent an image. Not every model can, including free ones. */
+  readonly vision: boolean;
   stream(request: AiRequest): AsyncIterable<string>;
 }
 

@@ -51,3 +51,6 @@ export type { FormResult } from "./forms/shared";
 
 export { ASSIST_ACTION_LIST, assistActionsFor, isAssistAction } from "./ai/actions";
 export type { AssistAction, AssistActionInfo } from "./ai/actions";
+
+export { paletteFromPixels } from "./theme/palette";
+export type { PaletteColors } from "./theme/palette";

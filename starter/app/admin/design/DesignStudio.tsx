@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { readImageForDesign, type ReadImageResult } from "@mimnets/admin";
+
 import type { PresetOption } from "../preset-actions";
 
 /**
@@ -18,16 +20,19 @@ export function DesignStudio({
   providers,
   siteName,
   usingGeneratedTheme,
+  visionEnabled,
   onGenerate,
   onApply,
   onApplyTheme,
   onReset,
+  onGenerateFromImage,
 }: {
   enabled: boolean;
   providerName: string | null;
   providers: { name: string; model: string; free: boolean }[];
   siteName: string;
   usingGeneratedTheme: boolean;
+  visionEnabled: boolean;
   onGenerate: (input: { brief: string; count?: number; provider?: string }) => Promise<{
     options: PresetOption[];
     failures: string[];
@@ -35,6 +40,11 @@ export function DesignStudio({
   onApply: (payload: string) => Promise<{ pages: number }>;
   onApplyTheme: (payload: string) => Promise<void>;
   onReset: () => Promise<void>;
+  onGenerateFromImage: (input: {
+    dataUrl: string;
+    palette: Record<string, string>;
+    brief: string;
+  }) => Promise<{ options: PresetOption[]; failures: string[] }>;
 }) {
   const router = useRouter();
   const [brief, setBrief] = useState("");
@@ -44,6 +54,7 @@ export function DesignStudio({
   const [busy, setBusy] = useState<"generating" | "applying" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [design, setDesign] = useState<ReadImageResult | null>(null);
 
   if (!enabled) {
     return (
@@ -67,6 +78,43 @@ export function DesignStudio({
       setFailures(result.failures);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Nothing could be generated.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function readFile(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    setStatus(null);
+
+    try {
+      // Decoded in the browser: the full-resolution file never leaves the machine, and the
+      // palette is read from real pixels rather than described by a model.
+      setDesign(await readImageForDesign(file));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "That image could not be read.");
+    }
+  }
+
+  async function generateFromDesign() {
+    if (!design) return;
+    setBusy("generating");
+    setError(null);
+    setStatus(null);
+    setOptions([]);
+    setFailures([]);
+
+    try {
+      const result = await onGenerateFromImage({
+        dataUrl: design.dataUrl,
+        palette: design.palette as unknown as Record<string, string>,
+        brief,
+      });
+      setOptions(result.options);
+      setFailures(result.failures);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "That design could not be read.");
     } finally {
       setBusy(null);
     }
@@ -175,6 +223,60 @@ export function DesignStudio({
           {providerName ? ` · via ${providerName}` : ""}
           {siteName ? ` · ${siteName}` : ""}
         </p>
+      </section>
+
+      <section className="mn-field-group">
+        <legend>Or work from a design you already have</legend>
+        <p className="mn-media-meta">
+          A screenshot, a photo of a brochure, or a Figma frame exported as a PNG. The colours
+          are read from the image’s own pixels — exact, not a model’s description of them —
+          and the arrangement is matched as closely as this Site’s Blocks allow.
+          {visionEnabled ? "" : " No configured model can read an image; see docs/AI.md."}
+        </p>
+
+        <div className="mn-image-actions">
+          <label className="mn-button">
+            {design ? "Choose a different image" : "Choose an image"}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              disabled={!visionEnabled || busy !== null}
+              onChange={(event) => void readFile(event.target.files?.[0])}
+            />
+          </label>
+
+          {design ? (
+            <button
+              type="button"
+              className="mn-button mn-button-primary"
+              disabled={busy !== null}
+              onClick={() => void generateFromDesign()}
+            >
+              {busy === "generating" ? "Reading the design…" : "Rebuild this design"}
+            </button>
+          ) : null}
+        </div>
+
+        {design ? (
+          <>
+            <div className="mn-swatches">
+              {Object.entries(design.palette)
+                .filter(([name]) => !name.startsWith("on"))
+                .map(([name, value]) => (
+                  <span className="mn-swatch" key={name}>
+                    <span style={{ background: value }} />
+                    <code>{value}</code>
+                    <small>{name}</small>
+                  </span>
+                ))}
+            </div>
+            <p className="mn-media-meta">
+              Read from your image, {design.width}×{design.height}. These colours are used as
+              they are; the model does not get to change them.
+            </p>
+          </>
+        ) : null}
       </section>
 
       {busy === "generating" ? (

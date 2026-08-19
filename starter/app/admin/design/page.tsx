@@ -2,11 +2,17 @@ import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { createDatabase, siteSettings } from "@mimnets/core/db";
 
-import { aiProvider, aiProviders } from "../../../lib/ai";
+import { aiProvider, aiProviders, visionConfigured } from "../../../lib/ai";
 import { requireDatabaseUrl } from "../../../lib/env";
 import { currentUser } from "../../../lib/session";
 import { DashboardShell } from "../DashboardShell";
-import { applyPreset, applyPresetTheme, generatePresets, resetTheme } from "../preset-actions";
+import {
+  applyPreset,
+  applyPresetTheme,
+  generateFromImage,
+  generatePresets,
+  resetTheme,
+} from "../preset-actions";
 import { DesignStudio } from "./DesignStudio";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +55,8 @@ export default async function DesignPage() {
         onApply={applyPreset}
         onApplyTheme={applyPresetTheme}
         onReset={resetTheme}
+        visionEnabled={visionConfigured()}
+        onGenerateFromImage={generateFromImage}
       />
     </DashboardShell>
   );

@@ -7,7 +7,7 @@ import { generatePreset, PRESET_DIRECTIONS, type GeneratedPreset } from "@mimnet
 import { createDatabase, pageVersions, pages, siteSettings } from "@mimnets/core/db";
 
 import { registry } from "../../blocks.config";
-import { aiProvider, aiProviderNamed, withinRateLimit } from "../../lib/ai";
+import { aiProvider, aiProviderNamed, visionProvider, withinRateLimit } from "../../lib/ai";
 import { requireDatabaseUrl } from "../../lib/env";
 import { requireOwner, requireUser } from "../../lib/session";
 
@@ -238,4 +238,61 @@ export async function generatePageLayout(input: {
 
   revalidatePath("/admin");
   return next;
+}
+
+/**
+ * Designs a Site from a picture of one.
+ *
+ * The division of labour is the whole point. The palette arrives already read from the
+ * image's pixels in the browser — exact, and not a model's description of a colour. The
+ * model is asked only for the thing pixels cannot answer: how the page is arranged.
+ *
+ * A Figma frame works by exporting it as a PNG. A Figma *link* cannot be read: the URL is a
+ * JavaScript application, and fetching it returns markup with no design in it.
+ */
+export async function generateFromImage(input: {
+  /** A downscaled data URL, produced in the browser. */
+  dataUrl: string;
+  /** Colours read from the same image, which override anything the model says. */
+  palette: Record<string, string>;
+  brief: string;
+}): Promise<{ options: PresetOption[]; failures: string[] }> {
+  const person = await requireOwner();
+
+  const provider = visionProvider();
+  if (!provider) {
+    throw new Error(
+      "None of this Site's configured models can read an image. Add a vision-capable one — " +
+        "see docs/AI.md.",
+    );
+  }
+  if (!withinRateLimit(person.id)) throw new Error("Too many requests at once. Wait a moment.");
+
+  if (!input.dataUrl.startsWith("data:image/")) throw new Error("That is not an image.");
+  // Roughly 4 MB of base64. A model cannot use more detail than this carries, and a larger
+  // body is a slower request for no gain.
+  if (input.dataUrl.length > 5_500_000) throw new Error("That image is too large. Under 4 MB.");
+
+  const results = await Promise.allSettled([
+    generatePreset(provider, {
+      brief: input.brief,
+      registry,
+      image: input.dataUrl,
+      palette: input.palette,
+    }),
+  ]);
+
+  const options: PresetOption[] = [];
+  const failures: string[] = [];
+
+  for (const result of results) {
+    if (result.status === "fulfilled") options.push(summarise(result.value));
+    else failures.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
+  }
+
+  if (options.length === 0) {
+    throw new Error(`That design could not be read. ${failures[0] ?? ""}`.trim());
+  }
+
+  return { options, failures };
 }

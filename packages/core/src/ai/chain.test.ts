@@ -16,6 +16,7 @@ function provider(
     name,
     model: `${name}-model`,
     free: false,
+    vision: false,
     async *stream() {
       const chunks = behaviour.chunks ?? [];
       for (let i = 0; i < chunks.length; i++) {
@@ -75,6 +76,7 @@ describe("the provider chain", () => {
         name: "paid",
         model: "m",
         free: false,
+        vision: false,
         async *stream() {
           paidWasAsked = true;
           yield "a whole different sentence";
@@ -129,6 +131,7 @@ describe("the provider chain", () => {
         name: "paid",
         model: "m",
         free: false,
+        vision: false,
         async *stream() {
           paidWasAsked = true;
           yield "should not happen";
@@ -151,6 +154,7 @@ describe("the provider chain", () => {
         name: "second",
         model: "m",
         free: false,
+        vision: false,
         async *stream() {
           secondWasAsked = true;
           yield "";

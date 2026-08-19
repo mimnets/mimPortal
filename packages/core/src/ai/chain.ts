@@ -21,6 +21,9 @@ export function providerChain(providers: AiProvider[]): AiProvider {
     name: usable.length > 0 ? `${usable[0]!.name} (+${usable.length - 1} fallbacks)` : "none",
     model: usable[0]?.model ?? "",
     free: usable[0]?.free ?? false,
+    // A chain can be sent an image if any provider in it can read one; the ones that
+    // cannot are filtered out before an image request is made.
+    vision: usable.some((provider) => provider.vision),
 
     async *stream(request: AiRequest) {
       const attempts: { provider: string; reason: string }[] = [];

@@ -18,6 +18,7 @@ export function openAiCompatibleProvider(options: {
   apiKey: string;
   model: string;
   free?: boolean;
+  vision?: boolean;
   /** OpenRouter asks for these so it can attribute traffic. Harmless elsewhere. */
   headers?: Record<string, string>;
 }): AiProvider {
@@ -27,6 +28,7 @@ export function openAiCompatibleProvider(options: {
     name: options.name,
     model: options.model,
     free: options.free ?? false,
+    vision: options.vision ?? false,
 
     async *stream(request: AiRequest) {
       let response: Response;
@@ -46,7 +48,17 @@ export function openAiCompatibleProvider(options: {
             max_tokens: request.maxTokens ?? 4096,
             messages: [
               { role: "system", content: request.system },
-              { role: "user", content: request.prompt },
+              {
+                role: "user",
+                // A plain string when there is no image, because some endpoints reject the
+                // array form outright and every one of them accepts a string.
+                content: request.image
+                  ? [
+                      { type: "text", text: request.prompt },
+                      { type: "image_url", image_url: { url: request.image } },
+                    ]
+                  : request.prompt,
+              },
             ],
             ...(request.json ? { response_format: { type: "json_object" } } : {}),
           }),
@@ -116,6 +128,7 @@ export function openRouterProvider(options: {
   apiKey: string;
   model: string;
   free?: boolean;
+  vision?: boolean;
   /** Sent as the attribution headers OpenRouter asks integrations to set. */
   siteUrl?: string;
   siteName?: string;
@@ -126,6 +139,7 @@ export function openRouterProvider(options: {
     apiKey: options.apiKey,
     model: options.model,
     free: options.free,
+    vision: options.vision,
     headers: {
       ...(options.siteUrl ? { "http-referer": options.siteUrl } : {}),
       ...(options.siteName ? { "x-title": options.siteName } : {}),
@@ -139,6 +153,7 @@ export function openAiProvider(options: { apiKey: string; model?: string }): AiP
     baseUrl: "https://api.openai.com/v1",
     apiKey: options.apiKey,
     model: options.model ?? "gpt-5",
+    vision: true,
   });
 }
 

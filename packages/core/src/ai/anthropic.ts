@@ -34,6 +34,8 @@ export function anthropicProvider(options: {
     name: options.name ?? "Anthropic",
     model,
     free: options.free ?? false,
+    // Every current Claude model reads images.
+    vision: true,
 
     async *stream(request: AiRequest) {
       try {
@@ -44,7 +46,22 @@ export function anthropicProvider(options: {
             // sentence or two and stop long before this.
             max_tokens: request.maxTokens ?? 4096,
             system: request.system,
-            messages: [{ role: "user", content: request.prompt }],
+            messages: [
+              {
+                role: "user",
+                content: request.image
+                  ? [
+                      // The image goes first: Anthropic documents better results when it
+                      // precedes the question about it.
+                      {
+                        type: "image" as const,
+                        source: splitDataUrl(request.image),
+                      },
+                      { type: "text" as const, text: request.prompt },
+                    ]
+                  : request.prompt,
+              },
+            ],
             // Rewriting a heading is not a reasoning problem, and an Author is watching the
             // text appear. Low effort keeps it quick and cheap.
             output_config: { effort: "low" },
@@ -67,5 +84,20 @@ export function anthropicProvider(options: {
         throw new ProviderError(options.name ?? "Anthropic", cause instanceof Error ? cause.message : "failed");
       }
     },
+  };
+}
+
+/** Turns `data:image/png;base64,AAA` into the shape the Messages API expects. */
+function splitDataUrl(dataUrl: string): {
+  type: "base64";
+  media_type: "image/png" | "image/jpeg" | "image/webp" | "image/gif";
+  data: string;
+} {
+  const match = dataUrl.match(/^data:(image\/(?:png|jpeg|webp|gif));base64,(.+)$/);
+  if (!match) throw new Error("An image must be a base64 data URL of a PNG, JPEG, WebP or GIF.");
+  return {
+    type: "base64",
+    media_type: match[1] as "image/png",
+    data: match[2]!,
   };
 }

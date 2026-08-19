@@ -32,6 +32,24 @@ let cached: AiProvider | null | undefined;
  * version of this list named three specific models and all three had already been retired.
  * The two behind it are pinned as a backstop for the day the router itself is busy.
  */
+/**
+ * Which of the free models can read an image.
+ *
+ * Kept as a list rather than asked of the API at boot: a Site should not make a network call
+ * before it can render, and OpenRouter's own catalogue is the thing that goes stale anyway.
+ * A model here that loses vision fails the same way any retired model does — the chain moves
+ * on and the Dashboard says why.
+ */
+const FREE_VISION_MODELS = new Set([
+  // Verified against a real screenshot: it counted the bands correctly and named the logos
+  // in the strip. Slow — around fifty seconds — but it genuinely reads a design.
+  "google/gemma-4-26b-a4b-it:free",
+  "google/gemma-4-31b-it:free",
+  // Deliberately absent: nvidia/nemotron-nano-12b-v2-vl:free advertises vision and then
+  // times out upstream on a real screenshot.
+  "openrouter/free",
+]);
+
 const DEFAULT_FREE_MODELS = [
   "nvidia/nemotron-3-super-120b-a12b:free",
   "google/gemma-4-26b-a4b-it:free",
@@ -85,6 +103,7 @@ function buildProviders(): AiProvider[] {
           apiKey: openRouterKey,
           model,
           free: true,
+          vision: FREE_VISION_MODELS.has(model),
           siteUrl: baseUrl(),
           siteName: process.env.SITE_NAME ?? "Mimnets Site",
         }),
@@ -203,4 +222,20 @@ export function withinRateLimit(personId: string): boolean {
   recent.push(now);
   REQUESTS.set(personId, recent);
   return true;
+}
+
+/**
+ * Only the providers that can be sent an image.
+ *
+ * Filtered rather than hoped for: a model sent an image it cannot read either errors, or —
+ * worse — answers confidently as though the image were not there, and nobody can tell the
+ * difference from the output.
+ */
+export function visionProvider(): AiProvider | null {
+  const capable = aiProviders().filter((provider) => provider.vision);
+  return capable.length > 0 ? providerChain(capable) : null;
+}
+
+export function visionConfigured(): boolean {
+  return visionProvider() !== null;
 }
