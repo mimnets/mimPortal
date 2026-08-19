@@ -53,7 +53,7 @@ export function EnquiryList({
   }
 
   return (
-    <div className="mn-dash-body">
+    <div className="mn-dash-body is-plain">
       <div className="mn-media-head">
         <strong>
           {items.length} enquir{items.length === 1 ? "y" : "ies"}

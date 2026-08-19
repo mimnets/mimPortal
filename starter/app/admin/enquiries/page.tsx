@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { DashboardBar } from "../DashboardBar";
+import { DashboardShell } from "../DashboardShell";
 import { currentUser } from "../../../lib/session";
 import { email } from "../../../lib/email";
 import { deleteEnquiry, listEnquiries, markEnquiryRead } from "../enquiry-actions";
@@ -15,8 +15,7 @@ export default async function EnquiriesPage() {
   const sender = email();
 
   return (
-    <main className="mn-dash">
-      <DashboardBar title="Enquiries" person={person} />
+    <DashboardShell current="enquiries" person={person} title="Enquiries">
 
       <EnquiryList
         enquiries={await listEnquiries()}
@@ -26,6 +25,6 @@ export default async function EnquiriesPage() {
         onMarkRead={markEnquiryRead}
         onDelete={deleteEnquiry}
       />
-    </main>
+    </DashboardShell>
   );
 }

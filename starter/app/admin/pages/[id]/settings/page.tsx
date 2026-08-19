@@ -2,13 +2,15 @@ import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { DashboardBar } from "../../../DashboardBar";import { createDatabase, pages } from "@mimnets/core/db";
+import { DashboardShell } from "../../../DashboardShell";import { createDatabase, pages } from "@mimnets/core/db";
 
 import { requireDatabaseUrl } from "../../../../../lib/env";
 import { currentUser } from "../../../../../lib/session";
 import { storage } from "../../../../../lib/storage";
-import { renamePage, savePageSeo } from "../../../actions";
+import { copyPageStructure, listPages, renamePage, savePageSeo } from "../../../actions";
 import { listMedia, uploadMedia } from "../../../media-actions";
+import { applySlotsToAllPages, setPageSlots } from "../../../slot-actions";
+import { listSharedSlots } from "../../../../../lib/slots";
 import { PageSettings } from "./PageSettings";
 
 export const dynamic = "force-dynamic";
@@ -22,13 +24,10 @@ export default async function PageSettingsRoute({ params }: { params: Promise<{ 
   const [page] = await db.select().from(pages).where(eq(pages.id, id)).limit(1);
   if (!page) notFound();
 
+  const [sharedSlots, allPages] = await Promise.all([listSharedSlots(), listPages()]);
+
   return (
-    <main className="mn-dash">
-      <DashboardBar
-        title={page.title}
-        person={person}
-        extra={<Link href={`/admin/pages/${page.id}`}>Editor</Link>}
-      />
+    <DashboardShell current="pages" person={person} title={page.title}>
 
       <PageSettings
         pageId={page.id}
@@ -44,7 +43,20 @@ export default async function PageSettingsRoute({ params }: { params: Promise<{ 
         onRename={renamePage}
         onListMedia={listMedia}
         onUploadMedia={uploadMedia}
+        headerSlotId={page.headerSlotId}
+        footerSlotId={page.footerSlotId}
+        sharedSlots={sharedSlots.map((slot) => ({
+          id: slot.id,
+          name: slot.name,
+          slot: slot.slot,
+        }))}
+        otherPages={allPages
+          .filter((row) => row.id !== page.id)
+          .map((row) => ({ id: row.id, title: row.title, path: row.path }))}
+        onSetSlots={setPageSlots}
+        onApplyToAll={applySlotsToAllPages}
+        onCopyStructure={copyPageStructure}
       />
-    </main>
+    </DashboardShell>
   );
 }

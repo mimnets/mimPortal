@@ -1,6 +1,7 @@
 import {
   anthropicProvider,
   deepSeekProvider,
+  openAiCompatibleProvider,
   openAiProvider,
   openRouterProvider,
   providerChain,
@@ -24,13 +25,17 @@ let cached: AiProvider | null | undefined;
 
 /**
  * Free models come and go, so this is a list rather than one name: each is tried in turn.
- * Override it with AI_FREE_MODELS as a comma-separated list when OpenRouter's catalogue
- * moves, which it does.
+ * Override it with AI_FREE_MODELS as a comma-separated list.
+ *
+ * `openrouter/free` leads deliberately. It is OpenRouter's own router across whatever is
+ * currently free, so it does not go stale the way a pinned model ID does — an earlier
+ * version of this list named three specific models and all three had already been retired.
+ * The two behind it are pinned as a backstop for the day the router itself is busy.
  */
 const DEFAULT_FREE_MODELS = [
-  "deepseek/deepseek-chat-v3.1:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen-2.5-72b-instruct:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "openrouter/free",
 ];
 
 export function aiProvider(): AiProvider | null {
@@ -67,6 +72,43 @@ export function aiProvider(): AiProvider | null {
           siteName: process.env.SITE_NAME ?? "Mimnets Site",
         }),
       );
+    }
+  }
+
+  // A Site's own endpoint — a self-hosted model, a proxy, a vendor not listed here, or an
+  // account on Together, Groq or Azure. Tried before the named vendors, because an Owner who
+  // configured one meant it.
+  const customUrl = process.env.AI_CUSTOM_BASE_URL;
+  if (customUrl) {
+    const format = (process.env.AI_CUSTOM_FORMAT ?? "openai").toLowerCase();
+    const label = process.env.AI_CUSTOM_NAME ?? "Custom";
+    const customKey = process.env.AI_CUSTOM_API_KEY ?? "";
+    const customModel = process.env.AI_CUSTOM_MODEL;
+
+    if (!customModel) {
+      throw new Error("AI_CUSTOM_BASE_URL is set but AI_CUSTOM_MODEL is not. Name the model to call.");
+    }
+
+    if (format === "anthropic") {
+      providers.push(
+        anthropicProvider({
+          apiKey: customKey,
+          model: customModel,
+          baseUrl: customUrl,
+          name: label,
+        }),
+      );
+    } else if (format === "openai") {
+      providers.push(
+        openAiCompatibleProvider({
+          name: label,
+          baseUrl: customUrl,
+          apiKey: customKey,
+          model: customModel,
+        }),
+      );
+    } else {
+      throw new Error(`AI_CUSTOM_FORMAT must be "openai" or "anthropic", not "${format}".`);
     }
   }
 

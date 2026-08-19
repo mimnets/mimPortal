@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { DashboardBar } from "../DashboardBar";
+import { DashboardShell } from "../DashboardShell";
 import { currentUser } from "../../../lib/session";
 import { storage } from "../../../lib/storage";
 import { deleteMedia, listMedia, setMediaAlt, uploadMedia } from "../media-actions";
@@ -13,8 +13,7 @@ export default async function MediaPage() {
   if (!person) redirect("/admin/sign-in");
 
   return (
-    <main className="mn-dash">
-      <DashboardBar title="Media" person={person} />
+    <DashboardShell current="media" person={person} title="Media">
 
       <MediaLibrary
         items={await listMedia()}
@@ -25,6 +24,6 @@ export default async function MediaPage() {
         onSetAlt={setMediaAlt}
         onDelete={deleteMedia}
       />
-    </main>
+    </DashboardShell>
   );
 }

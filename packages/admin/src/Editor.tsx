@@ -43,6 +43,13 @@ export interface EditorProps {
   versions: PageVersionSummary[];
   /** Slots this person may not change. Empty for an Owner. */
   lockedSlots?: SlotName[];
+  /** Why each locked Slot is locked, when "the Owner did it" is not the reason. */
+  slotNotes?: Partial<Record<SlotName, string>>;
+  /** Restrict the Editor to certain Slots. Used when editing a shared Header on its own. */
+  visibleSlots?: SlotName[];
+  /** Overrides the Publish button, which a shared Slot does not have. */
+  saveLabel?: string;
+  hidePublish?: boolean;
   /** Menus and Site name, resolved by the server so the preview matches the public Site. */
   context?: RenderContext;
   signedInAs?: string;
@@ -78,6 +85,10 @@ export function Editor({
   onRestore,
   versions: initialVersions,
   lockedSlots = [],
+  slotNotes,
+  visibleSlots,
+  saveLabel,
+  hidePublish = false,
   context = emptyContext(),
   signedInAs,
   onSignOut,
@@ -173,24 +184,30 @@ export function Editor({
             }
           >
             <SaveIcon />
-            {status === "saving" ? "Saving…" : "Save draft"}
+            {status === "saving" ? "Saving…" : (saveLabel ?? "Save draft")}
           </button>
 
           {signedInAs ? <span className="mn-ed-who">{signedInAs}</span> : null}
 
-          <button
-            type="button"
-            className="mn-button mn-button-primary"
-            disabled={busy}
-            onClick={() =>
-              run("publishing", async () => {
-                setVersions(await onPublish(state.layout));
-                return "Published";
-              })
-            }
-          >
-            {status === "publishing" ? "Publishing…" : "Publish"}
-          </button>
+          {/* A shared Header has no draft and no history: it is edited in one place and
+              every Page using it changes at once, the same as a Menu. Publishing it would
+              mean a Page could be live while its Header is not, and there is no good answer
+              to what a visitor should see then. */}
+          {hidePublish ? null : (
+            <button
+              type="button"
+              className="mn-button mn-button-primary"
+              disabled={busy}
+              onClick={() =>
+                run("publishing", async () => {
+                  setVersions(await onPublish(state.layout));
+                  return "Published";
+                })
+              }
+            >
+              {status === "publishing" ? "Publishing…" : "Publish"}
+            </button>
+          )}
 
           {onSignOut ? (
             <button type="button" className="mn-button" onClick={() => void onSignOut()}>
@@ -214,6 +231,8 @@ export function Editor({
               selection={state.selection}
               dispatch={dispatch}
               lockedSlots={lockedSlots}
+              slotNotes={slotNotes}
+              visibleSlots={visibleSlots}
               context={context}
             />
 

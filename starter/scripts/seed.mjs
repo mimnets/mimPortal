@@ -143,18 +143,90 @@ const section = (layout, columns, options = {}) => ({
   background: options.background ?? { key: "", overlay: 0.45 },
 });
 
-/** Every Page shares the same Header and Footer, which is what the Menu entity is for. */
-const header = () =>
-  section("2-1", [
-    column([block("logo", { image: emptyImage(), text: "", href: "/" })]),
-    column([block("menu", { slug: "main", align: "end" })]),
-  ]);
+/**
+ * Headers and Footers are shared rows, not per-Page copies.
+ *
+ * Each Page points at one, so editing it changes every Page using it — which is what a
+ * Header is for, and what this Site claimed to do long before it was true. Two of each are
+ * seeded so a Site starts with an actual choice rather than one arrangement and a blank.
+ */
+const SHARED_SLOTS = [
+  {
+    slug: "main-header",
+    name: "Main header",
+    slot: "header",
+    sections: [
+      section("2-1", [
+        column([block("logo", { image: emptyImage(), text: "", href: "/" })]),
+        column([block("menu", { slug: "main", align: "end" })]),
+      ]),
+    ],
+  },
+  {
+    slug: "centred-header",
+    name: "Centred header",
+    slot: "header",
+    sections: [
+      section("1", [
+        column([
+          block("logo", { image: emptyImage(), text: "", href: "/" }),
+          block("menu", { slug: "main", align: "center" }),
+        ]),
+      ]),
+    ],
+  },
+  {
+    slug: "main-footer",
+    name: "Main footer",
+    slot: "footer",
+    sections: [
+      section(
+        "2-1",
+        [
+          column([block("text", { body: "© Mimnets — one Footer, shared by every Page." })]),
+          column([block("menu", { slug: "main", align: "end" })]),
+        ],
+        { tone: "surface" },
+      ),
+    ],
+  },
+  {
+    slug: "simple-footer",
+    name: "Simple footer",
+    slot: "footer",
+    sections: [
+      section("1", [column([block("text", { body: "© Mimnets" })])], { tone: "surface" }),
+    ],
+  },
+];
 
-const footer = (text) =>
-  section("1", [column([block("text", { body: text })])], { tone: "surface" });
+async function seedSharedSlots(sql) {
+  const ids = {};
+  for (const entry of SHARED_SLOTS) {
+    const [row] = await sql`
+      insert into shared_slots (slug, name, slot, sections)
+      values (${entry.slug}, ${entry.name}, ${entry.slot}, ${sql.json(entry.sections)})
+      on conflict (slug) do update
+        set name = excluded.name, sections = excluded.sections, updated_at = now()
+      returning id, slug
+    `;
+    ids[row.slug] = row.id;
+  }
+  console.log(`Seeded ${SHARED_SLOTS.length} shared Headers and Footers`);
+  return ids;
+}
 
+/**
+ * A Page holds Main and Sidebar. Its Header and Footer come from a shared Slot, so the
+ * layout document keeps those two empty — the Page has nothing of its own to store there
+ * until somebody chooses "This Page only".
+ */
 function page(title, path, main) {
-  return { title, path, layout: { version: 1, slots: { header: [header()], main, sidebar: [], footer: [footer("© Mimnets — every Page shares this Footer and its Menu.")] } } };
+  return {
+    title,
+    path,
+    layout: { version: 1, slots: { header: [], main, sidebar: [], footer: [] } },
+  };
 }
 
 /* ---- The Pages ----------------------------------------------------------- */
@@ -397,6 +469,7 @@ const sql = postgres(url, { max: 1 });
 
 try {
   await seedMedia(sql);
+  const slotIds = await seedSharedSlots(sql);
 
   await sql`
     insert into menus (slug, name, items)
@@ -412,12 +485,16 @@ try {
     // Seeded Pages are published, because a Page nobody published is not visible and the
     // point of the seed is to have something to look at.
     const [row] = await sql`
-      insert into pages (path, title, locale, draft_layout, published_layout)
-      values (${entry.path}, ${entry.title}, 'en', ${sql.json(entry.layout)}, ${sql.json(entry.layout)})
+      insert into pages (path, title, locale, draft_layout, published_layout,
+                         header_slot_id, footer_slot_id)
+      values (${entry.path}, ${entry.title}, 'en', ${sql.json(entry.layout)}, ${sql.json(entry.layout)},
+              ${slotIds["main-header"]}, ${slotIds["main-footer"]})
       on conflict (path, locale) do update
         set title = excluded.title,
             draft_layout = excluded.draft_layout,
             published_layout = excluded.published_layout,
+            header_slot_id = excluded.header_slot_id,
+            footer_slot_id = excluded.footer_slot_id,
             updated_at = now()
       returning path
     `;

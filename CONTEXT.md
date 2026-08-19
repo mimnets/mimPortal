@@ -74,6 +74,11 @@ _Avoid_: unpublished, working copy
 The state of a Page that public visitors see.
 _Avoid_: live, released
 
+**Shared Slot**:
+A Header or Footer defined once for the Site and used by any number of Pages. Editing one
+changes every Page using it. A Page may keep its own instead.
+_Avoid_: global header, template part, partial, include
+
 **Media library**:
 Every image a Site has uploaded, listed in the Dashboard and shared by all its Pages.
 _Avoid_: assets, uploads, files, gallery

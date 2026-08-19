@@ -28,6 +28,7 @@ export function EditorClient({
   mediaBaseUrl,
   nav,
   assist,
+  slotNotes,
 }: {
   layout: PageLayout;
   pageTitle: string;
@@ -44,6 +45,7 @@ export function EditorClient({
   mediaBaseUrl: string;
   nav: ReactNode;
   assist: AssistSettings;
+  slotNotes: Partial<Record<SlotName, string>>;
 }) {
   return (
     <Editor
@@ -61,6 +63,7 @@ export function EditorClient({
       media={{ list: onListMedia, upload: onUploadMedia, baseUrl: mediaBaseUrl }}
       nav={nav}
       assist={assist}
+      slotNotes={slotNotes}
     />
   );
 }

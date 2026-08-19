@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
-import { DashboardBar } from "../DashboardBar";import { menuItemsSchema } from "@mimnets/core";
+import { DashboardShell } from "../DashboardShell";import { menuItemsSchema } from "@mimnets/core";
 import { createDatabase, menus } from "@mimnets/core/db";
 
 import { requireDatabaseUrl } from "../../../lib/env";
@@ -22,8 +22,7 @@ export default async function MenusPage() {
   const parsed = menuItemsSchema.safeParse(row?.items ?? []);
 
   return (
-    <main className="mn-dash">
-      <DashboardBar title="Menus" person={person} />
+    <DashboardShell current="menus" person={person} title="Menus">
 
       <MenuEditor
         slug={MAIN_MENU}
@@ -31,6 +30,6 @@ export default async function MenusPage() {
         canEdit={person.role === "owner"}
         onSave={saveMenu.bind(null, MAIN_MENU)}
       />
-    </main>
+    </DashboardShell>
   );
 }

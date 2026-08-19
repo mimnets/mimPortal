@@ -15,12 +15,23 @@ export function anthropicProvider(options: {
   /** ADR-0007 fixes the default; an Owner may change it, an Author never sees it. */
   model?: string;
   free?: boolean;
+  /**
+   * Point at something other than api.anthropic.com — a gateway, a proxy, or any service
+   * that speaks the Messages API. The SDK is still what builds the request, so the shape
+   * stays correct wherever it is sent.
+   */
+  baseUrl?: string;
+  /** What to call it in the Dashboard, when it is not Anthropic itself. */
+  name?: string;
 }): AiProvider {
   const model = options.model ?? "claude-opus-5";
-  const client = new Anthropic({ apiKey: options.apiKey });
+  const client = new Anthropic({
+    apiKey: options.apiKey,
+    ...(options.baseUrl ? { baseURL: options.baseUrl } : {}),
+  });
 
   return {
-    name: "Anthropic",
+    name: options.name ?? "Anthropic",
     model,
     free: options.free ?? false,
 
@@ -48,12 +59,12 @@ export function anthropicProvider(options: {
         }
       } catch (cause) {
         if (cause instanceof Anthropic.APIError) {
-          throw new ProviderError("Anthropic", cause.message, cause.status);
+          throw new ProviderError(options.name ?? "Anthropic", cause.message, cause.status);
         }
         // An abort is the Author changing their mind, not a provider failing — it must not
         // send the chain looking for a second opinion.
         if (cause instanceof Error && cause.name === "AbortError") throw cause;
-        throw new ProviderError("Anthropic", cause instanceof Error ? cause.message : "failed");
+        throw new ProviderError(options.name ?? "Anthropic", cause instanceof Error ? cause.message : "failed");
       }
     },
   };

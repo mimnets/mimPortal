@@ -6,6 +6,7 @@ import { createDatabase, pages } from "@mimnets/core/db";
 import { registry } from "../../blocks.config";
 import { baseUrl, requireDatabaseUrl } from "../../lib/env";
 import { renderContext } from "../../lib/site";
+import { resolveLayout } from "../../lib/slots";
 import { storage } from "../../lib/storage";
 
 // Pages are rendered from data on request (ADR-0002). Caching arrives with the first Site
@@ -96,16 +97,24 @@ export default async function PublicPage({
   if (!page?.publishedLayout) notFound();
 
   const { layout } = registry.safeParseLayout(page.publishedLayout);
+
+  // The Page holds Main and Sidebar; its Header and Footer usually come from a shared Slot,
+  // which is what makes editing one change every Page that uses it.
+  const resolved = await resolveLayout(layout, {
+    headerSlotId: page.headerSlotId,
+    footerSlotId: page.footerSlotId,
+  });
+
   const context = await renderContext(currentPath, query);
 
   return (
     <>
-      <SlotView layout={layout} slot="header" registry={registry} context={context} />
+      <SlotView layout={resolved} slot="header" registry={registry} context={context} />
       <main>
-        <SlotView layout={layout} slot="main" registry={registry} context={context} />
-        <SlotView layout={layout} slot="sidebar" registry={registry} context={context} />
+        <SlotView layout={resolved} slot="main" registry={registry} context={context} />
+        <SlotView layout={resolved} slot="sidebar" registry={registry} context={context} />
       </main>
-      <SlotView layout={layout} slot="footer" registry={registry} context={context} />
+      <SlotView layout={resolved} slot="footer" registry={registry} context={context} />
     </>
   );
 }

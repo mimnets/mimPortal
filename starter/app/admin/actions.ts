@@ -207,6 +207,70 @@ export async function restoreVersion(pageId: string, versionId: string): Promise
   return parsed;
 }
 
+/**
+ * Copies another Page's structure into this one's draft.
+ *
+ * Main and Sidebar only. Header and Footer are deliberately excluded: those are chosen on
+ * this screen and usually shared, and silently overwriting that choice while "copying the
+ * structure" would be the kind of surprise this product exists to avoid.
+ *
+ * It writes to the draft, never to what is published, so the Author still sees it and
+ * presses Publish — and the previous published version is still there if they do not.
+ *
+ * Block ids are regenerated. Two Pages holding Blocks with the same id would confuse the
+ * Editor's selection, which addresses Blocks by id.
+ */
+export async function copyPageStructure(input: {
+  pageId: string;
+  fromPageId: string;
+}): Promise<PageLayout> {
+  await requireOwner();
+  const db = database();
+
+  const [source] = await db.select().from(pages).where(eq(pages.id, input.fromPageId)).limit(1);
+  if (!source) throw new Error("That Page no longer exists.");
+
+  const [target] = await db.select().from(pages).where(eq(pages.id, input.pageId)).limit(1);
+  if (!target) throw new Error("That Page no longer exists.");
+
+  const from = registry.safeParseLayout(source.draftLayout ?? source.publishedLayout).layout;
+  const into = registry.safeParseLayout(target.draftLayout ?? target.publishedLayout).layout;
+
+  const next: PageLayout = {
+    ...into,
+    slots: {
+      ...into.slots,
+      main: reidentify(from.slots.main),
+      sidebar: reidentify(from.slots.sidebar),
+    },
+  };
+
+  const parsed = registry.parseLayout(next);
+
+  await db
+    .update(pages)
+    .set({ draftLayout: parsed, updatedAt: new Date() })
+    .where(eq(pages.id, input.pageId));
+
+  revalidatePath("/admin");
+  return parsed;
+}
+
+/** Fresh ids throughout, so the copy is its own content rather than an alias of the original. */
+function reidentify(sections: PageLayout["slots"]["main"]): PageLayout["slots"]["main"] {
+  const id = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
+
+  return sections.map((section) => ({
+    ...section,
+    id: id("sec"),
+    columns: section.columns.map((column) => ({
+      ...column,
+      id: id("col"),
+      blocks: column.blocks.map((block) => ({ ...block, id: id("blk") })),
+    })),
+  }));
+}
+
 /* ---- Menus -------------------------------------------------------------- */
 
 export async function saveMenu(slug: string, items: unknown): Promise<void> {

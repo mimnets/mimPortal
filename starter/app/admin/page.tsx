@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { DashboardBar } from "./DashboardBar";
+import { DashboardShell } from "./DashboardShell";
 import { currentUser } from "../../lib/session";
 import { listPages } from "./actions";
 import { PageList } from "./PageList";
@@ -14,8 +14,7 @@ export default async function DashboardPage() {
   const rows = await listPages();
 
   return (
-    <main className="mn-dash">
-      <DashboardBar title="Pages" person={person} />
+    <DashboardShell current="pages" person={person} title="Pages">
 
       <PageList
         canManage={person.role === "owner"}
@@ -27,6 +26,6 @@ export default async function DashboardPage() {
           updatedAt: row.updatedAt.toISOString(),
         }))}
       />
-    </main>
+    </DashboardShell>
   );
 }

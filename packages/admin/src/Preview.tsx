@@ -245,10 +245,26 @@ export function Preview({
   dispatch,
   context,
   lockedSlots = [],
-}: Common & { layout: PageLayout; lockedSlots?: SlotName[] }) {
+  slotNotes = {},
+  visibleSlots,
+}: Common & {
+  layout: PageLayout;
+  lockedSlots?: SlotName[];
+  /**
+   * Which Slots to draw. Defaults to all four; a shared Header is edited on a screen that
+   * shows only that one, because the other three belong to a Page and this is not one.
+   */
+  visibleSlots?: SlotName[];
+  /**
+   * Why a Slot cannot be edited here. A Header that is shared across Pages is not "locked
+   * by the Owner" — it is edited somewhere else, and saying so is the difference between
+   * a person finding that place and concluding the product is broken.
+   */
+  slotNotes?: Partial<Record<SlotName, string>>;
+}) {
   return (
     <div className="mn-ed-preview" onClick={() => dispatch({ type: "select", selection: null })}>
-      {SLOT_NAMES.map((slot) =>
+      {(visibleSlots ?? SLOT_NAMES).map((slot) =>
         lockedSlots.includes(slot) ? (
           // A locked Slot renders through the public renderer: an Author sees exactly what a
           // visitor sees, with no handles to grab and nothing to delete.
@@ -258,7 +274,7 @@ export function Preview({
               <span>{slot}</span>
               <span className="mn-ed-lock">
                 <LockIcon />
-                Locked by the Owner
+                {slotNotes[slot] ?? "Locked by the Owner"}
               </span>
             </header>
             <div className="mn-ed-locked-body">

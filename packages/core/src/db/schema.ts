@@ -35,6 +35,13 @@ export const pages = pgTable(
     seoDescription: text("seo_description"),
     /** A storage key, not a URL, for the same reason the media table holds one. */
     seoImageKey: text("seo_image_key"),
+    /**
+     * Which shared Header and Footer this Page uses. Null means it keeps its own, stored in
+     * its layout document — which is what every Page did before shared Slots existed, and
+     * remains the escape hatch for a Page that genuinely needs a different one.
+     */
+    headerSlotId: uuid("header_slot_id"),
+    footerSlotId: uuid("footer_slot_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -153,3 +160,35 @@ export const formSubmissions = pgTable(
 );
 
 export type FormSubmissionRow = typeof formSubmissions.$inferSelect;
+
+/**
+ * A Header or Footer that many Pages share.
+ *
+ * Before this existed every Page carried its own copy, and the demo Site said "the Header
+ * above is the same on every Page" while editing one changed exactly one Page. Only the
+ * Menu inside it was shared, which made the claim half true and the behaviour surprising.
+ *
+ * The same reasoning as the Menu entity, one level up: the thing an Author expects when they
+ * change a Header is that it changes everywhere, and a Site that does not do that generates
+ * the single most common complaint about template-built sites.
+ *
+ * A Site can hold several — a full Header and a minimal one for landing Pages — and each
+ * Page picks. `slot` says which region it may be used for, so a Footer cannot be selected
+ * as a Header.
+ */
+export const sharedSlots = pgTable(
+  "shared_slots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull().unique(),
+    name: text("name").notNull(),
+    /** "header" or "footer". Main and Sidebar are per-Page by definition. */
+    slot: text("slot").notNull(),
+    /** The Sections it holds, in the same shape a Page's Slot holds. */
+    sections: jsonb("sections").$type<unknown>().notNull().default([]),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("shared_slots_slot_idx").on(table.slot)],
+);
+
+export type SharedSlotRow = typeof sharedSlots.$inferSelect;

@@ -61,7 +61,7 @@ export function MediaLibrary({
   }
 
   return (
-    <div className="mn-dash-body">
+    <div className="mn-dash-body is-plain">
       <div className="mn-media-head">
         <strong>{items.length} file{items.length === 1 ? "" : "s"}</strong>
         <span className="mn-media-meta">stored on {storageName}</span>
