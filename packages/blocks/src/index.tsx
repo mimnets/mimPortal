@@ -113,8 +113,10 @@ export const menuBlock = defineBlock({
 
     return (
       <nav className="mn-nav" style={{ justifyContent: align }} aria-label="Navigation">
-        <input type="checkbox" id={toggleId} className="mn-nav-toggle" />
-        <label htmlFor={toggleId} className="mn-nav-button" aria-label="Menu">
+        {/* The checkbox is the control a keyboard reaches, so the name belongs on it.
+            The label is the thing a thumb hits, and its bars carry no meaning. */}
+        <input type="checkbox" id={toggleId} className="mn-nav-toggle" aria-label="Menu" />
+        <label htmlFor={toggleId} className="mn-nav-button" aria-hidden="true">
           <span />
           <span />
           <span />

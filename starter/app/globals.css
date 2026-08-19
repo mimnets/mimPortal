@@ -174,7 +174,7 @@ h3.mn-heading {
 }
 
 /* The drawer is a checkbox and CSS. Navigation is the one thing on a Site that has to work
-   before any JavaScript has loaded. */
+   before any JavaScript has loaded — and, for the same reason, without a mouse. */
 .mn-nav-toggle,
 .mn-nav-button {
   display: none;
@@ -184,6 +184,28 @@ h3.mn-heading {
   .mn-nav {
     position: relative;
     justify-content: flex-end !important;
+  }
+
+  /* Visually hidden, but still in the focus order. `display: none` would take the
+     checkbox out of it entirely and leave a keyboard user with no way to open the
+     drawer — the links become unreachable below 720px. */
+  .mn-nav-toggle {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    opacity: 0;
+  }
+
+  /* The checkbox is invisible, so its focus ring has to be drawn on the button. */
+  .mn-nav-toggle:focus-visible ~ .mn-nav-button {
+    outline: 2px solid var(--mn-color-primary);
+    outline-offset: 2px;
   }
 
   .mn-nav-button {
