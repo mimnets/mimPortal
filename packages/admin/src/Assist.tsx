@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { assistActionsFor, type AssistAction } from "@mimnets/core";
+import { ASSIST_ERROR } from "@mimnets/core/ai";
 
 /**
  * The assistant, as a row of buttons under a text field.
@@ -36,6 +37,16 @@ export function Assist({
   const before = useRef<string>("");
 
   const actions = assistActionsFor(kind);
+
+  /**
+   * Stop writing into a field that is no longer on screen.
+   *
+   * `onChange` closes over the Block that was selected when the request started, so a stream
+   * still running after the Author moves on keeps writing to the Block behind them — text
+   * appearing in something they are not looking at, which they then save. The settings panel
+   * is keyed on the Block's id, so selecting another one unmounts this and cancels here.
+   */
+  useEffect(() => () => abort.current?.abort(), []);
 
   function cancel() {
     abort.current?.abort();
@@ -83,6 +94,18 @@ export function Assist({
         const { done, value: bytes } = await reader.read();
         if (done) break;
         text += decoder.decode(bytes, { stream: true });
+
+        // Everything after the sentinel is a report, not writing. The response is already
+        // 200 by the time a provider can fail, so this is how the server says so — and
+        // treating it as text is what used to put "[Every provider failed...]" into a
+        // heading as content the Author could publish.
+        const failure = text.indexOf(ASSIST_ERROR);
+        if (failure >= 0) {
+          onChange(before.current);
+          setError(text.slice(failure + ASSIST_ERROR.length) || "The assistant failed.");
+          return;
+        }
+
         onChange(text);
       }
 

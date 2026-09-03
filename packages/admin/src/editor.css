@@ -1439,3 +1439,69 @@
   font-size: 0.6875rem;
   color: #6b6b76;
 }
+
+/* ---- When something breaks ---------------------------------------------------
+   Two audiences, two tones. A Block that threw is a small, local, recoverable
+   problem and says so in place; a whole screen that failed needs to tell an
+   Author what happened to their work before anything else. */
+
+.mn-block-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem 1.15rem;
+  border: 1px dashed #d4a5a0;
+  border-radius: 6px;
+  background: #fdf6f5;
+  color: #5c2b26;
+}
+
+.mn-block-error strong {
+  font-size: 0.9rem;
+}
+
+.mn-block-error p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #7a4b45;
+}
+
+.mn-block-error code {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #f6e6e4;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.mn-error-page {
+  max-width: 34rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 2rem 0;
+}
+
+.mn-error-page h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.mn-error-page p {
+  margin: 0;
+  color: #56646f;
+}
+
+.mn-error-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem !important;
+}
+
+.mn-error-ref {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #8a8a96 !important;
+}

@@ -1,4 +1,4 @@
-import { looksLikeEmail, type EmailAdapter, type EmailMessage } from "./adapter";
+import { looksLikeEmail, SEND_TIMEOUT_MS, type EmailAdapter, type EmailMessage } from "./adapter";
 
 /**
  * Resend, over its HTTP API.
@@ -23,6 +23,10 @@ export function resendEmail(options: {
 
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
+        // A visitor is waiting on this. The enquiry is already stored by the time it runs,
+        // so a slow provider costs a notification and a row marked undelivered — but only
+        // if it is allowed to end. Without a deadline the visitor's own POST hangs with it.
+        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
         headers: {
           authorization: `Bearer ${options.apiKey}`,
           "content-type": "application/json",

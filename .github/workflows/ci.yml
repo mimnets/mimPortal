@@ -78,6 +78,9 @@ jobs:
 
       - run: pnpm typecheck
 
+      # AI_LIVE_TESTS is deliberately unset. Those suites call a real model, and a free tier
+      # that is rate limited or busy would fail a pull request that changed nothing. Run them
+      # on a schedule, or by hand before shipping anything that touches the AI stack.
       - run: pnpm test
 
       # The build must stay warning-free: storage.ts carries a turbopackIgnore that stops the

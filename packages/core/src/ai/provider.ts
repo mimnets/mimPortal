@@ -27,6 +27,92 @@ export interface AiRequest {
    * either errors or, worse, quietly answers as though the image were not there.
    */
   image?: string;
+  /**
+   * How long the stream may produce nothing before it is abandoned, in milliseconds.
+   *
+   * `signal` alone is not enough. It carries an Author who changed their mind and a visitor
+   * who closed the tab — both of which require somebody to *do* something. An upstream that
+   * accepts the connection and then says nothing produces neither, and the request waits for
+   * as long as the platform allows. That is the case this exists for.
+   */
+  idleMs?: number;
+}
+
+/**
+ * How long a stream may say nothing before it is treated as hung.
+ *
+ * The first attempt at this was a deadline on the whole request, and it was the wrong tool.
+ * A streaming call to a model that thinks before it speaks is legitimately slow — a Preset
+ * is a Theme plus several Pages of copy, and free models take minutes — so any total long
+ * enough not to kill real work is too long to catch a hang, and any total short enough to
+ * catch a hang kills real work. It did: generation began failing with TimeoutError partway
+ * through, and `chain.ts` rethrows rather than falling through once a stream has started, so
+ * there was not even a fallback to save it.
+ *
+ * Silence is the signal that actually distinguishes the two. A model producing tokens is
+ * working however slowly; one that has produced nothing for this long is not coming back.
+ */
+export const AI_IDLE_MS = 45_000;
+
+/**
+ * How long a stream may take to say anything at all.
+ *
+ * Separate from the gap between chunks, and considerably longer, because they are different
+ * events. A model that reasons before it writes produces nothing for a long time and then
+ * writes steadily — measured well past a minute on the free models this Site tries first —
+ * so treating first-token latency as a hang abandons work that was about to arrive. A gap of
+ * the same length *after* the writing has started is a stall, and means something else.
+ */
+export const AI_FIRST_TOKEN_MS = 150_000;
+
+/**
+ * A signal that aborts when the stream goes quiet.
+ *
+ * `bump()` is called as each chunk arrives, which restarts the clock; `done()` releases the
+ * timer. Composed with the caller's own signal so cancelling still works — an Author who
+ * presses Escape must not have to wait for silence.
+ */
+export function idleGuard(
+  signal: AbortSignal | undefined,
+  idleMs = AI_IDLE_MS,
+  firstMs = AI_FIRST_TOKEN_MS,
+) {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let started = false;
+
+  const bump = () => {
+    if (timer) clearTimeout(timer);
+    // The wait before the first chunk is thinking; every wait after it is a stall.
+    const window = started ? idleMs : firstMs;
+    started = true;
+    timer = setTimeout(
+      () => controller.abort(new DOMException("The model stopped responding.", "TimeoutError")),
+      window,
+    );
+  };
+
+  const done = () => {
+    if (timer) clearTimeout(timer);
+    timer = undefined;
+  };
+
+  bump();
+
+  return {
+    signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
+    bump,
+    done,
+    /**
+     * Whether this guard fired, rather than the caller cancelling.
+     *
+     * The two abort the same composed signal and have to be told apart: an Author pressing
+     * Escape must stop the chain, while a provider that went silent must hand over to the
+     * next one. Providers report the second as a ProviderError, which is the only thing
+     * `chain.ts` will move on from.
+     */
+    expired: () => controller.signal.aborted,
+  };
 }
 
 export interface AiProvider {

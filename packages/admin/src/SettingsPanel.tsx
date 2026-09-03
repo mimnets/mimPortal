@@ -50,7 +50,9 @@ export function SettingsPanel({
     }
 
     return (
-      <div className="mn-ed-panel-body">
+      // Keyed on the Block, so selecting another one remounts this panel rather than reusing
+      // it. That is what cancels an Assist request still streaming into the previous Block.
+      <div className="mn-ed-panel-body" key={block.id}>
         <h2 className="mn-ed-panel-title">
           {(() => {
             const Glyph = ICONS_BY_BLOCK[blockType.name] ?? BlockIcon;
@@ -154,7 +156,7 @@ export function SettingsPanel({
     if (!section) return <p className="mn-ed-hint">That Section is no longer here.</p>;
 
     return (
-      <div className="mn-ed-panel-body">
+      <div className="mn-ed-panel-body" key={section.id}>
         <h2>Section</h2>
         <div className="mn-field">
           <span>Column layout</span>

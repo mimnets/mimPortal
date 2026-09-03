@@ -1,4 +1,4 @@
-import { ProviderError, type AiProvider, type AiRequest } from "./provider";
+import { idleGuard, ProviderError, type AiProvider, type AiRequest } from "./provider";
 
 /**
  * OpenRouter, OpenAI and DeepSeek.
@@ -33,10 +33,14 @@ export function openAiCompatibleProvider(options: {
     async *stream(request: AiRequest) {
       let response: Response;
 
+      // Restarted by every chunk that arrives, so a slow model is left alone and a silent
+      // one is abandoned. Released in the outer finally, whichever way this ends.
+      const idle = idleGuard(request.signal, request.idleMs);
+
       try {
         response = await fetch(endpoint, {
           method: "POST",
-          signal: request.signal,
+          signal: idle.signal,
           headers: {
             authorization: `Bearer ${options.apiKey}`,
             "content-type": "application/json",
@@ -64,6 +68,11 @@ export function openAiCompatibleProvider(options: {
           }),
         });
       } catch (cause) {
+        // Its own deadline, not the Author's cancellation. A provider that never answered
+        // has failed, and saying so in the chain's vocabulary is what lets the next one try
+        // — a raw TimeoutError is not a ProviderError, so chain.ts rethrows it and the
+        // fallback never runs.
+        if (idle.expired()) throw new ProviderError(options.name, "stopped responding");
         if (cause instanceof Error && cause.name === "AbortError") throw cause;
         throw new ProviderError(options.name, cause instanceof Error ? cause.message : "unreachable");
       }
@@ -112,11 +121,23 @@ export function openAiCompatibleProvider(options: {
               }
 
               const text = parsed.choices?.[0]?.delta?.content;
-              if (text) yield text;
+              if (text) {
+                idle.bump();
+                yield text;
+              }
             }
           }
         }
+      } catch (cause) {
+        // The wait for a first token happens here, not in the fetch — a streaming response
+        // resolves as soon as its headers arrive, and the silence comes after. So the guard
+        // fires inside this loop, and this is where it has to be turned into the failure the
+        // chain understands. Without it a provider that connected and then said nothing took
+        // the whole request down with it instead of handing over.
+        if (idle.expired()) throw new ProviderError(options.name, "stopped responding");
+        throw cause;
       } finally {
+        idle.done();
         await reader.cancel().catch(() => {});
       }
     },

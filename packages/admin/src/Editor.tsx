@@ -8,7 +8,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { useReducer, useState, type ReactNode } from "react";
+import { useEffect, useReducer, useState, type ReactNode } from "react";
 
 import type { BlockRegistry, PageLayout, RenderContext, SlotName } from "@mimnets/core";
 import { emptyContext } from "@mimnets/core";
@@ -124,6 +124,25 @@ export function Editor({
    * keeps working, while a tab left open across somebody else's edit is refused.
    */
   const [revision, setRevision] = useState<number | null>(openedAt);
+
+  /**
+   * Asks before an unsaved draft is thrown away.
+   *
+   * The layout lives in a reducer and there is no autosave, so closing the tab, going back,
+   * or following a link loses everything since the last Save — and nothing said so. This is
+   * the last line rather than the first: Blocks no longer navigate on click, and a Block that
+   * throws no longer unmounts the Editor. It covers what neither of those can, which is an
+   * Author who simply closes the window.
+   *
+   * The browser shows its own wording and ignores ours; only the fact that we asked matters.
+   */
+  useEffect(() => {
+    if (!state.dirty) return;
+
+    const ask = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", ask);
+    return () => window.removeEventListener("beforeunload", ask);
+  }, [state.dirty]);
 
   // A small distance before a drag begins, so clicking a Block to select it does not drag it.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));

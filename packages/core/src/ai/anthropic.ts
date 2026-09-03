@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-import { ProviderError, type AiProvider, type AiRequest } from "./provider";
+import { idleGuard, ProviderError, type AiProvider, type AiRequest } from "./provider";
 
 /**
  * Anthropic, through the official SDK.
@@ -38,6 +38,8 @@ export function anthropicProvider(options: {
     vision: true,
 
     async *stream(request: AiRequest) {
+      const idle = idleGuard(request.signal, request.idleMs);
+
       try {
         const stream = client.messages.stream(
           {
@@ -66,15 +68,17 @@ export function anthropicProvider(options: {
             // text appear. Low effort keeps it quick and cheap.
             output_config: { effort: "low" },
           },
-          { signal: request.signal },
+          { signal: idle.signal },
         );
 
         for await (const event of stream) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            idle.bump();
             yield event.delta.text;
           }
         }
       } catch (cause) {
+        if (idle.expired()) throw new ProviderError(options.name ?? "Anthropic", "stopped responding");
         if (cause instanceof Anthropic.APIError) {
           throw new ProviderError(options.name ?? "Anthropic", cause.message, cause.status);
         }
@@ -82,6 +86,9 @@ export function anthropicProvider(options: {
         // send the chain looking for a second opinion.
         if (cause instanceof Error && cause.name === "AbortError") throw cause;
         throw new ProviderError(options.name ?? "Anthropic", cause instanceof Error ? cause.message : "failed");
+      } finally {
+        // Whichever way the stream ended, the timer must not keep the process awake.
+        idle.done();
       }
     },
   };
