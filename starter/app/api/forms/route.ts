@@ -5,7 +5,8 @@ import { createDatabase, formSubmissions, siteSettings } from "@mimnets/core/db"
 import { elapsedSince, hashIp, runSpamChecks, safeReturnPath } from "@mimnets/core/forms";
 
 import { authSecret, baseUrl, requireDatabaseUrl } from "../../../lib/env";
-import { defaultRecipient, email } from "../../../lib/email";
+import { email } from "../../../lib/email";
+import { recipientForForm } from "../../../lib/forms";
 import { RATE_LIMIT_WINDOW_MS, spamSignals } from "../../../lib/spam";
 
 /**
@@ -84,7 +85,10 @@ export async function POST(request: Request) {
     .limit(1);
 
   const siteName = settings?.siteName || "your Site";
-  const recipient = text("recipient") || defaultRecipient();
+
+  // Never from the request. See lib/forms.ts — a visitor who can name the recipient owns the
+  // Site's outbound mail.
+  const recipient = await recipientForForm(slug);
 
   if (recipient) {
     try {

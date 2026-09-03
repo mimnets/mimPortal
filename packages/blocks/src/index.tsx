@@ -192,7 +192,10 @@ export const contactBlock = defineBlock({
       default: "contact",
     }),
   },
-  render: ({ heading, intro, recipient, buttonLabel, successMessage, slug }, context) => {
+  // `recipient` is deliberately absent from this signature. It is a field an Author sets and
+  // the form route reads back from the published Block by `slug`; putting it in the markup as
+  // a hidden input made it visitor input, and made the Site a relay for anybody's mail.
+  render: ({ heading, intro, buttonLabel, successMessage, slug }, context) => {
     const result = context.query[FORM_RESULT_PARAM];
 
     // The result belongs to this form, not to whichever form rendered first on the Page.
@@ -219,7 +222,6 @@ export const contactBlock = defineBlock({
         <input type="hidden" name={FORM_FIELDS.slug} value={slug} />
         <input type="hidden" name={FORM_FIELDS.renderedAt} value={context.formToken} />
         <input type="hidden" name={FORM_FIELDS.returnTo} value={context.currentPath} />
-        <input type="hidden" name="recipient" value={recipient} />
 
         {/* The bait. Positioned off-screen rather than display:none, because some bots skip
             what is explicitly hidden, and hidden from assistive technology and the tab order
