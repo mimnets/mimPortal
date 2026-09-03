@@ -2,12 +2,14 @@
 
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
   closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useEffect, useReducer, useState, type ReactNode } from "react";
 
 import type { BlockRegistry, PageLayout, RenderContext, SlotName } from "@mimnets/core";
@@ -145,7 +147,15 @@ export function Editor({
   }, [state.dirty]);
 
   // A small distance before a drag begins, so clicking a Block to select it does not drag it.
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  //
+  // The keyboard sensor is not an extra: dnd-kit's drag handles already announce "To pick up
+  // a sortable item, press the space bar" to a screen reader, and without this registered
+  // that instruction was a lie. Reordering was the one thing a keyboard-only Author could
+  // not do — they could add a Block and delete it, but never move it.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   function handleDragEnd(event: DragEndEvent) {
     const activeId = String(event.active.id);
@@ -209,7 +219,17 @@ export function Editor({
 
           {nav ? <nav className="mn-dash-nav">{nav}</nav> : null}
 
-          <span className={`mn-ed-state${error ? " is-error" : state.dirty ? " is-dirty" : ""}`}>
+          {/* Announced, not merely displayed. "Draft saved" in a bare span is invisible to
+              anyone not looking at that corner of the screen — and pressing Save and being
+              told nothing is how people learn to press it twice. `polite` because it must
+              not interrupt whatever is being read; `atomic` so the whole sentence is spoken
+              rather than the words that changed. */}
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className={`mn-ed-state${error ? " is-error" : state.dirty ? " is-dirty" : ""}`}
+          >
             {error ?? message ?? (state.dirty ? "Unsaved changes" : "All changes saved")}
           </span>
 

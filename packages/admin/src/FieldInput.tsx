@@ -298,10 +298,34 @@ function ImageField({
         <input
           id={`${id}-alt`}
           value={String(image.alt ?? "")}
+          disabled={Boolean(image.decorative)}
           onChange={(event) => onChange({ ...image, alt: event.target.value })}
         />
-        <small>Describe what the image shows. Leave empty only if it is decorative.</small>
+        <small>
+          What would somebody miss if they could not see it? Write that. Not the filename,
+          and not &ldquo;image of&rdquo; — a screen reader already says it is an image.
+        </small>
       </label>
+
+      {/* Forgetting and deciding used to produce the same markup, which is why a Page of
+          undescribed photographs passed every check. Now they are different answers, and
+          giving neither is visibly unfinished. */}
+      <label className="mn-field mn-field-inline" htmlFor={`${id}-decorative`}>
+        <input
+          id={`${id}-decorative`}
+          type="checkbox"
+          checked={Boolean(image.decorative)}
+          onChange={(event) => onChange({ ...image, decorative: event.target.checked })}
+        />
+        <span>This image is decoration — it says nothing the words do not</span>
+      </label>
+
+      {image.key && !image.decorative && !String(image.alt ?? "").trim() ? (
+        <p className="mn-field-warning" role="status">
+          This image has no description. Anyone using a screen reader, and every search
+          engine, will be told nothing about it.
+        </p>
+      ) : null}
 
       {browsing ? (
         <MediaBrowser

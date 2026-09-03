@@ -1505,3 +1505,17 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: #8a8a96 !important;
 }
+
+/* An unfinished field says so where the field is, rather than failing quietly at
+   publish time or, worse, on the live Site. */
+
+.mn-field-warning {
+  margin: 0;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #7a5a00;
+  background: #fdf6e3;
+  border: 1px solid #ecd9a0;
+  border-radius: 4px;
+}

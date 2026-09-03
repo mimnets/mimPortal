@@ -124,11 +124,17 @@ export function SlotView({
   const sections = layout.slots[slot];
   if (sections.length === 0) return null;
 
+  // The Header and Footer are landmarks, not decoration. Rendered as <div> they were
+  // invisible to the one navigation aid that would have made a long Shared Header bearable:
+  // without a banner and a contentinfo, somebody using a screen reader has no way to jump
+  // past the Menu and meets it again on every Page of the Site.
+  const Tag = slot === "header" ? "header" : slot === "footer" ? "footer" : "div";
+
   return (
-    <div className="mn-slot" data-slot={slot}>
+    <Tag className="mn-slot" data-slot={slot}>
       {sections.map((section) => (
         <SectionView key={section.id} section={section} registry={registry} context={context} />
       ))}
-    </div>
+    </Tag>
   );
 }

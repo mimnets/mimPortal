@@ -784,9 +784,23 @@ h3.mn-heading {
    a token is a value the Theme cannot change, and a Site that can be given one
    is a Site a client can take off-brand. */
 
+/* The readable variants, not the brand ones. A brand colour is picked to be seen
+   on a button; read as a paragraph it is often below the 4.5:1 body text needs —
+   the Starter's own accent is 3.7:1 on white. These are the same hues moved only
+   as far as legibility requires, derived in theme.ts rather than chosen. */
 .mn-block[data-tone="muted"] { color: var(--mn-color-muted); }
-.mn-block[data-tone="primary"] { color: var(--mn-color-primary); }
-.mn-block[data-tone="accent"] { color: var(--mn-color-accent); }
+.mn-block[data-tone="primary"] { color: var(--mn-color-primary-text); }
+.mn-block[data-tone="accent"] { color: var(--mn-color-accent-text); }
+
+/* Inside a painted Section the ground is no longer the page, so the readable
+   variants are wrong there too — and a primary Block in a primary Section was
+   painting the colour on itself, which is not low contrast but none at all.
+   Within a band, the text colour that band already established is the only
+   correct answer, so these tones stop overriding it. */
+.mn-section[data-tone="primary"] .mn-block[data-tone],
+.mn-section[data-tone="dark"] .mn-block[data-tone] {
+  color: inherit;
+}
 
 /* Headings inherit rather than keeping their own colour, or setting the tone on
    a Block containing one would appear to do nothing. */
@@ -845,4 +859,25 @@ h3.mn-heading {
 @keyframes mn-rise-in {
   from { opacity: 0; transform: translateY(1.25rem); }
   to { opacity: 1; transform: none; }
+}
+
+/* ---- Skip link --------------------------------------------------------------
+   Off-screen until focused, rather than display:none — an element that is not
+   displayed is not focusable either, which is how most skip links come to do
+   nothing at all. */
+
+.mn-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--mn-color-primary);
+  color: var(--mn-color-on-primary);
+  text-decoration: none;
+  border-bottom-right-radius: var(--mn-radius);
+}
+
+.mn-skip:focus {
+  left: 0;
 }

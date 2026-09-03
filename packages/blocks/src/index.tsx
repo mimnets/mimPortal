@@ -70,7 +70,11 @@ export const imageBlock = defineBlock({
             they are absent only for formats that hide their size (AVIF) or have none (SVG). */}
         <img
           src={`${context.mediaBaseUrl}/${image.key}`}
-          alt={image.alt}
+          alt={image.decorative ? "" : image.alt}
+          // Marked decoration is taken out of the accessibility tree entirely, rather than
+          // being announced as an image with no name. An empty alt alone leaves some readers
+          // announcing the filename.
+          {...(image.decorative ? { role: "presentation" as const } : {})}
           width={image.width ?? undefined}
           height={image.height ?? undefined}
           loading="lazy"
