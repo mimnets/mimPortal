@@ -15,6 +15,7 @@ dist/
 # run has got, are facts about a machine rather than about the project.
 specs/.current-spec
 **/.progress.md
+**/.ralph-state.json
 
 # Orchestration state: logs, handoffs, session notepads. Project-scoped skills
 # under .omc/skills/ are the deliberate exception and stay tracked.
