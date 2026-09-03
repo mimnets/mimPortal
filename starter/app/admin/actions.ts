@@ -9,6 +9,7 @@ import { createDatabase, menus, pageVersions, pages } from "@mimnets/core/db";
 import { registry } from "../../blocks.config";
 import { requireDatabaseUrl } from "../../lib/env";
 import { lockedSlotsFor, requireOwner, requireUser } from "../../lib/session";
+import { restoreOwnSlots } from "../../lib/slots";
 
 /**
  * Every mutation validates its input and re-checks the caller's role on the server. The
@@ -123,19 +124,31 @@ export async function listVersions(pageId: string): Promise<PageVersionSummary[]
   return rows.map((row) => ({ id: row.id, publishedAt: row.publishedAt.toISOString() }));
 }
 
+/**
+ * What a save is allowed to write.
+ *
+ * Two rules, in order. A Slot this Page does not own is put back to what is stored, because
+ * the Editor was handed the resolved document and would otherwise write a shared Header into
+ * the Page. Only then is the role's locked-Slot rule applied — asking it first would refuse
+ * an Author for a difference the Editor introduced rather than one they made.
+ */
 async function guardedLayout(pageId: string, incoming: unknown): Promise<PageLayout> {
   const person = await requireUser();
   const parsed = registry.parseLayout(incoming);
   const locked = await lockedSlotsFor(person);
 
-  if (locked.length > 0) {
-    const [page] = await database().select().from(pages).where(eq(pages.id, pageId)).limit(1);
-    if (!page) throw new Error("That Page no longer exists.");
-    const { layout: current } = registry.safeParseLayout(page.draftLayout ?? page.publishedLayout);
-    assertLockedSlotsUnchanged(parsed, current, locked);
-  }
+  const [page] = await database().select().from(pages).where(eq(pages.id, pageId)).limit(1);
+  if (!page) throw new Error("That Page no longer exists.");
 
-  return parsed;
+  const { layout: current } = registry.safeParseLayout(page.draftLayout ?? page.publishedLayout);
+  const kept = restoreOwnSlots(parsed, current, {
+    headerSlotId: page.headerSlotId,
+    footerSlotId: page.footerSlotId,
+  });
+
+  if (locked.length > 0) assertLockedSlotsUnchanged(kept, current, locked);
+
+  return kept;
 }
 
 export async function saveDraft(pageId: string, layout: unknown): Promise<void> {
