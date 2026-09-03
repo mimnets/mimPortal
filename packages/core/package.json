@@ -1,6 +1,6 @@
 {
   "name": "@mimnets/core",
-  "version": "0.0.0",
+  "version": "0.1.1",
   "description": "Layout schema, block registry, renderer and storage adapter",
   "license": "UNLICENSED",
   "type": "module",
@@ -14,10 +14,42 @@
     "./ai": "./src/ai/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "node -e \"const p=require('./package.json');if(!process.env.npm_config_user_agent||!/pnpm/.test(process.env.npm_config_user_agent)){console.error('\\n  Publish '+p.name+' with pnpm, not npm.\\n\\n'+'  npm ignores publishConfig.exports, so it would ship a package whose exports\\n'+'  point at ./src while files ships only ./dist. It installs and then fails on\\n'+'  the first import, which is a worse failure than refusing to publish.\\n');process.exit(1)}\""
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./db": {
+        "types": "./dist/db/index.d.ts",
+        "default": "./dist/db/index.js"
+      },
+      "./auth": {
+        "types": "./dist/auth/index.d.ts",
+        "default": "./dist/auth/index.js"
+      },
+      "./storage": {
+        "types": "./dist/storage/index.d.ts",
+        "default": "./dist/storage/index.js"
+      },
+      "./email": {
+        "types": "./dist/email/index.d.ts",
+        "default": "./dist/email/index.js"
+      },
+      "./forms": {
+        "types": "./dist/forms/index.d.ts",
+        "default": "./dist/forms/index.js"
+      },
+      "./ai": {
+        "types": "./dist/ai/index.d.ts",
+        "default": "./dist/ai/index.js"
+      }
+    }
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
@@ -35,5 +67,8 @@
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.18",
     "react": "^19.2.8"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

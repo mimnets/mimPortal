@@ -1,0 +1,22 @@
+# Ledger is its own workspace root, and deliberately not part of the monorepo's.
+#
+# Belonging to the root workspace would link @mimnets/* straight to the source packages, and
+# then this Site would prove nothing: M8 asks whether a Site that *installs* the published
+# packages can be upgraded, not whether a symlink works. Declaring a root here is what stops
+# pnpm walking up and finding the other one.
+# This Site, and nothing else.
+packages:
+  - "."
+
+allowBuilds:
+  esbuild: set this to true or false
+
+# pnpm refuses a version published within the last day, on the reasoning that a compromised
+# release is usually caught within hours. Exactly right for a Site installing from npm, and
+# impossible for this one: the whole exercise is publish, then upgrade, minutes apart.
+#
+# It has to live here rather than in .npmrc, and this file is only read when pnpm treats the
+# directory as a workspace root — `--ignore-workspace` skips it and the guard comes back.
+#
+# Restore pnpm's default the moment this Site points at a public registry.
+minimumReleaseAge: 0

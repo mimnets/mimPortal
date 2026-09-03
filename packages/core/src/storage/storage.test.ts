@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -118,6 +119,49 @@ describe("local disk storage", () => {
   it("serves from the public path the route handler owns", async () => {
     const storage = localDiskStorage({ directory: await scratch() });
     expect(storage.url("2026/08/a-abc123.png")).toBe("/media/2026/08/a-abc123.png");
+  });
+});
+
+describe("the type an object was stored with", () => {
+  /**
+   * The local adapter used to throw away the contentType it was handed and let `get` guess
+   * from the extension. Right for the images this Site uploads, wrong for anything else —
+   * and the S3 adapter keeps it, so the two disagreed and a Site moving from the disk to a
+   * bucket changed behaviour for reasons nobody could see.
+   */
+  it("comes back as it was given, not as the extension suggests", async () => {
+    const storage = localDiskStorage({ directory: await scratch() });
+    const key = "2026/09/declared.bin";
+
+    await storage.put(key, bytes("x"), { contentType: "image/png" });
+
+    // The extension says nothing; the declaration says image/png.
+    expect(contentTypeForKey(key)).toBe("application/octet-stream");
+    expect((await storage.get(key))?.contentType).toBe("image/png");
+  });
+
+  it("falls back to the extension for objects stored before it kept the type", async () => {
+    const directory = await scratch();
+    const storage = localDiskStorage({ directory });
+    const key = "2026/09/legacy.webp";
+
+    await storage.put(key, bytes("x"), { contentType: "image/webp" });
+    // Remove the sidecar, leaving exactly what an older Site's disk holds.
+    await rm(join(directory, key + ".type"), { force: true });
+
+    expect((await storage.get(key))?.contentType).toBe("image/webp");
+  });
+
+  it("does not leave a type behind for a deleted object", async () => {
+    const directory = await scratch();
+    const storage = localDiskStorage({ directory });
+    const key = "2026/09/gone.png";
+
+    await storage.put(key, bytes("x"), { contentType: "image/png" });
+    await storage.delete(key);
+
+    // A re-used key must not inherit the old object's type.
+    expect(existsSync(join(directory, key + ".type"))).toBe(false);
   });
 });
 

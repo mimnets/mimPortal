@@ -36,16 +36,31 @@ export function localDiskStorage(options: {
     name: "local disk",
     baseUrl: publicPath,
 
-    async put(key, body) {
+    async put(key, body, options) {
       const full = pathFor(key);
       await mkdir(dirname(full), { recursive: true });
       await writeFile(full, body);
+      // The type the caller declared, kept beside the object.
+      //
+      // It used to be discarded, and `get` guessed from the extension instead — which is
+      // right for the images this Site uploads and wrong for anything else, returning
+      // application/octet-stream for a type it had actually been told. The S3 adapter stores
+      // it, so the two disagreed, and a Site moving from the disk to a bucket changed
+      // behaviour for reasons nobody could see.
+      await writeFile(`${full}.type`, options.contentType, "utf8");
     },
 
     async get(key) {
       try {
-        const body = await readFile(pathFor(key));
-        return { body: new Uint8Array(body), contentType: contentTypeForKey(key) };
+        const full = pathFor(key);
+        const body = await readFile(full);
+        // The declared type when there is one; the extension for objects written before
+        // this adapter kept it, which is exactly what those used to return anyway.
+        const declared = await readFile(`${full}.type`, "utf8").catch(() => null);
+        return {
+          body: new Uint8Array(body),
+          contentType: declared?.trim() || contentTypeForKey(key),
+        };
       } catch (error) {
         // A missing file is a 404, not a crash: a key can outlive the object it points at.
         if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
@@ -54,7 +69,10 @@ export function localDiskStorage(options: {
     },
 
     async delete(key) {
-      await rm(pathFor(key), { force: true });
+      const full = pathFor(key);
+      await rm(full, { force: true });
+      // Otherwise the sidecar outlives the object and a re-used key inherits a stale type.
+      await rm(`${full}.type`, { force: true });
     },
 
     url(key) {

@@ -1,0 +1,19 @@
+{
+  // Emitting, rather than only checking. The base config sets noEmit because the monorepo
+  // consumes these packages as TypeScript source; a published package cannot, so this is the
+  // delta that produces something npm can carry.
+  //
+  // Declarations are emitted alongside, with maps, so a consumer clicking through to a symbol
+  // lands in the original source rather than in generated JavaScript.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}
