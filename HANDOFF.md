@@ -8,16 +8,24 @@ copy of that one, discard it: it presents M7 as "next up" and M7 shipped the sam
 
 ## Where to start
 
-**Launch Docker Desktop.** It is not running, and everything below waits on it.
+Most of the outstanding work needs nothing but an editor. **Docker gates two things
+specifically, and it is worth being precise about which**, because an earlier draft of this
+file claimed it gated everything and that was wrong:
 
-Then, in order:
+| Needs a running database | Does not |
+| --- | --- |
+| The two sign-in checks below | Writing and unit-testing most of the audit's remaining findings |
+| The container-backed suites — Postgres, MinIO, Mailpit | The CI workflow, which runs on GitHub |
+| Integration tests that genuinely hit Postgres | Anything in seams 4, 5 and 6 |
+
+So: continue the fix pass on `audit/high-severity` whenever you like. Run these two checks
+when Docker is next up.
 
 1. `docker compose up -d db`, `pnpm dev`, and sign in at http://localhost:3000/admin.
 2. **Media → Upload** a photograph. Check it lists at the right pixel size, place it on a
    Page with the image Block, publish. That is the last unverified clause of **M6**.
 3. **Enquiries.** Submit the form on `/contact` as a visitor, then look at that screen while
    signed in. That is the last unverified clause of **M6.5**.
-4. Then continue the audit fix pass on `audit/high-severity` — see *The work in progress*.
 
 Those two checks have been the only thing between two milestones and a tick since 19 August.
 Neither is waiting on code. Both are waiting on somebody being logged in, which nobody has
