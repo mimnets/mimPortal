@@ -161,7 +161,7 @@ storing before sending.
 the same missing sign-in that leaves M6 unticked, and one session covers both.
 
 ---
-## M7 — AI writing assistant
+## M7 — AI writing assistant ✅
 
 Write, rewrite, shorten, generate alt text, draft an SEO description — acting on the
 currently selected Block's fields. Streaming, cancellable, with the API key held server-side
@@ -171,6 +171,27 @@ both.
 
 **Done when:** an Author selects a heading, presses Rewrite, and the field updates with
 something they can accept or reject.
+
+**Built** at `356109b`. Rewrite, shorten, expand, proofread, alt text and search
+descriptions, acting on whichever field an Author is editing — streaming, cancellable, and
+off entirely until a Site configures a provider, because a button that always fails is
+worse than no button.
+
+Providers turned out to be a chain rather than a choice
+([ADR-0014](./adr/0014-free-models-first-paid-as-fallback.md), amending
+[ADR-0007](./adr/0007-ai-generated-presets.md)): free OpenRouter models first, then
+Anthropic, OpenAI and DeepSeek. Free models fail in a recoverable way, so the alternative
+was making an Owner choose once between "free but flaky" and "reliable but billed" — and
+almost every Site wants free for the ordinary case and paid for the moment free stops
+working. One OpenRouter key gets a working assistant with no card on file, which is the
+same argument the local disk makes for storage.
+
+**Carrying known faults.** The project audit rates four against this milestone, all still
+open: a total provider failure is written into the Author's field as content and can then
+be published (I-19); there is no timeout anywhere in the AI stack, so a hung upstream hangs
+the request — including a visitor's form POST (I-20); Assist keeps streaming into the
+previously selected Block if the Author moves mid-request (I-18); and the rate limit is
+per-process per-person rather than per Site as this milestone's own text claims (I-50).
 
 ---
 
@@ -203,7 +224,7 @@ map**. The map Block defaults to an OpenStreetMap embed, which needs no API key 
 third-party cookies; a Site that wants Google Maps supplies its own key and accepts the
 consent-banner consequences.
 
- lands here too, with a sanitising renderer
+**Markdown prose** lands here too, with a sanitising renderer
 ([ADR-0011](./adr/0011-markdown-for-prose-json-for-layout.md)) — prose Blocks and, later,
 blog posts store Markdown rather than plain strings or HTML. Each one is a
 `defineBlock` call and a component — if this stage is slow, the M1 interface was wrong and
