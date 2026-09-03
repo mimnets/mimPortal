@@ -186,12 +186,20 @@ almost every Site wants free for the ordinary case and paid for the moment free 
 working. One OpenRouter key gets a working assistant with no card on file, which is the
 same argument the local disk makes for storage.
 
-**Carrying known faults.** The project audit rates four against this milestone, all still
-open: a total provider failure is written into the Author's field as content and can then
-be published (I-19); there is no timeout anywhere in the AI stack, so a hung upstream hangs
-the request — including a visitor's form POST (I-20); Assist keeps streaming into the
-previously selected Block if the Author moves mid-request (I-18); and the rate limit is
-per-process per-person rather than per Site as this milestone's own text claims (I-50).
+**Faults found and fixed since.** The project audit rated four against this milestone and
+three are closed: a total provider failure was written into the Author's field as publishable
+content (I-19); nothing in the AI stack had a timeout, so a hung upstream held the request —
+including a visitor's form POST (I-20); and Assist kept streaming into the previously
+selected Block when the Author moved on (I-18).
+
+The timeout took four attempts and the failures are worth knowing. A deadline on the whole
+request cannot tell a model reasoning for two minutes from an upstream that died, so it
+either abandons real work or catches nothing. Silence separates them — with a longer window
+before the first token than between later ones — and a provider that goes quiet has to report
+that as a `ProviderError`, or `chain.ts` rethrows it and the fallback never runs.
+
+Still open: the rate limit is per-process per-person rather than per Site as this milestone's
+own text claims (I-50).
 
 ---
 

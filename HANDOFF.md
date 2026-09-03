@@ -8,33 +8,17 @@ copy of that one, discard it: it presents M7 as "next up" and M7 shipped the sam
 
 ## Where to start
 
-Most of the outstanding work needs nothing but an editor. **Docker gates two things
-specifically, and it is worth being precise about which**, because an earlier draft of this
-file claimed it gated everything and that was wrong:
+**The two sign-in checks.** They have been the oldest open item since 19 August, they take
+twenty minutes, and they are the only thing between two milestones and a tick. Nothing is
+waiting on code; both are waiting on somebody being logged in.
 
-| Needs a running database | Does not |
-| --- | --- |
-| The two sign-in checks below | Writing and unit-testing most of the audit's remaining findings |
-| The container-backed suites — Postgres, MinIO, Mailpit | The CI workflow, which runs on GitHub |
-| Integration tests that genuinely hit Postgres | Anything in seams 4, 5 and 6 |
-
-So: continue the fix pass on `audit/high-severity` whenever you like. Run these two checks
-when Docker is next up.
-
-1. `docker compose up -d db`, `pnpm dev`, and sign in at http://localhost:3000/admin.
+1. `docker compose up -d db`, `pnpm dev`, sign in at http://localhost:3000/admin.
 2. **Media → Upload** a photograph. Check it lists at the right pixel size, place it on a
-   Page with the image Block, publish. That is the last unverified clause of **M6**.
+   Page with the image Block, publish. That is the last clause of **M6**.
 3. **Enquiries.** Submit the form on `/contact` as a visitor, then look at that screen while
-   signed in. That is the last unverified clause of **M6.5**.
+   signed in. That is the last clause of **M6.5**.
 
-Those two checks have been the only thing between two milestones and a tick since 19 August.
-Neither is waiting on code. Both are waiting on somebody being logged in, which nobody has
-been.
-
-If you want the notification email to arrive while testing, point the Site at the local mail
-container: `docker compose --profile mail up -d mail`, then the SMTP block from
-`starter/.env.example` with `SMTP_HOST=localhost` and `SMTP_PORT=1025`. Inbox at
-http://localhost:8025. Real setup is in [docs/EMAIL.md](./docs/EMAIL.md).
+After that the audit is behind you and everything left is a feature. See *What is next*.
 
 ## What exists today
 
@@ -61,85 +45,112 @@ is what proves the packaged-template architecture works — fix one bug in `pack
 publish, upgrade two Sites. Everything built since M7 rests on an assumption that has never
 been tested against a second Site.
 
-## The audit, and the work in progress
+## The audit is closed
 
-On 20 August the project was audited end to end. It produced
+On 20 August the project was audited end to end, producing
 [specs/project-audit/research.md](./specs/project-audit/research.md) — **85 findings**, each
-with a file and line number, banded:
+with a file and a line number, banded High, Medium, Low and docs-versus-reality.
 
-| Band | Count | Range |
-| --- | --- | --- |
-| High | 20 | I-01 – I-20 |
-| Medium | 42 | I-21 – I-62 |
-| Low | 14 | I-63 – I-76 |
-| Docs vs reality | 9 | I-77 – I-85 |
-
-**Twenty are in scope for the current pass**: the High band, plus I-30, I-48 and I-32
-promoted from Medium because they are security-shaped rather than merely untidy. Three are
-done. They are the first three commits on `audit/high-severity`:
-
-- **I-01 — the contact form was an open mail relay.** `recipient` was a hidden input, so any
-  visitor could name an address and have the Site deliver their message from its own verified
-  domain. Now looked up server-side from the published Block.
-- **I-02 — the installer failed open during a database outage.** An unreachable database read
-  as an unconfigured one, which handed an unauthenticated `provisionDatabase` to whoever
-  caught the Site while it was down. Four install modes now, and every route asks positively.
-  [ADR-0016](./docs/adr/0016-the-installer-fails-closed.md).
-- **I-03 — saving a Page destroyed its own Header.** The Editor is handed the resolved
-  document and posted back a copy of whichever Shared Slot was rendered in its place.
-  [ADR-0017](./docs/adr/0017-the-editor-does-not-own-shared-slots.md).
-
-The remaining seventeen sort into six seams, to be taken in this order, one commit each:
+**Twenty were taken on**: the whole High band, plus I-30, I-32 and I-48 promoted from Medium
+because they were security-shaped rather than merely untidy. **All twenty are closed**, on
+`audit/high-severity`, in six seams:
 
 | Seam | Findings |
 | --- | --- |
-| **Test foundation** | I-08, I-10 |
-| Layout integrity | I-04, I-11 |
-| Entry points | I-07, I-30, I-32, I-48 |
-| Resilience | I-05, I-20 |
-| Editor correctness | I-06, I-17, I-18, I-19 |
-| Accessibility | I-09, I-12, I-13, I-14, I-15, I-16 |
+| Entry points, first pass | I-01 open mail relay, I-02 installer failing open, I-03 Shared Slots destroyed on save |
+| Test foundation | I-08 the suite failing without Docker, I-10 no coverage of any Draft/Published transition, plus CI |
+| Layout integrity | I-04 one bad Block blanking a Page, I-11 a stale tab overwriting a publish |
+| Entry points | I-07 reply-to header injection, I-30 `/media` serving the whole bucket, I-32 an unchecked Theme |
+| Resilience and the Editor | I-05 no error boundaries, I-20 no timeouts, I-06, I-17, I-18, I-19 |
+| Accessibility | I-09 no keyboard path, I-12 alt text, I-13 landmarks, I-14 contrast, I-15 announcements, I-16 focus trap |
 
-**The test foundation goes first, and it is not a formality.** I-10 found that no test
-touches `actions.ts`, `slots.ts`, `render.tsx` or either route handler — which is precisely
-where I-04, I-07 and I-11 live. The coverage that would prove the rest of this pass does not
-exist yet. Building it first is what makes the other five seams verifiable rather than
-asserted.
+**Two findings were rejected rather than implemented**, with the reasoning in their commits.
+I-79 claimed the roadmap misreported the Block count; it did not. I-48 called
+`applySlotsToAllPages` "an UPDATE with no WHERE", which is what the function is for — the
+real omission was a missing `updatedAt`, and that was fixed instead.
+
+Seven problems the audit did not list were found while fixing the ones it did, including
+`deleteSection` discarding a selection in a Section it never touched, and `moveBlock` moving
+the settings panel away from the Block being edited.
+
+**Still open from the audit:** the Medium band beyond the three promoted, the whole Low band,
+and the documentation findings already closed. `research.md` remains the record.
+
+### Tests
+
+`pnpm test` — **246 passing, 7 skipped, about eight seconds.** It was 2 failing, 152 passing
+and red without Docker.
+
+The seven skips are the live-provider suites, off unless asked for:
+
+```bash
+AI_LIVE_TESTS=1 pnpm test     # calls a real model; slow and occasionally flaky by nature
+```
+
+They are opt-in because free models are rate limited and retired without notice, so they
+fail for reasons unrelated to the code — which is the failure I-08 was about, reintroduced
+once a run. Run them before shipping anything that touches the AI stack.
+
+**There are still no component tests.** The vitest environment is `node`, with no jsdom, so
+`BlockBoundary`, the focus trap and the keyboard sensor are verified in a browser rather than
+in CI. One of them shipped broken to review because of it.
 
 ## Not finished
 
 Honest list. None of it is hidden behind a green tick.
 
 - **Nobody has been signed in.** Two milestones, two screens, twenty minutes. See the top.
-- **Seventeen of the twenty audit findings are open**, including: one bad Block blanks the
-  whole Page and Publish is not gated on `dirty`, so a click bakes it in (I-04); there are no
-  error boundaries anywhere (I-05); `/media` has no auth at all (I-30); there is no timeout
-  anywhere in the AI stack, so a hung upstream hangs a visitor's form POST (I-20); and a total
-  AI failure is written into the Author's field as content, which they can then publish (I-19).
-- **The Editor has no keyboard route** (I-09) — and its drag handles announce dnd-kit's
-  keyboard instructions for a sensor that was never registered.
-- **`pnpm test` fails without Docker.** `permissions.test.ts` gates on `DATABASE_URL` being
-  *set* rather than *reachable*, so it hard-fails where it was designed to skip (I-08). The
-  audit's 20 August run reported 166 tests with 2 failing for this reason; that number has not
-  been re-measured since, and cannot be until Docker is up.
-- **There is no CI and no lint.** No `.github`, no workflow, no lint script — yet eight
-  `eslint-disable` comments sit in the source (I-64). Note that ESLint *cannot* currently run
-  here: TypeScript 7.0 is the native Go port and ships a CLI with no compiler API until 7.1.
-- **M8 has not been started**, and no second Site exists.
+- **M8 has not been started**, and no second Site exists. v1 does not end until it has.
 - **Six Block Types from M8.5 are missing**: accordion, embed, image gallery, carousel,
-  location map, and Markdown prose with its sanitising renderer (ADR-0011).
+  location map, and Markdown prose with its sanitising renderer (ADR-0011). A carousel and a
+  gallery are the first two a real client asks for.
+- **The nav is one level deep**, deliberately (see `render/context.ts`). A client wanting a
+  dropdown means reopening that decision, and the comment there is right that hover intent,
+  keyboard traps and mobile behaviour make it harder than it looks.
+- **There is no lint.** ESLint cannot run here at all: TypeScript 7.0 is the native Go port
+  and ships a CLI with no compiler API, which typescript-eslint needs. Revisit at 7.1 rather
+  than adding a linter that cannot see types (I-64).
+- **No component tests.** See the note above.
 - **Nobody has sent through Resend.** SMTP is proven against a real mail server; Resend is
   not, because that needs an account and a verified domain.
 - **Provisioning mode of the installer is still untested.** This machine already had a
   database configured, so the no-database path has never been run.
 - **A form's fields are fixed**: name, email, message.
-- **Deleting a file leaves the Pages that used it pointing at nothing.** Deliberate, argued in
-  ADR-0012, but there is no "where is this used?" view.
+- **Deleting a file leaves the Pages that used it pointing at nothing.** Deliberate, argued
+  in ADR-0012, but there is no "where is this used?" view.
 - **AVIF and SVG upload without dimensions.** They render; just without width and height.
 - **No caching anywhere.** Every request reads the database. Deliberate.
-- **`next-env.d.ts` is tracked and churns** between `.next/types` and `.next/dev/types`
-  depending on whether `dev` or `build` ran last. Next's own docs say it should not be tracked
-  (I-63). Out of scope for the current pass, so it is sitting modified in the working tree.
+- **The Medium and Low audit bands are untouched** — 56 findings. `research.md` has them all
+  with a file and a line number, so picking one up costs no investigation.
+
+## What is next
+
+In the order agreed, and none of it started:
+
+1. **Finish M8.5** — carousel, accordion, image gallery, comparison table, social links row.
+   This is what turns "a plausible landing page" into "we could rebuild that client's Site",
+   and it is the prerequisite for a Preset being worth generating, exactly as M8.5's own text
+   has said since it was written.
+2. **Stock images.** Generated Presets ship with grey rectangles where photographs belong.
+   Behind a `StockAdapter`, in the same shape as StorageAdapter and EmailAdapter. Photos are
+   **downloaded into the Site's own media store at apply time**, never hotlinked — layouts
+   hold keys, not URLs (ADR-0012) — and fetching at apply time rather than generate time
+   means a Preset nobody chooses costs nothing. Media rows record where a photo came from so
+   the Dashboard can show which are still placeholders.
+3. **Effects and a demo page.** Section stagger, slide/scale/blur/wipe, speed as Gentle /
+   Normal / Brisk, parallax. Named options resolving to Theme tokens, never utility classes —
+   the rule from `1dac8e7` holds. Plus an ⓘ explaining each in plain words and a gallery at
+   `/admin/design/effects`, because choosing "Rise" today shows an Author nothing.
+4. **A preview panel in the Design tab**, so a Theme can be seen before it is applied.
+5. **AI provider and model settings.** Gemini and Grok by name, Groq and Mistral as presets
+   over the existing custom endpoint. Model chosen from each provider's live catalogue.
+   Site-wide default in Settings, per-job override kept in Design Studio. Keys stay in the
+   environment: the Settings screen chooses among what the environment already enabled, and
+   never stores a secret.
+6. **The blog** — the Markdown prose Block first, then posts with their own routing and a
+   listing Block. Collections generalise it later.
+7. **A Vercel deploy button** plus a Neon integration. Note that ADR-0012 rules out the local
+   disk on Vercel, so that template must require R2 or S3 rather than offer it.
 
 ## Things to know before you touch the code
 
