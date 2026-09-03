@@ -8,14 +8,33 @@ copy of that one, discard it: it presents M7 as "next up" and M7 shipped the sam
 
 ## Where to start
 
-**M8, or the Blocks.** Nothing is blocked, nothing is half-finished, and the audit is closed.
-Two things are worth doing before either, and neither is code — see *What is next*.
+Three things are queued. None is blocked on code, and two need you.
 
-The two sign-in checks that stood open since 19 August are done: M6 and M6.5 are ticked, and
-the roadmap now reads M0 through M7 and M9 all green. What is left in v1 is **M8** — publish
-the packages, clone the Starter into a second Site, fix one bug in `packages/core` and
-upgrade both. That is the milestone that proves ADR-0001 was worth its setup cost, and if
-upgrading turns out to be painful, that is the finding and it is still cheap to act on.
+**1. Publish, if you want it public.** `npm login` first — it is interactive, so it cannot be
+done for you. Then `pnpm release`. Worth knowing before you do: no package exists under
+`@mimnets` today, so the first publish claims the scope, and npm publishes are effectively
+permanent. Everything about the packaging is already proven against the local registry, so
+this changes the hostname and nothing else.
+
+**2. Component tests are blocked on a pnpm store mismatch.** Installing jsdom and
+`@testing-library/react` fails with `ERR_PNPM_UNEXPECTED_STORE`: this repo's `node_modules`
+are linked from `~/.pnpm/store/v11` while pnpm now wants `~/AppData/Local/pnpm/store/v11`.
+Either keep the old store, or accept the new one and reinstall:
+
+```bash
+pnpm config set store-dir "C:/Users/Monir/.pnpm/store" --global    # keep the old store
+pnpm install                                                        # or accept the new one
+```
+
+The second reinstalls the whole monorepo, which is why it was left rather than started at the
+end of a session. It is worth doing. **There are still no component tests**, the vitest
+environment is `node` with no DOM, and that is precisely why the Block error boundary shipped
+broken to review earlier today: it was wrapped around a function call rather than a child
+component, so it caught nothing, and only a browser showed it.
+
+**3. A fresh audit.** The last one is dated 20 August and the codebase has moved a long way
+since — twenty findings fixed, a build step, published packages, a second Site. A new pass
+would find what those changes introduced, which is where problems hide after a big change.
 
 ## What exists today
 
@@ -30,17 +49,17 @@ upgrading turns out to be painful, that is the finding and it is still cheap to 
 | ✅ | **M6** Media and SEO | StorageAdapter, uploads, media library, per-Page SEO, sitemap, robots |
 | ✅ | **M6.5** Forms and email | Contact Block, enquiries in the Dashboard, pluggable spam checks, EmailAdapter |
 | ✅ | **M7** AI writing assistant | Rewrite, shorten, alt text, search descriptions, over a chain of providers (ADR-0014) |
-| ❌ | **M8** Packaging, Site two | **Not started.** The milestone that proves ADR-0001 earned its cost |
+| ✅ | **M8** Packaging, Site two | Packages build and publish; `sites/ledger` installs them and upgraded from 0.1.0 to 0.1.1 |
 | ⚠️ | **M8.5** Block library | 14 Block Types, Section tones, a Theme built around them — six Block Types still missing |
 | ✅ | **M9** Presets | Generate a Theme and Pages together, validated against the registry before they land |
 
-Shipped since the last handoff, none of it recorded there: M7, Shared Headers and Footers
-(ADR-0015), M9 Presets, design-from-an-image, and per-Block text colour and typeface.
+**v1 is finished.** M8.5 is the only partial, and it sits after the v1 boundary in the
+roadmap by design.
 
-**M8 is the gap worth naming.** The roadmap has said since M0 that v1 ends after M8, and M8
-is what proves the packaged-template architecture works — fix one bug in `packages/core`,
-publish, upgrade two Sites. Everything built since M7 rests on an assumption that has never
-been tested against a second Site.
+There are two Sites now. `starter` is the one the monorepo develops against; `sites/ledger`
+is a chartered accountant with its own Theme and one Block Type of its own, deliberately
+outside the pnpm workspace so that it installs the published packages rather than linking to
+their source. A workspace link would have tested the monorepo rather than the packaging.
 
 ## The audit is closed
 
@@ -75,7 +94,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **246 passing, 7 skipped, about eight seconds.** It was 2 failing, 152 passing
+`pnpm test` — **249 passing, 7 skipped, about nine seconds.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -96,7 +115,11 @@ in CI. One of them shipped broken to review because of it.
 
 Honest list. None of it is hidden behind a green tick.
 
-- **M8 has not been started**, and no second Site exists. v1 does not end until it has.
+- **Nothing is published to npm.** The registry is Verdaccio, behind the `registry` profile
+  in `docker-compose.yml`, so the `@mimnets` scope is unclaimed and no version is public. The
+  build, the exports, the publish guard, the install and the upgrade are all real; only the
+  hostname is local.
+- **No component tests.** See the top — blocked on a pnpm store mismatch, not on effort.
 - **Six Block Types from M8.5 are missing**: accordion, embed, image gallery, carousel,
   location map, and Markdown prose with its sanitising renderer (ADR-0011). A carousel and a
   gallery are the first two a real client asks for.
@@ -179,10 +202,16 @@ In the order agreed, and none of it started:
 ## Running it
 
 ```bash
+# The local npm registry, for the packaging work. Not needed day to day.
+docker compose --profile registry up -d registry
+
 docker compose up -d db                        # Postgres, stack name mimnets-multisite
 pnpm dev                                       # http://localhost:3000
 pnpm seed                                      # three demo Pages, the main Menu, an image, a contact form
-pnpm test                                      # see the note on I-08 above
+pnpm test                                      # 249 in about nine seconds
+AI_LIVE_TESTS=1 pnpm test                      # plus the seven that call a real model
+pnpm build:packages                            # dist for the three packages
+pnpm release                                   # changeset publish — pnpm, never npm
 pnpm typecheck                                 # 4 packages, strict
 pnpm build                                     # must stay warning-free
 
