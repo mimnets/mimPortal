@@ -11,16 +11,26 @@ import postgres from "postgres";
 
 import { auth } from "../../lib/auth";
 import { databaseUrl } from "../../lib/env";
-import { installMode } from "../../lib/install";
+import { installMode, type InstallMode } from "../../lib/install";
 
 /**
- * Both installer modes refuse to run once the Site is installed. The check is a database
- * read rather than a file on disk, so a redeploy cannot resurrect the installer (ADR-0010).
+ * Both installer modes refuse to run unless the Site is actually in that mode.
+ *
+ * The check is a database read rather than a file on disk, so a redeploy cannot resurrect
+ * the installer (ADR-0010). It is asked positively — "is this Site in the mode this action
+ * belongs to?" — because the negative form fails open: an unreachable database used to read
+ * as `provisioning`, which handed an unauthenticated `provisionDatabase` to anybody who
+ * caught the Site during an outage.
  */
-async function assertNotInstalled(): Promise<void> {
-  if ((await installMode()) === "installed") {
-    throw new Error("This Site is already installed.");
+async function assertMode(expected: InstallMode): Promise<void> {
+  const mode = await installMode();
+  if (mode === expected) return;
+
+  if (mode === "installed") throw new Error("This Site is already installed.");
+  if (mode === "unavailable") {
+    throw new Error("The Site's database cannot be reached. The installer stays closed until it can.");
   }
+  throw new Error("The installer is not at that step.");
 }
 
 /**
@@ -29,7 +39,10 @@ async function assertNotInstalled(): Promise<void> {
  * string is read from the environment at boot.
  */
 export async function provisionDatabase(connectionString: string): Promise<{ restart: true }> {
-  await assertNotInstalled();
+  // This action is unauthenticated by necessity — nobody has an account yet — so the mode is
+  // the whole of its protection. A Site that already has a working database is never in
+  // provisioning mode, and so can never be repointed at somebody else's.
+  await assertMode("provisioning");
 
   const url = connectionString.trim();
   if (!/^postgres(ql)?:\/\//.test(url)) {
@@ -41,9 +54,10 @@ export async function provisionDatabase(connectionString: string): Promise<{ res
     await client`select 1`;
     await migrate(drizzle(client), { migrationsFolder: join(process.cwd(), "drizzle") });
   } catch (cause) {
-    throw new Error(
-      `Could not use that database: ${cause instanceof Error ? cause.message : "unknown error"}`,
-    );
+    // The reason is logged, never returned: an unauthenticated caller who is told exactly why
+    // a connection failed has been handed an outbound port scanner.
+    console.error(`[mimnets] Provisioning rejected a database: ${cause instanceof Error ? cause.message : cause}`);
+    throw new Error("Could not use that database. The reason is in the server log.");
   } finally {
     await client.end({ timeout: 5 }).catch(() => {});
   }
@@ -74,7 +88,7 @@ export async function completeInstall(input: {
   email: string;
   password: string;
 }): Promise<void> {
-  await assertNotInstalled();
+  await assertMode("onboarding");
 
   const url = databaseUrl();
   if (!url) throw new Error("No database is configured yet.");
