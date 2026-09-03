@@ -109,8 +109,15 @@ function parsePayload(payload: string): GeneratedPreset {
 
   // Re-validated on the way in. The payload made a round trip through the browser, and
   // trusting it here would make every schema check upstream decorative.
+  //
+  // That included the Theme, which used to pass through untouched while the layouts beside
+  // it were checked. A Theme is compiled into CSS custom properties inside a <style> tag on
+  // every page of the Site, so an unchecked one is a stored injection with a Site-wide reach
+  // — and the schema that would have caught it was already being applied by saveTheme two
+  // hundred lines below. Same schema here, same completion of the derived values.
   return {
     ...preset,
+    theme: completeTheme(themeSchema.parse(preset.theme)),
     pages: preset.pages.map((page) => ({
       ...page,
       layout: registry.parseLayout(page.layout),

@@ -6,7 +6,7 @@ import { elapsedSince, hashIp, runSpamChecks, safeReturnPath } from "@mimnets/co
 
 import { authSecret, baseUrl, requireDatabaseUrl } from "../../../lib/env";
 import { email } from "../../../lib/email";
-import { recipientForForm } from "../../../lib/forms";
+import { recipientForForm, replyToFor } from "../../../lib/forms";
 import { RATE_LIMIT_WINDOW_MS, spamSignals } from "../../../lib/spam";
 
 /**
@@ -95,8 +95,9 @@ export async function POST(request: Request) {
       await email().send({
         to: recipient,
         subject: `New enquiry from ${siteName}${name ? ` — ${name}` : ""}`,
-        // Reply goes to the person who wrote in, so answering is one keystroke.
-        replyTo: senderEmail,
+        // Reply goes to the person who wrote in, so answering is one keystroke — when the
+        // address is one. See lib/forms.ts: this is visitor input reaching a mail header.
+        replyTo: replyToFor(senderEmail),
         text: [
           `${name || "Someone"} sent a message through ${siteName}.`,
           "",

@@ -3,6 +3,8 @@ import type { BlockInstance, PageLayout } from "@mimnets/core";
 import { createDatabase, pages, sharedSlots } from "@mimnets/core/db";
 
 import { registry } from "../blocks.config";
+import { looksLikeEmail } from "@mimnets/core/email";
+
 import { defaultRecipient } from "./email";
 import { requireDatabaseUrl } from "./env";
 import { parseSections } from "./slots";
@@ -23,6 +25,27 @@ import { parseSections } from "./slots";
 
 const CONTACT = "contact";
 const DEFAULT_SLUG = "contact";
+
+/**
+ * The address a notification may be answered to, or nothing.
+ *
+ * Whoever filled in the form typed this, and it lands in a mail header. Headers are
+ * line-delimited, so an interior CRLF is how somebody asked only for an email address writes
+ * a second one — a Bcc, say. `looksLikeEmail` refuses all whitespace and so refuses that.
+ *
+ * The returned value is the *trimmed* one on purpose, and this function exists to make that
+ * unavoidable. `looksLikeEmail` trims before testing, so a value with trailing whitespace
+ * passes the check while the original still carries it; sending the original would mean the
+ * string that was validated and the string that was sent were not the same string. They are
+ * now, because only one of them ever leaves here.
+ *
+ * An address that fails is dropped rather than refused. The enquiry is already stored and the
+ * Owner still receives it; what is lost is one-keystroke reply on a message from somebody who
+ * typed something that was never an address.
+ */
+export function replyToFor(senderEmail: string): string | undefined {
+  return looksLikeEmail(senderEmail) ? senderEmail.trim() : undefined;
+}
 
 interface ContactProps {
   slug?: unknown;
