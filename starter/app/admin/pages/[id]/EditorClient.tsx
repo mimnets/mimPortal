@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import type { PageLayout, RenderContext, SlotName } from "@mimnets/core";
 
 import { registry } from "../../../../blocks.config";
-import type { PageVersionSummary } from "../../actions";
+import type { PageVersionSummary, PublishResult } from "../../actions";
 
 /**
  * The registry holds React components and Zod schemas, so it cannot be serialised across
@@ -15,6 +15,7 @@ import type { PageVersionSummary } from "../../actions";
 export function EditorClient({
   layout,
   pageTitle,
+  revision,
   versions,
   lockedSlots,
   signedInAs,
@@ -32,12 +33,14 @@ export function EditorClient({
 }: {
   layout: PageLayout;
   pageTitle: string;
+  /** The Page's revision when this screen was rendered. Guards against a stale tab. */
+  revision: number;
   versions: PageVersionSummary[];
   lockedSlots: SlotName[];
   signedInAs: string;
   context: RenderContext;
-  onSave: (layout: PageLayout) => Promise<void>;
-  onPublish: (layout: PageLayout) => Promise<PageVersionSummary[]>;
+  onSave: (layout: PageLayout, expectedRevision: number | null) => Promise<number>;
+  onPublish: (layout: PageLayout, expectedRevision: number | null) => Promise<PublishResult>;
   onRestore: (versionId: string) => Promise<PageLayout>;
   onSignOut: () => Promise<void>;
   onListMedia: () => Promise<MediaItem[]>;
@@ -52,6 +55,7 @@ export function EditorClient({
       layout={layout}
       registry={registry}
       pageTitle={pageTitle}
+      revision={revision}
       versions={versions}
       lockedSlots={lockedSlots}
       signedInAs={signedInAs}

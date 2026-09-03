@@ -70,7 +70,11 @@ export const imageBlock = defineBlock({
             they are absent only for formats that hide their size (AVIF) or have none (SVG). */}
         <img
           src={`${context.mediaBaseUrl}/${image.key}`}
-          alt={image.alt}
+          alt={image.decorative ? "" : image.alt}
+          // Marked decoration is taken out of the accessibility tree entirely, rather than
+          // being announced as an image with no name. An empty alt alone leaves some readers
+          // announcing the filename.
+          {...(image.decorative ? { role: "presentation" as const } : {})}
           width={image.width ?? undefined}
           height={image.height ?? undefined}
           loading="lazy"
@@ -192,7 +196,10 @@ export const contactBlock = defineBlock({
       default: "contact",
     }),
   },
-  render: ({ heading, intro, recipient, buttonLabel, successMessage, slug }, context) => {
+  // `recipient` is deliberately absent from this signature. It is a field an Author sets and
+  // the form route reads back from the published Block by `slug`; putting it in the markup as
+  // a hidden input made it visitor input, and made the Site a relay for anybody's mail.
+  render: ({ heading, intro, buttonLabel, successMessage, slug }, context) => {
     const result = context.query[FORM_RESULT_PARAM];
 
     // The result belongs to this form, not to whichever form rendered first on the Page.
@@ -219,7 +226,6 @@ export const contactBlock = defineBlock({
         <input type="hidden" name={FORM_FIELDS.slug} value={slug} />
         <input type="hidden" name={FORM_FIELDS.renderedAt} value={context.formToken} />
         <input type="hidden" name={FORM_FIELDS.returnTo} value={context.currentPath} />
-        <input type="hidden" name="recipient" value={recipient} />
 
         {/* The bait. Positioned off-screen rather than display:none, because some bots skip
             what is explicitly hidden, and hidden from assistive technology and the tab order

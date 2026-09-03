@@ -55,8 +55,10 @@ export function SlotEditorClient({
       assist={assist}
       media={{ list: onListMedia, upload: onUploadMedia, baseUrl: mediaBaseUrl }}
       onSave={onSave}
-      // Neither is reachable: Publish is hidden and History has nothing to show.
-      onPublish={async () => []}
+      // Neither is reachable: Publish is hidden and History has nothing to show. A shared
+      // Slot has no draft and no revision to guard either — it is edited in one place, so
+      // there is no second screen for a stale tab to be stale against.
+      onPublish={async () => ({ versions: [], revision: 0 })}
       onRestore={async () => layout}
     />
   );

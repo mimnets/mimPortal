@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { assertLockedSlotsUnchanged, lockedSlotViolation } from "./locking";
-import { emptyLayout, sectionDefaults, type PageLayout, type SectionNode } from "./schema";
+import { blockStyleDefaults, emptyLayout, sectionDefaults, type PageLayout, type SectionNode } from "./schema";
 
 function section(id: string, blockText = "hello"): SectionNode {
   return {
     id,
     layout: "1",
-    columns: [{ id: `${id}-col`, blocks: [{ id: `${id}-blk`, type: "text", props: { body: blockText } }] }],
+    columns: [{ id: `${id}-col`, blocks: [{ id: `${id}-blk`, type: "text", props: { body: blockText }, style: blockStyleDefaults() }] }],
     ...sectionDefaults(),
   };
 }

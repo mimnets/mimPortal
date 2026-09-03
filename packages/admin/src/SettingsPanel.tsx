@@ -9,7 +9,8 @@ import type {
   SectionPadding,
   SectionTone,
 } from "@mimnets/core";
-import { field, type ColumnLayout } from "@mimnets/core";
+import { BLOCK_ANIMATIONS, BLOCK_FONTS, BLOCK_TONES, field, type ColumnLayout } from "@mimnets/core";
+import type { BlockAnimation, BlockFont, BlockTone } from "@mimnets/core";
 
 import { FieldInput } from "./FieldInput";
 import { BlockIcon, ICONS_BY_BLOCK, TrashIcon } from "./icons";
@@ -49,7 +50,9 @@ export function SettingsPanel({
     }
 
     return (
-      <div className="mn-ed-panel-body">
+      // Keyed on the Block, so selecting another one remounts this panel rather than reusing
+      // it. That is what cancels an Assist request still streaming into the previous Block.
+      <div className="mn-ed-panel-body" key={block.id}>
         <h2 className="mn-ed-panel-title">
           {(() => {
             const Glyph = ICONS_BY_BLOCK[blockType.name] ?? BlockIcon;
@@ -66,6 +69,76 @@ export function SettingsPanel({
             onChange={(value) => dispatch({ type: "setProp", path: selection.path, key: name, value })}
           />
         ))}
+        <fieldset className="mn-field-group">
+          <legend>Appearance</legend>
+
+          <label className="mn-field" htmlFor="block-tone">
+            <span>Text colour</span>
+            <select
+              id="block-tone"
+              value={block.style?.tone ?? "default"}
+              onChange={(event) =>
+                dispatch({
+                  type: "setBlockStyle",
+                  path: selection.path,
+                  style: { tone: event.target.value as BlockTone },
+                })
+              }
+            >
+              <option value="default">Normal</option>
+              <option value="muted">Muted</option>
+              <option value="primary">Primary colour</option>
+              <option value="accent">Accent colour</option>
+            </select>
+            <small>
+              From the Site's Theme, not a colour picker — so changing the Theme still
+              changes this, and nothing here can be off-brand.
+            </small>
+          </label>
+
+          <label className="mn-field" htmlFor="block-font">
+            <span>Typeface</span>
+            <select
+              id="block-font"
+              value={block.style?.font ?? "default"}
+              onChange={(event) =>
+                dispatch({
+                  type: "setBlockStyle",
+                  path: selection.path,
+                  style: { font: event.target.value as BlockFont },
+                })
+              }
+            >
+              <option value="default">As the Block normally is</option>
+              <option value="heading">Heading face</option>
+              <option value="body">Body face</option>
+            </select>
+            <small>Setting a paragraph in the heading face makes it read as a lead.</small>
+          </label>
+
+          <label className="mn-field" htmlFor="block-animate">
+            <span>Appears with</span>
+            <select
+              id="block-animate"
+              value={block.style?.animate ?? "none"}
+              onChange={(event) =>
+                dispatch({
+                  type: "setBlockStyle",
+                  path: selection.path,
+                  style: { animate: event.target.value as BlockAnimation },
+                })
+              }
+            >
+              <option value="none">No animation</option>
+              <option value="fade">Fade in</option>
+              <option value="rise">Rise and fade</option>
+            </select>
+            <small>
+              Plays as the Block scrolls into view. Skipped entirely for anyone who has
+              asked their system to reduce motion.
+            </small>
+          </label>
+        </fieldset>
         <button
           type="button"
           className="mn-button mn-button-danger"
@@ -83,7 +156,7 @@ export function SettingsPanel({
     if (!section) return <p className="mn-ed-hint">That Section is no longer here.</p>;
 
     return (
-      <div className="mn-ed-panel-body">
+      <div className="mn-ed-panel-body" key={section.id}>
         <h2>Section</h2>
         <div className="mn-field">
           <span>Column layout</span>

@@ -4,9 +4,11 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { PageLayout } from "@mimnets/core";
 import { generatePreset, PRESET_DIRECTIONS, type GeneratedPreset } from "@mimnets/core/ai";
+import { completeTheme, themeSchema } from "@mimnets/core";
 import { createDatabase, pageVersions, pages, siteSettings } from "@mimnets/core/db";
 
 import { registry } from "../../blocks.config";
+import { BUILT_IN_PRESETS, presetBySlug } from "../../presets";
 import { aiProvider, aiProviderNamed, visionProvider, withinRateLimit } from "../../lib/ai";
 import { requireDatabaseUrl } from "../../lib/env";
 import { requireOwner, requireUser } from "../../lib/session";
@@ -107,8 +109,15 @@ function parsePayload(payload: string): GeneratedPreset {
 
   // Re-validated on the way in. The payload made a round trip through the browser, and
   // trusting it here would make every schema check upstream decorative.
+  //
+  // That included the Theme, which used to pass through untouched while the layouts beside
+  // it were checked. A Theme is compiled into CSS custom properties inside a <style> tag on
+  // every page of the Site, so an unchecked one is a stored injection with a Site-wide reach
+  // — and the schema that would have caught it was already being applied by saveTheme two
+  // hundred lines below. Same schema here, same completion of the derived values.
   return {
     ...preset,
+    theme: completeTheme(themeSchema.parse(preset.theme)),
     pages: preset.pages.map((page) => ({
       ...page,
       layout: registry.parseLayout(page.layout),
@@ -295,4 +304,102 @@ export async function generateFromImage(input: {
   }
 
   return { options, failures };
+}
+
+/* ---- The designs that ship with the Starter ------------------------------- */
+
+export interface BuiltInSummary {
+  slug: string;
+  name: string;
+  category: string;
+  description: string;
+  theme: GeneratedPreset["theme"];
+  pages: { title: string; path: string; sections: number }[];
+}
+
+/** Ids are assigned here, exactly as they are for a generated Preset. */
+function withIds(sections: unknown[]): unknown[] {
+  const id = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+
+  return sections.map((section) => {
+    const node = section as { columns?: { blocks?: unknown[] }[] };
+    return {
+      ...(section as object),
+      id: id("sec"),
+      columns: (node.columns ?? []).map((column) => ({
+        ...column,
+        id: id("col"),
+        blocks: (column.blocks ?? []).map((block) => ({ ...(block as object), id: id("blk") })),
+      })),
+    };
+  });
+}
+
+/** Every ready-made design, for the gallery. Cheap: it is data in the bundle. */
+export async function listBuiltInPresets(): Promise<BuiltInSummary[]> {
+  await requireOwner();
+
+  return BUILT_IN_PRESETS.map((preset) => ({
+    slug: preset.slug,
+    name: preset.name,
+    category: preset.category,
+    description: preset.description,
+    theme: completeTheme(preset.theme),
+    pages: preset.pages.map((page) => ({
+      title: page.title,
+      path: page.path,
+      sections: page.sections.length,
+    })),
+  }));
+}
+
+/**
+ * Applies a ready-made design.
+ *
+ * Built server-side from the slug rather than from anything the browser sent, and then run
+ * through the same `applyPreset` an AI-generated one uses — so a built-in gets no more
+ * trust than model output does, and there is one code path for "a design was applied".
+ */
+export async function applyBuiltInPreset(slug: string): Promise<{ pages: number }> {
+  await requireOwner();
+
+  const preset = presetBySlug(slug);
+  if (!preset) throw new Error("That design is not one this Site ships with.");
+
+  const payload: GeneratedPreset = {
+    name: preset.name,
+    description: preset.description,
+    theme: completeTheme(preset.theme),
+    pages: preset.pages.map((page) => ({
+      title: page.title,
+      path: page.path,
+      layout: registry.parseLayout({
+        version: 1,
+        slots: { header: [], main: withIds(page.sections), sidebar: [], footer: [] },
+      }),
+    })),
+  };
+
+  return applyPreset(JSON.stringify(payload));
+}
+
+/**
+ * Saves a Theme edited by hand.
+ *
+ * The "customisable" half of a ready-made design: apply one, then change the six colours
+ * that matter without regenerating anything. Validated like any other Theme, because it
+ * arrives from a form and is compiled straight into CSS custom properties.
+ */
+export async function saveTheme(input: Record<string, unknown>): Promise<void> {
+  await requireOwner();
+
+  const parsed = themeSchema.parse(input);
+
+  await database()
+    .update(siteSettings)
+    .set({ theme: completeTheme(parsed) })
+    .where(eq(siteSettings.id, "singleton"));
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/design");
 }

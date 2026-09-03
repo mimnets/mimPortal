@@ -83,6 +83,38 @@ _Avoid_: global header, template part, partial, include
 Every image a Site has uploaded, listed in the Dashboard and shared by all its Pages.
 _Avoid_: assets, uploads, files, gallery
 
+**Enquiry**:
+One message a visitor sent through a form on a Site, stored before any attempt is made to
+deliver it, and readable in the Dashboard whether or not the notification arrived.
+_Avoid_: submission, form submission, lead, contact, message
+
+### Installing
+
+**Install mode**:
+Which of four states a Site is in, decided by asking its database rather than by reading a
+file. Every install route refuses unless the Site is in the mode that route belongs to.
+_Avoid_: install step, setup stage, installer state
+
+**Provisioning**:
+The install mode in which no usable database is configured, so the installer asks for one.
+_Avoid_: setup, first run, bootstrap
+
+**Onboarding**:
+The install mode in which a database exists but nobody has installed the Site. The first
+Owner is created and the Site is named. The only window in which an account is created over
+HTTP.
+_Avoid_: registration, sign-up, welcome
+
+**Installed**:
+The install mode in which every install route refuses, permanently.
+_Avoid_: live, complete, done
+
+**Unavailable**:
+The install mode in which a database is configured but cannot be reached. Nothing about the
+Site can be decided, so every install route refuses rather than guessing. Distinct from
+Provisioning on purpose: treating an outage as an unconfigured Site reopens the installer.
+_Avoid_: offline, down, error, broken
+
 ### People
 
 **Owner**:

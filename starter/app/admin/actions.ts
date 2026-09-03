@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { PageLayout } from "@mimnets/core";
 import { assertLockedSlotsUnchanged, emptyLayout, menuItemsSchema } from "@mimnets/core";
@@ -9,6 +9,7 @@ import { createDatabase, menus, pageVersions, pages } from "@mimnets/core/db";
 import { registry } from "../../blocks.config";
 import { requireDatabaseUrl } from "../../lib/env";
 import { lockedSlotsFor, requireOwner, requireUser } from "../../lib/session";
+import { restoreOwnSlots } from "../../lib/slots";
 
 /**
  * Every mutation validates its input and re-checks the caller's role on the server. The
@@ -18,6 +19,12 @@ import { lockedSlotsFor, requireOwner, requireUser } from "../../lib/session";
 export interface PageVersionSummary {
   id: string;
   publishedAt: string;
+}
+
+export interface PublishResult {
+  versions: PageVersionSummary[];
+  /** The Page's new revision, so the Editor can keep saving without reloading. */
+  revision: number;
 }
 
 function database() {
@@ -123,28 +130,80 @@ export async function listVersions(pageId: string): Promise<PageVersionSummary[]
   return rows.map((row) => ({ id: row.id, publishedAt: row.publishedAt.toISOString() }));
 }
 
-async function guardedLayout(pageId: string, incoming: unknown): Promise<PageLayout> {
+const STALE =
+  "This Page changed somewhere else after you opened it — another tab, or another person. " +
+  "Reload to see the current version. Nothing here has been written.";
+
+/**
+ * Matches the Page by id, and by revision when the caller offered one.
+ *
+ * This is the whole of the concurrency control, and it lives in the WHERE clause rather than
+ * in a comparison up here on purpose: a read followed by a write leaves a window in which
+ * somebody else's write lands between the two, and the check passes for a Page that has
+ * already moved on. Postgres decides instead. An UPDATE matching no row is a write that
+ * would have replaced work it never saw, and the caller is told so.
+ */
+function atRevision(pageId: string, expected: number | null | undefined) {
+  return expected == null
+    ? eq(pages.id, pageId)
+    : and(eq(pages.id, pageId), eq(pages.revision, expected));
+}
+
+/**
+ * What a save is allowed to write.
+ *
+ * Three rules, in order. The revision is checked first, so a stale tab is turned away before
+ * anything else is considered. Then a Slot this Page does not own is put back to what is
+ * stored, because the Editor was handed the resolved document and would otherwise write a
+ * shared Header into the Page. Only then is the role's locked-Slot rule applied — asking it
+ * before the restore would refuse an Author for a difference the Editor introduced rather
+ * than one they made.
+ */
+async function guardedLayout(
+  pageId: string,
+  incoming: unknown,
+  expectedRevision?: number | null,
+): Promise<{ layout: PageLayout; page: typeof pages.$inferSelect }> {
   const person = await requireUser();
   const parsed = registry.parseLayout(incoming);
   const locked = await lockedSlotsFor(person);
 
-  if (locked.length > 0) {
-    const [page] = await database().select().from(pages).where(eq(pages.id, pageId)).limit(1);
-    if (!page) throw new Error("That Page no longer exists.");
-    const { layout: current } = registry.safeParseLayout(page.draftLayout ?? page.publishedLayout);
-    assertLockedSlotsUnchanged(parsed, current, locked);
-  }
+  const [page] = await database().select().from(pages).where(eq(pages.id, pageId)).limit(1);
+  if (!page) throw new Error("That Page no longer exists.");
 
-  return parsed;
+  // A courtesy, not the guard. It turns the common case — a tab open for an hour — into a
+  // clear message before any work is done, but the write below is what actually decides.
+  if (expectedRevision != null && page.revision !== expectedRevision) throw new Error(STALE);
+
+  const { layout: current } = registry.safeParseLayout(page.draftLayout ?? page.publishedLayout);
+  const kept = restoreOwnSlots(parsed, current, {
+    headerSlotId: page.headerSlotId,
+    footerSlotId: page.footerSlotId,
+  });
+
+  if (locked.length > 0) assertLockedSlotsUnchanged(kept, current, locked);
+
+  return { layout: kept, page };
 }
 
-export async function saveDraft(pageId: string, layout: unknown): Promise<void> {
-  const parsed = await guardedLayout(pageId, layout);
+export async function saveDraft(
+  pageId: string,
+  layout: unknown,
+  expectedRevision?: number | null,
+): Promise<number> {
+  const { layout: parsed } = await guardedLayout(pageId, layout, expectedRevision);
 
-  await database()
+  const [written] = await database()
     .update(pages)
-    .set({ draftLayout: parsed, updatedAt: new Date() })
-    .where(eq(pages.id, pageId));
+    .set({ draftLayout: parsed, revision: sql`${pages.revision} + 1`, updatedAt: new Date() })
+    .where(atRevision(pageId, expectedRevision))
+    .returning({ revision: pages.revision });
+
+  if (!written) throw new Error(STALE);
+
+  // Returned so the Editor's next save is checked against what it just wrote rather than
+  // against the version it opened, which would make the second save of a session a conflict.
+  return written.revision;
 }
 
 /**
@@ -152,23 +211,36 @@ export async function saveDraft(pageId: string, layout: unknown): Promise<void> 
  * transaction. A publish that half-happened — live but unrecorded — would defeat the point
  * of keeping history at all.
  */
-export async function publishPage(pageId: string, layout: unknown): Promise<PageVersionSummary[]> {
-  const parsed = await guardedLayout(pageId, layout);
+export async function publishPage(
+  pageId: string,
+  layout: unknown,
+  expectedRevision?: number | null,
+): Promise<PublishResult> {
+  const { layout: parsed, page } = await guardedLayout(pageId, layout, expectedRevision);
   const db = database();
 
-  const [page] = await db.select({ path: pages.path }).from(pages).where(eq(pages.id, pageId));
-
-  await db.transaction(async (tx) => {
-    await tx
+  // The revision check is inside the transaction, so a publish that loses the race writes
+  // nothing at all — not the layout, and not the snapshot that would claim it went live.
+  const revision = await db.transaction(async (tx) => {
+    const [written] = await tx
       .update(pages)
-      .set({ draftLayout: parsed, publishedLayout: parsed, updatedAt: new Date() })
-      .where(eq(pages.id, pageId));
+      .set({
+        draftLayout: parsed,
+        publishedLayout: parsed,
+        revision: sql`${pages.revision} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(atRevision(pageId, expectedRevision))
+      .returning({ revision: pages.revision });
+
+    if (!written) throw new Error(STALE);
 
     await tx.insert(pageVersions).values({ pageId, layout: parsed });
+    return written.revision;
   });
 
-  if (page) revalidatePath(page.path);
-  return listVersions(pageId);
+  revalidatePath(page.path);
+  return { versions: await listVersions(pageId), revision };
 }
 
 /**

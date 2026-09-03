@@ -2,13 +2,15 @@
 
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
   closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { useReducer, useState, type ReactNode } from "react";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { useEffect, useReducer, useState, type ReactNode } from "react";
 
 import type { BlockRegistry, PageLayout, RenderContext, SlotName } from "@mimnets/core";
 import { emptyContext } from "@mimnets/core";
@@ -31,13 +33,21 @@ export interface EditorProps {
   layout: PageLayout;
   registry: BlockRegistry;
   pageTitle: string;
-  /** Persists the draft. Throwing here surfaces the message to the Author. */
-  onSave: (layout: PageLayout) => Promise<void>;
+  /**
+   * Persists the draft. Throwing here surfaces the message to the Author.
+   *
+   * Takes the revision the Editor is working from and returns the one it just wrote, so a
+   * tab that has been open while somebody else edited is refused rather than silently
+   * replacing their work. A consumer with nothing to guard passes and returns nothing.
+   */
+  onSave: (layout: PageLayout, expectedRevision: number | null) => Promise<number | void>;
   /**
    * Publishes the draft and returns the version list as it now stands, so the panel stays
    * accurate without the Editor knowing anything about routing or revalidation.
    */
-  onPublish: (layout: PageLayout) => Promise<PageVersionSummary[]>;
+  onPublish: (layout: PageLayout, expectedRevision: number | null) => Promise<PublishResult>;
+  /** The Page's revision when this Editor opened. Absent for a shared Slot, which has none. */
+  revision?: number | null;
   /** Loads an old version back into the draft. */
   onRestore: (versionId: string) => Promise<PageLayout>;
   versions: PageVersionSummary[];
@@ -74,6 +84,12 @@ export interface EditorProps {
   assist?: AssistSettings;
 }
 
+export interface PublishResult {
+  versions: PageVersionSummary[];
+  /** The Page's revision after publishing, so the Editor keeps saving without a reload. */
+  revision: number;
+}
+
 type Tab = "settings" | "history";
 
 export function Editor({
@@ -83,6 +99,7 @@ export function Editor({
   onSave,
   onPublish,
   onRestore,
+  revision: openedAt = null,
   versions: initialVersions,
   lockedSlots = [],
   slotNotes,
@@ -103,8 +120,42 @@ export function Editor({
   const [versions, setVersions] = useState(initialVersions);
   const [tab, setTab] = useState<Tab>("settings");
 
+  /**
+   * Which revision of the Page this Editor is writing against. Sent with every save and
+   * publish, and replaced by whatever the server says it wrote — so a long editing session
+   * keeps working, while a tab left open across somebody else's edit is refused.
+   */
+  const [revision, setRevision] = useState<number | null>(openedAt);
+
+  /**
+   * Asks before an unsaved draft is thrown away.
+   *
+   * The layout lives in a reducer and there is no autosave, so closing the tab, going back,
+   * or following a link loses everything since the last Save — and nothing said so. This is
+   * the last line rather than the first: Blocks no longer navigate on click, and a Block that
+   * throws no longer unmounts the Editor. It covers what neither of those can, which is an
+   * Author who simply closes the window.
+   *
+   * The browser shows its own wording and ignores ours; only the fact that we asked matters.
+   */
+  useEffect(() => {
+    if (!state.dirty) return;
+
+    const ask = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", ask);
+    return () => window.removeEventListener("beforeunload", ask);
+  }, [state.dirty]);
+
   // A small distance before a drag begins, so clicking a Block to select it does not drag it.
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  //
+  // The keyboard sensor is not an extra: dnd-kit's drag handles already announce "To pick up
+  // a sortable item, press the space bar" to a screen reader, and without this registered
+  // that instruction was a lie. Reordering was the one thing a keyboard-only Author could
+  // not do — they could add a Block and delete it, but never move it.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   function handleDragEnd(event: DragEndEvent) {
     const activeId = String(event.active.id);
@@ -168,7 +219,17 @@ export function Editor({
 
           {nav ? <nav className="mn-dash-nav">{nav}</nav> : null}
 
-          <span className={`mn-ed-state${error ? " is-error" : state.dirty ? " is-dirty" : ""}`}>
+          {/* Announced, not merely displayed. "Draft saved" in a bare span is invisible to
+              anyone not looking at that corner of the screen — and pressing Save and being
+              told nothing is how people learn to press it twice. `polite` because it must
+              not interrupt whatever is being read; `atomic` so the whole sentence is spoken
+              rather than the words that changed. */}
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className={`mn-ed-state${error ? " is-error" : state.dirty ? " is-dirty" : ""}`}
+          >
             {error ?? message ?? (state.dirty ? "Unsaved changes" : "All changes saved")}
           </span>
 
@@ -178,7 +239,8 @@ export function Editor({
             disabled={busy || !state.dirty}
             onClick={() =>
               run("saving", async () => {
-                await onSave(state.layout);
+                const next = await onSave(state.layout, revision);
+                if (typeof next === "number") setRevision(next);
                 return "Draft saved";
               })
             }
@@ -200,7 +262,9 @@ export function Editor({
               disabled={busy}
               onClick={() =>
                 run("publishing", async () => {
-                  setVersions(await onPublish(state.layout));
+                  const result = await onPublish(state.layout, revision);
+                  setVersions(result.versions);
+                  setRevision(result.revision);
                   return "Published";
                 })
               }

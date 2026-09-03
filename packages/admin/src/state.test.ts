@@ -171,3 +171,124 @@ describe("what the Editor saves", () => {
     expect(() => registry.parseLayout(edited.layout)).not.toThrow();
   });
 });
+
+/**
+ * What a structural change does to the selection.
+ *
+ * A selection is a *position* — slot, section, column, index — so anything that moves what
+ * is above it changes which Block that position names. Deleting index 0 while index 1 was
+ * selected left the selection reading 1, now addressing what had been index 2: the settings
+ * panel silently retargeted and the Author edited a Block they had not chosen.
+ *
+ * The rule these check is one sentence: a structural change never changes *what* is
+ * selected, only where that thing now is.
+ */
+describe("following the selection through a change", () => {
+  /** Three Blocks in one Column, so there is something above and below any of them. */
+  function threeBlocks(): EditorState {
+    const layout: PageLayout = emptyLayout();
+    const section = newSection("1");
+    section.columns[0]!.blocks.push(newBlock(heading), newBlock(text), newBlock(heading));
+    layout.slots.main.push(section);
+    return initialState(layout);
+  }
+
+  const at = (block: number) => ({ slot: "main" as const, section: 0, column: 0, block });
+
+  it("keeps the same Block selected when one above it is deleted", () => {
+    const state = { ...threeBlocks(), selection: { kind: "block" as const, path: at(1) } };
+    const chosen = state.layout.slots.main[0]!.columns[0]!.blocks[1]!;
+
+    const next = editorReducer(state, { type: "deleteBlock", path: at(0) });
+
+    // The index moved from 1 to 0; the Block it names did not change.
+    expect(next.selection).toEqual({ kind: "block", path: at(0) });
+    expect(findBlockPath(next.layout, chosen.id)).toEqual(at(0));
+  });
+
+  it("clears the selection when the selected Block is the one deleted", () => {
+    const state = { ...threeBlocks(), selection: { kind: "block" as const, path: at(1) } };
+
+    const next = editorReducer(state, { type: "deleteBlock", path: at(1) });
+
+    expect(next.selection).toBeNull();
+  });
+
+  it("leaves the selection alone when the deleted Block is below it", () => {
+    const state = { ...threeBlocks(), selection: { kind: "block" as const, path: at(0) } };
+
+    const next = editorReducer(state, { type: "deleteBlock", path: at(2) });
+
+    expect(next.selection).toEqual({ kind: "block", path: at(0) });
+  });
+
+  it("does not retarget the panel when a different Block is dragged past it", () => {
+    const state = { ...threeBlocks(), selection: { kind: "block" as const, path: at(2) } };
+    const chosen = state.layout.slots.main[0]!.columns[0]!.blocks[2]!;
+
+    // Drag the first Block to the end, moving it past the selected one.
+    const next = editorReducer(state, {
+      type: "moveBlock",
+      from: at(0),
+      to: { slot: "main", section: 0, column: 0, index: 2 },
+    });
+
+    expect(next.selection).toEqual({ kind: "block", path: at(1) });
+    expect(findBlockPath(next.layout, chosen.id)).toEqual(at(1));
+  });
+
+  it("follows the selected Block when it is the one dragged", () => {
+    const state = { ...threeBlocks(), selection: { kind: "block" as const, path: at(0) } };
+    const chosen = state.layout.slots.main[0]!.columns[0]!.blocks[0]!;
+
+    const next = editorReducer(state, {
+      type: "moveBlock",
+      from: at(0),
+      to: { slot: "main", section: 0, column: 0, index: 2 },
+    });
+
+    expect(next.selection).toEqual({ kind: "block", path: at(2) });
+    expect(findBlockPath(next.layout, chosen.id)).toEqual(at(2));
+  });
+
+  it("selects what was dragged only when nothing was selected", () => {
+    const state = threeBlocks();
+
+    const next = editorReducer(state, {
+      type: "moveBlock",
+      from: at(0),
+      to: { slot: "main", section: 0, column: 0, index: 2 },
+    });
+
+    expect(next.selection).toEqual({ kind: "block", path: at(2) });
+  });
+
+  it("keeps a Block selected when a Section above it is deleted", () => {
+    const layout: PageLayout = emptyLayout();
+    const first = newSection("1");
+    const second = newSection("1");
+    second.columns[0]!.blocks.push(newBlock(heading));
+    layout.slots.main.push(first, second);
+
+    const state = {
+      ...initialState(layout),
+      selection: { kind: "block" as const, path: { slot: "main" as const, section: 1, column: 0, block: 0 } },
+    };
+    const chosen = second.columns[0]!.blocks[0]!;
+
+    const next = editorReducer(state, { type: "deleteSection", path: { slot: "main", section: 0 } });
+
+    // This used to clear the selection outright, which threw away a Block the Author was
+    // editing because a different Section was removed.
+    expect(next.selection).toEqual({ kind: "block", path: at(0) });
+    expect(findBlockPath(next.layout, chosen.id)).toEqual(at(0));
+  });
+
+  it("clears the selection when the Section holding the selected Block is deleted", () => {
+    const state = { ...threeBlocks(), selection: { kind: "block" as const, path: at(1) } };
+
+    const next = editorReducer(state, { type: "deleteSection", path: { slot: "main", section: 0 } });
+
+    expect(next.selection).toBeNull();
+  });
+});

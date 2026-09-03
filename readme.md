@@ -166,7 +166,7 @@ mimnets/                            ← this repo (the product)
 ├── packages/
 │   ├── core/          layout schema, block registry, renderer, storage adapter
 │   ├── admin/         the Dashboard and the Editor
-│   └── blocks/        standard Block Types: heading, text, image, video, logo, menu
+│   └── blocks/        the 14 standard Block Types, heading through pricing plan
 └── starter/           the thin app cloned to create a Site
 
 client-site/                       ← a clone of starter/

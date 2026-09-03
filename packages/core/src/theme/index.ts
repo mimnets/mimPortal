@@ -22,6 +22,16 @@ export interface Theme {
      */
     accent: string;
     onAccent: string;
+    /**
+     * The brand colours as *text on the page*, moved far enough to be legible.
+     *
+     * A colour chosen for a button is chosen to be seen; read as a paragraph it often is not.
+     * These are derived by `completeTheme` and never asked for, exactly as onPrimary and
+     * onAccent are — a client should not have to know what a contrast ratio is to pick a
+     * heading colour, and a Theme that offers an unreadable option has offered a mistake.
+     */
+    primaryText: string;
+    accentText: string;
     border: string;
   };
   fonts: {
@@ -52,6 +62,8 @@ export const defaultTheme: Theme = {
     onPrimary: "#ffffff",
     accent: "#f0568c",
     onAccent: "#ffffff",
+    primaryText: "#2f5ad6",
+    accentText: "#b8285e",
     border: "#e4e4e9",
   },
   fonts: {
@@ -168,6 +180,64 @@ export type ThemeInput = z.infer<typeof themeSchema>;
  * The sRGB relative-luminance formula from WCAG. The 0.55 threshold is a shade above the
  * mathematical midpoint because white text on a mid-tone reads worse than black does.
  */
+/** Relative luminance, per WCAG. Shared by everything below that reasons about contrast. */
+function luminanceOf(hex: string): number {
+  const channel = (pair: string) => {
+    const value = parseInt(pair, 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  };
+
+  return (
+    0.2126 * channel(hex.slice(1, 3)) +
+    0.7152 * channel(hex.slice(3, 5)) +
+    0.0722 * channel(hex.slice(5, 7))
+  );
+}
+
+function contrastRatio(a: string, b: string): number {
+  const [light, dark] = [luminanceOf(a), luminanceOf(b)].sort((x, y) => y - x) as [number, number];
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * The same colour, moved until it is readable as text on `background`.
+ *
+ * A brand colour is chosen to be seen, not to be read: the Starter's own accent is #e05a26,
+ * which is 3.7:1 on white and therefore below the 4.5:1 that body text needs. The Editor
+ * offered it as a Block tone anyway, next to a note promising that nothing here can be
+ * off-brand — so the one option that made text hard to read was presented as the safe kind.
+ *
+ * Darkening or lightening in a straight line keeps the hue, which is the part a client
+ * recognises; the saturation and the character survive, only the value moves, and only as far
+ * as it has to. A colour that already passes is returned untouched.
+ */
+export function readableText(colour: string, background: string): string {
+  if (contrastRatio(colour, background) >= 4.5) return colour;
+
+  const towardsBlack = luminanceOf(background) > 0.5;
+  const [r, g, b] = [1, 3, 5].map((at) => parseInt(colour.slice(at, at + 2), 16)) as [
+    number,
+    number,
+    number,
+  ];
+
+  // Twenty steps is finer than the eye can follow and cheap enough to run at build time.
+  for (let step = 1; step <= 20; step += 1) {
+    const factor = towardsBlack ? 1 - step / 20 : step / 20;
+    const mix = (channel: number) =>
+      Math.round(towardsBlack ? channel * factor : channel + (255 - channel) * factor);
+
+    const candidate = `#${[mix(r), mix(g), mix(b)]
+      .map((value) => value.toString(16).padStart(2, "0"))
+      .join("")}`;
+
+    if (contrastRatio(candidate, background) >= 4.5) return candidate;
+  }
+
+  // Nothing on this hue works against this background; legibility wins over brand.
+  return towardsBlack ? "#111111" : "#ffffff";
+}
+
 export function readableOn(hex: string): string {
   const channel = (pair: string) => {
     const value = parseInt(pair, 16) / 255;
@@ -189,6 +259,11 @@ export function completeTheme(input: ThemeInput, base: Theme = defaultTheme): Th
       ...input.colors,
       onPrimary: input.colors.onPrimary ?? readableOn(input.colors.primary),
       onAccent: input.colors.onAccent ?? readableOn(input.colors.accent),
+      // The brand colours again, moved as far as they must be to be *read* on the page
+      // rather than seen on a button. Derived rather than asked for, like the two above:
+      // nobody should have to work out a contrast ratio to pick a heading colour.
+      primaryText: readableText(input.colors.primary, input.colors.background),
+      accentText: readableText(input.colors.accent, input.colors.background),
     },
     fonts: {
       body: input.fonts?.body ?? base.fonts.body,

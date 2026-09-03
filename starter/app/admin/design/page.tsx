@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { completeTheme } from "@mimnets/core";
 import { createDatabase, siteSettings } from "@mimnets/core/db";
 
 import { aiProvider, aiProviders, visionConfigured } from "../../../lib/ai";
@@ -7,13 +8,19 @@ import { requireDatabaseUrl } from "../../../lib/env";
 import { currentUser } from "../../../lib/session";
 import { DashboardShell } from "../DashboardShell";
 import {
+  applyBuiltInPreset,
   applyPreset,
   applyPresetTheme,
   generateFromImage,
   generatePresets,
+  listBuiltInPresets,
   resetTheme,
+  saveTheme,
 } from "../preset-actions";
+import { theme as fileTheme } from "../../../theme";
 import { DesignStudio } from "./DesignStudio";
+import { ReadyMade } from "./ReadyMade";
+import { ThemeEditor } from "./ThemeEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -39,8 +46,28 @@ export default async function DesignPage() {
 
   const provider = aiProvider();
 
+  // What the Site is wearing right now: the stored Theme if a design has been applied,
+  // otherwise the one in theme.ts.
+  const stored = settings?.theme;
+  const active = stored
+    ? completeTheme(stored as Parameters<typeof completeTheme>[0])
+    : fileTheme;
+
   return (
     <DashboardShell current="design" person={person} title="Design">
+      <ReadyMade presets={await listBuiltInPresets()} onApply={applyBuiltInPreset} />
+
+      <ThemeEditor
+        theme={{
+          colors: { ...active.colors },
+          fonts: { body: active.fonts.body, heading: active.fonts.heading },
+          radius: { base: active.radius.base },
+          spacing: { section: active.spacing.section, gutter: active.spacing.gutter },
+          measure: active.measure,
+        }}
+        onSave={saveTheme}
+      />
+
       <DesignStudio
         enabled={provider !== null}
         providerName={provider?.name ?? null}

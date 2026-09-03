@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAssistAction } from "@mimnets/core";
-import { assistPrompt, NoProviderAvailable } from "@mimnets/core/ai";
+import { ASSIST_ERROR, assistPrompt, NoProviderAvailable } from "@mimnets/core/ai";
 
 import { aiProvider, withinRateLimit } from "../../../lib/ai";
 import { requireUser } from "../../../lib/session";

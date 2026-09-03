@@ -234,9 +234,20 @@ export async function applySlotsToAllPages(pageId: string): Promise<number> {
 
   if (!source) throw new Error("That Page no longer exists.");
 
+  // Every Page, deliberately — that is what the caller asked for and what the button says.
+  // The only thing scoping it would achieve is a partial apply that nothing reports.
+  //
+  // `updatedAt` is set because every other mutation sets it, and a Page whose Header changed
+  // while its timestamp did not is a Page the Dashboard sorts wrongly and a stale cache has
+  // no reason to drop. The layout document is untouched, so `revision` is left alone: it
+  // guards writes to the layout, and nothing here writes one.
   const changed = await db
     .update(pages)
-    .set({ headerSlotId: source.headerSlotId, footerSlotId: source.footerSlotId })
+    .set({
+      headerSlotId: source.headerSlotId,
+      footerSlotId: source.footerSlotId,
+      updatedAt: new Date(),
+    })
     .returning({ id: pages.id });
 
   revalidatePath("/", "layout");

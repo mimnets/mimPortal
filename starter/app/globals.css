@@ -777,3 +777,107 @@ h3.mn-heading {
     align-items: center;
   }
 }
+
+/* ---- Block appearance ------------------------------------------------------
+   Text colour and typeface, chosen per Block from the Theme's own tokens. There
+   is no colour picker anywhere in this product on purpose: a value that is not
+   a token is a value the Theme cannot change, and a Site that can be given one
+   is a Site a client can take off-brand. */
+
+/* The readable variants, not the brand ones. A brand colour is picked to be seen
+   on a button; read as a paragraph it is often below the 4.5:1 body text needs —
+   the Starter's own accent is 3.7:1 on white. These are the same hues moved only
+   as far as legibility requires, derived in theme.ts rather than chosen. */
+.mn-block[data-tone="muted"] { color: var(--mn-color-muted); }
+.mn-block[data-tone="primary"] { color: var(--mn-color-primary-text); }
+.mn-block[data-tone="accent"] { color: var(--mn-color-accent-text); }
+
+/* Inside a painted Section the ground is no longer the page, so the readable
+   variants are wrong there too — and a primary Block in a primary Section was
+   painting the colour on itself, which is not low contrast but none at all.
+   Within a band, the text colour that band already established is the only
+   correct answer, so these tones stop overriding it. */
+.mn-section[data-tone="primary"] .mn-block[data-tone],
+.mn-section[data-tone="dark"] .mn-block[data-tone] {
+  color: inherit;
+}
+
+/* Headings inherit rather than keeping their own colour, or setting the tone on
+   a Block containing one would appear to do nothing. */
+.mn-block[data-tone] .mn-heading,
+.mn-block[data-tone] .mn-eyebrow,
+.mn-block[data-tone] .mn-muted,
+.mn-block[data-tone] .mn-text p {
+  color: inherit;
+}
+
+.mn-block[data-font="heading"],
+.mn-block[data-font="heading"] .mn-text p {
+  font-family: var(--mn-font-heading);
+}
+
+.mn-block[data-font="body"],
+.mn-block[data-font="body"] .mn-heading {
+  font-family: var(--mn-font-body);
+}
+
+/* ---- Reveal on scroll ------------------------------------------------------
+   Scroll-driven CSS, with no JavaScript and no observer.
+
+   Two guards, and the order matters. Content is visible by default and the
+   animation only ever applies inside @supports, so a browser without
+   scroll-timelines shows the page normally rather than showing nothing — the
+   failure mode of every reveal-on-scroll script ever written. And it is off
+   entirely for anyone who has asked their system to reduce motion. */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .mn-block[data-animate="fade"],
+    .mn-block[data-animate="rise"] {
+      animation: linear both;
+      animation-timeline: view();
+      /* Finishes well before the Block reaches the middle of the screen, so it is
+         readable by the time anyone looks at it. */
+      animation-range: entry 5% cover 30%;
+    }
+
+    .mn-block[data-animate="fade"] {
+      animation-name: mn-fade-in;
+    }
+
+    .mn-block[data-animate="rise"] {
+      animation-name: mn-rise-in;
+    }
+  }
+}
+
+@keyframes mn-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mn-rise-in {
+  from { opacity: 0; transform: translateY(1.25rem); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---- Skip link --------------------------------------------------------------
+   Off-screen until focused, rather than display:none — an element that is not
+   displayed is not focusable either, which is how most skip links come to do
+   nothing at all. */
+
+.mn-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--mn-color-primary);
+  color: var(--mn-color-on-primary);
+  text-decoration: none;
+  border-bottom-right-radius: var(--mn-radius);
+}
+
+.mn-skip:focus {
+  left: 0;
+}

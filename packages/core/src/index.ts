@@ -14,6 +14,10 @@ export { createRegistry } from "./blocks/registry";
 export type { BlockRegistry } from "./blocks/registry";
 
 export {
+  BLOCK_ANIMATIONS,
+  BLOCK_FONTS,
+  BLOCK_TONES,
+  blockStyleDefaults,
   COLUMN_LAYOUTS,
   SECTION_PADDINGS,
   SECTION_TONES,
@@ -25,7 +29,11 @@ export {
   sectionDefaults,
 } from "./layout/schema";
 export type {
+  BlockAnimation,
+  BlockFont,
   BlockInstance,
+  BlockStyle,
+  BlockTone,
   ColumnLayout,
   ColumnNode,
   PageLayout,

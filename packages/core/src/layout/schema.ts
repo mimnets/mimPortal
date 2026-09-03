@@ -57,10 +57,41 @@ export interface SectionBackground {
   overlay: number;
 }
 
+/**
+ * How a Block is presented, separate from what it says.
+ *
+ * Every option here resolves to a Theme token. There is no colour picker and there will not
+ * be one: a client who can set any colour will set one that does not belong to the Site,
+ * and the whole argument of this product is constraints they cannot break — the same
+ * reasoning that gave Sections four tones instead of a palette (ADR-0013).
+ */
+export const BLOCK_TONES = ["default", "muted", "primary", "accent"] as const;
+export type BlockTone = (typeof BLOCK_TONES)[number];
+
+/** Which of the Theme's two families. A Text Block set in the display face reads as a lead. */
+export const BLOCK_FONTS = ["default", "heading", "body"] as const;
+export type BlockFont = (typeof BLOCK_FONTS)[number];
+
+/** Reveal on scroll. Deliberately three, and all of them quiet. */
+export const BLOCK_ANIMATIONS = ["none", "fade", "rise"] as const;
+export type BlockAnimation = (typeof BLOCK_ANIMATIONS)[number];
+
+export interface BlockStyle {
+  tone: BlockTone;
+  font: BlockFont;
+  animate: BlockAnimation;
+}
+
 export interface BlockInstance {
   id: string;
   type: string;
   props: Record<string, unknown>;
+  style: BlockStyle;
+}
+
+/** What a Block looks like before anybody styles it. */
+export function blockStyleDefaults(): BlockStyle {
+  return { tone: "default", font: "default", animate: "none" };
 }
 
 export interface ColumnNode {

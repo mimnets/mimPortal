@@ -48,6 +48,16 @@ export function unconfiguredEmail(): EmailAdapter {
   };
 }
 
+/**
+ * How long any adapter may spend sending one message.
+ *
+ * A visitor's form POST waits on this. The enquiry is written to the database before
+ * delivery is attempted, so a provider that never answers costs a notification and a row
+ * marked undelivered — but only if the attempt is allowed to end. Ten seconds is far more
+ * than a working provider needs and far less than a visitor will wait.
+ */
+export const SEND_TIMEOUT_MS = 10_000;
+
 /** A very small check, to catch a mistyped recipient before an adapter is asked to send. */
 export function looksLikeEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());

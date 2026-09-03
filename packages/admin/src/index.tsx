@@ -11,3 +11,4 @@ export { AssistProvider, useAssist } from "./assist-context";
 export type { AssistSettings } from "./assist-context";
 export { readImageForDesign } from "./image-palette";
 export type { ReadImageResult } from "./image-palette";
+export { BlockBoundary } from "./BlockBoundary";

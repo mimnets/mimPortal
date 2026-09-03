@@ -15,8 +15,24 @@ import { assistPrompt } from "./assist";
  * Skipped, not failed, when OPENROUTER_API_KEY is unset, so a contributor without a key
  * still gets a green suite.
  */
+/**
+ * Live-provider tests, off unless asked for: `AI_LIVE_TESTS=1 pnpm test`.
+ *
+ * These call a real model over the network, and that makes them unreliable in a way that has
+ * nothing to do with this codebase. Free models are rate limited, retired without notice and
+ * return 503 under load — the same properties ADR-0014 built the provider chain around — so a
+ * red result here means "OpenRouter is busy" at least as often as it means "something broke".
+ * Worse, the suite competes with itself: vitest runs files in parallel, so every live file
+ * hits the same throttled account at once and they take each other down.
+ *
+ * A suite that goes red for reasons unrelated to the code is the exact failure I-08 was about,
+ * and it costs more than the coverage is worth on every run. So they are opt-in, the same way
+ * the container-backed suites skip without their container. Run them before shipping anything
+ * that touches the AI stack, and on a schedule rather than on every push.
+ */
 const key = process.env.OPENROUTER_API_KEY;
-const suite = key ? describe : describe.skip;
+const live = process.env.AI_LIVE_TESTS === "1";
+const suite = key && live ? describe : describe.skip;
 
 /** Kept in step with DEFAULT_FREE_MODELS in starter/lib/ai.ts. */
 const FREE_MODELS = [

@@ -11,7 +11,7 @@ export {
 export { providerChain, collect } from "./chain";
 export { ProviderError, NoProviderAvailable } from "./provider";
 export type { AiProvider, AiRequest } from "./provider";
-export { ASSIST_ACTIONS, ASSIST_SYSTEM, assistPrompt } from "./assist";
+export { ASSIST_ACTIONS, ASSIST_ERROR, ASSIST_SYSTEM, assistPrompt } from "./assist";
 export type { AssistContext } from "./assist";
 export type { AssistAction } from "./actions";
 export {

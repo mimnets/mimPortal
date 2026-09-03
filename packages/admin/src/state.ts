@@ -8,7 +8,8 @@ import type {
   SectionNode,
   SlotName,
 } from "@mimnets/core";
-import { columnCount, sectionDefaults } from "@mimnets/core";
+import { blockStyleDefaults, columnCount, sectionDefaults } from "@mimnets/core";
+import type { BlockStyle } from "@mimnets/core";
 
 export interface BlockPath {
   slot: SlotName;
@@ -43,6 +44,7 @@ export interface EditorState {
 export type EditorAction =
   | { type: "select"; selection: Selection }
   | { type: "setProp"; path: BlockPath; key: string; value: unknown }
+  | { type: "setBlockStyle"; path: BlockPath; style: Partial<BlockStyle> }
   | { type: "addBlock"; target: Omit<DropTarget, "index">; blockType: AnyBlockType }
   | { type: "deleteBlock"; path: BlockPath }
   | { type: "moveBlock"; from: BlockPath; to: DropTarget }
@@ -78,6 +80,7 @@ export function newSection(layout: ColumnLayout): SectionNode {
 export function newBlock(blockType: AnyBlockType): BlockInstance {
   return {
     id: newId("blk"),
+    style: blockStyleDefaults(),
     type: blockType.name,
     props: blockType.propsSchema.parse({}) as Record<string, unknown>,
   };
@@ -142,6 +145,39 @@ function samePath(a: BlockPath, b: BlockPath): boolean {
 }
 
 /**
+ * Follows the selection through a change to the document's shape.
+ *
+ * A selection is a *position* — slot, section, column, index — and a position means a
+ * different Block after anything above it moves. Deleting the Block at index 0 while index 1
+ * was selected left the selection reading 1, which now addressed what had been index 2: the
+ * settings panel silently retargeted, and the Author edited a Block they had not chosen.
+ * Dragging past the selection did the same thing.
+ *
+ * So the id is resolved *before* the mutation and the path rebuilt from it after. That fixes
+ * the whole class rather than the two cases that were noticed, and a Block that no longer
+ * exists clears the selection instead of pointing at its neighbour.
+ *
+ * Only Block selections need this. A Section selection is already a position that Sections
+ * moving would break in the same way, but nothing in the Editor reorders Sections while one
+ * is selected without going through `select` itself.
+ */
+function followSelection(before: PageLayout, after: PageLayout, selection: Selection): Selection {
+  if (!selection) return null;
+
+  if (selection.kind === "block") {
+    const selected = blockAt(before, selection.path);
+    if (!selected) return null;
+    const path = findBlockPath(after, selected.id);
+    return path ? { kind: "block", path } : null;
+  }
+
+  const selected = sectionAt(before, selection.path);
+  if (!selected) return null;
+  const path = findSectionPath(after, selected.id);
+  return path ? { kind: "section", path } : null;
+}
+
+/**
  * Every action produces a new layout document. The Editor holds the whole tree in memory
  * and saves it whole (ADR-0004), so there is no partial state to reconcile.
  */
@@ -186,9 +222,10 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const column = columnAt(layout, action.path);
       if (!column) return state;
       column.blocks.splice(action.path.block, 1);
-      const stillSelected =
-        state.selection?.kind === "block" && samePath(state.selection.path, action.path);
-      return { layout, dirty: true, selection: stillSelected ? null : state.selection };
+
+      // The deleted Block is gone from `layout`, so following the selection through resolves
+      // to null for it and to a corrected path for every Block that shifted up behind it.
+      return { layout, dirty: true, selection: followSelection(state.layout, layout, state.selection) };
     }
 
     case "moveBlock": {
@@ -204,10 +241,22 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       // out, which is what a sortable drop reports. No shifting is needed either way.
       const index = Math.max(0, Math.min(action.to.index, destination.blocks.length));
       destination.blocks.splice(index, 0, moved);
+
+      // Reordering does not change what is selected. Dragging the selected Block follows it
+      // to its new home; dragging a different one leaves the panel where it was, with its
+      // path corrected. Only a drag with nothing selected selects what was dragged, because
+      // then there is nothing to preserve and the Author has just handled that Block.
       return {
         layout,
         dirty: true,
-        selection: { kind: "block", path: { ...action.to, block: index } },
+        selection: state.selection
+          ? followSelection(state.layout, layout, state.selection)
+          : {
+              kind: "block",
+              // Built field by field rather than spread from the drop target, which carries
+              // an `index` that a BlockPath has no business holding.
+              path: { slot: action.to.slot, section: action.to.section, column: action.to.column, block: index },
+            },
       };
     }
 
@@ -227,7 +276,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case "deleteSection": {
       const layout = structuredClone(state.layout);
       layout.slots[action.path.slot].splice(action.path.section, 1);
-      return { layout, dirty: true, selection: null };
+
+      // Clearing the selection outright was safe but wrong: deleting the first Section threw
+      // away a selection on a Block in the third. Following it keeps that, and still clears
+      // when what was selected is what was deleted.
+      return { layout, dirty: true, selection: followSelection(state.layout, layout, state.selection) };
     }
 
     case "moveSection": {
@@ -239,8 +292,19 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return {
         layout,
         dirty: true,
-        selection: { kind: "section", path: { slot: action.slot, section: action.to } },
+        selection: state.selection
+          ? followSelection(state.layout, layout, state.selection)
+          : { kind: "section", path: { slot: action.slot, section: action.to } },
       };
+    }
+
+    case "setBlockStyle": {
+      const layout = structuredClone(state.layout);
+      const block = blockAt(layout, action.path);
+      if (!block) return state;
+
+      block.style = { ...blockStyleDefaults(), ...block.style, ...action.style };
+      return { ...state, layout, dirty: true };
     }
 
     case "setSectionStyle": {

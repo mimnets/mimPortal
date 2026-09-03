@@ -70,6 +70,34 @@ export async function resolveLayout(layout: PageLayout, refs: PageSlotRefs): Pro
 }
 
 /**
+ * The inverse of `resolveLayout`, for the way back in.
+ *
+ * The Editor is handed the *resolved* document, so what it posts back carries a copy of
+ * whichever shared Slot was rendered in its place. Writing that copy would destroy the
+ * Page's own Header — the sections `resolveLayout` promises to leave untouched — and, for an
+ * Author, would trip the locked-Slot check on a difference they never made. A Slot the Page
+ * does not own therefore keeps what is already stored, whoever is saving and whatever they
+ * sent. Changing a shared Slot happens in Headers & Footers, and nowhere else.
+ */
+export function restoreOwnSlots(
+  incoming: PageLayout,
+  stored: PageLayout,
+  refs: PageSlotRefs,
+): PageLayout {
+  const sharedIds: Record<ShareableSlot, string | null> = {
+    header: refs.headerSlotId,
+    footer: refs.footerSlotId,
+  };
+
+  const shared = SHAREABLE_SLOTS.filter((slot) => sharedIds[slot]);
+  if (shared.length === 0) return incoming;
+
+  const result: PageLayout = { ...incoming, slots: { ...incoming.slots } };
+  for (const slot of shared) result.slots[slot] = stored.slots[slot];
+  return result;
+}
+
+/**
  * A shared Slot's sections are validated the same way a Page's are, through the same
  * registry. A Slot holding a Block Type this Site no longer registers renders as empty
  * rather than taking down every Page that uses it — which, for a Header, is all of them.
@@ -79,11 +107,22 @@ export function parseSections(row: SharedSlotRow): PageLayout["slots"]["header"]
     version: 1,
     slots: { header: row.sections, main: [], sidebar: [], footer: [] },
   };
-  const { layout, error } = registry.safeParseLayout(wrapped);
+  const { layout, error, dropped } = registry.safeParseLayout(wrapped);
+
   if (error) {
     console.error(`[mimnets] Shared Slot "${row.slug}" failed validation: ${error}`);
     return null;
   }
+
+  // A Block that will not parse is dropped, not fatal. Returning null here would blank a
+  // Header on every Page that uses it because one Block Type was removed from the registry.
+  for (const block of dropped) {
+    console.error(
+      `[mimnets] Shared Slot "${row.slug}" dropped a Block` +
+        `${block.type ? ` of type "${block.type}"` : ""}${block.id ? ` (${block.id})` : ""}: ${block.reason}`,
+    );
+  }
+
   return layout.slots.header;
 }
 

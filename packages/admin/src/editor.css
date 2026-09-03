@@ -733,6 +733,69 @@
   justify-content: space-between;
 }
 
+/* Choosing a Page instead of typing its path. Each Page is one target rather than a
+   dropdown plus a confirm, because adding three links should be three clicks. */
+
+.mn-menu-add-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mn-menu-add-pages h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+  color: #6b6b78;
+}
+
+.mn-menu-pages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mn-menu-page {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+}
+
+.mn-menu-page:hover {
+  border-color: #b9b9c2;
+}
+
+.mn-menu-page:focus-visible {
+  outline: 2px solid #1f6feb;
+  outline-offset: 2px;
+}
+
+.mn-menu-page-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mn-menu-page-title {
+  font-weight: 500;
+}
+
+.mn-menu-page code {
+  font-size: 0.75rem;
+  color: #8a8a96;
+}
+
 /* ---- Media -----------------------------------------------------------------
    The library, and the image field that opens it. Thumbnails are the whole
    point: an Author choosing a photograph should be looking at photographs, not
@@ -1271,5 +1334,188 @@
   font-weight: 700;
   padding: 0.125rem 0.25rem;
   border: 1px solid #3b6cf6;
+  border-radius: 4px;
+}
+
+/* ---- Ready-made designs ----------------------------------------------------
+   A gallery. Each card shows a miniature built from the Theme's own colours,
+   because what an Owner is choosing between is how a page will look. */
+
+.mn-preset-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.mn-preset-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Stacked bands in the design's own palette — the shape of a page built from it. */
+.mn-preset-thumb {
+  display: flex;
+  flex-direction: column;
+  height: 7rem;
+  border-bottom: 1px solid #e2e2e6;
+}
+
+.mn-preset-thumb span {
+  display: block;
+  width: 100%;
+}
+
+.mn-preset-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.875rem;
+}
+
+.mn-preset-body strong {
+  font-size: 1.0625rem;
+}
+
+.mn-preset-body .mn-button {
+  margin-top: 0.25rem;
+  align-self: flex-start;
+}
+
+.mn-swatch.is-small > span {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 3px;
+}
+
+/* ---- The theme editor ---- */
+
+.mn-colour-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+
+.mn-colour {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+}
+
+/* A native colour input, sized to be a swatch rather than a form control. */
+.mn-colour input[type="color"] {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid #dcdce2;
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+.mn-colour span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mn-colour small {
+  font-size: 0.6875rem;
+  color: #9a9aa6;
+}
+
+.mn-colour code {
+  font-size: 0.6875rem;
+  color: #6b6b76;
+}
+
+/* ---- When something breaks ---------------------------------------------------
+   Two audiences, two tones. A Block that threw is a small, local, recoverable
+   problem and says so in place; a whole screen that failed needs to tell an
+   Author what happened to their work before anything else. */
+
+.mn-block-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem 1.15rem;
+  border: 1px dashed #d4a5a0;
+  border-radius: 6px;
+  background: #fdf6f5;
+  color: #5c2b26;
+}
+
+.mn-block-error strong {
+  font-size: 0.9rem;
+}
+
+.mn-block-error p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #7a4b45;
+}
+
+.mn-block-error code {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #f6e6e4;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.mn-error-page {
+  max-width: 34rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 2rem 0;
+}
+
+.mn-error-page h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.mn-error-page p {
+  margin: 0;
+  color: #56646f;
+}
+
+.mn-error-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem !important;
+}
+
+.mn-error-ref {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #8a8a96 !important;
+}
+
+/* An unfinished field says so where the field is, rather than failing quietly at
+   publish time or, worse, on the live Site. */
+
+.mn-field-warning {
+  margin: 0;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: #7a5a00;
+  background: #fdf6e3;
+  border: 1px solid #ecd9a0;
   border-radius: 4px;
 }

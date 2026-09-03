@@ -1,34 +1,26 @@
-# Handoff — 19 August 2026
+# Handoff — 3 September 2026
 
-Where Mimnets stands at the end of today, what is not finished, and where to pick up
-tomorrow. Read this first; it is written to be the only thing you need before starting.
+Where Mimnets stands, what is not finished, and where to pick up. Read this first; it is
+written to be the only thing you need before starting.
 
-## Where to start tomorrow
+The previous handoff was dated 19 August and went eleven commits stale. If you are reading a
+copy of that one, discard it: it presents M7 as "next up" and M7 shipped the same afternoon.
 
-**One sign-in closes out both M6 and M6.5.** Neither is ticked, and neither is waiting on
-code — they are waiting on somebody being logged in, which nobody has been. Twenty minutes:
+## Where to start
 
-1. `docker compose up -d db` then `pnpm dev`, and sign in at http://localhost:3000/admin.
-2. **Media → Upload** a photograph. Check it lists with the right pixel size, then place it
-   on a Page with the image Block and publish. That is the last clause of M6.
-3. **Enquiries.** Submit the form on `/contact` as a visitor first, then look at that screen
-   while signed in. That is the last clause of M6.5.
-4. Look at the Site. It is not the austere cream-and-serif thing it was — the demo is now a
-   landing page with a dark hero, a jade statistics band and a call to action, and the
-   Editor can set a Section's tone, height and background image.
-5. Then either put it in front of a real client — which is what v1 was for — or pick up
-   **M7, the AI writing assistant**, or finish **M8.5**'s remaining six Block Types
-   ([docs/ROADMAP.md](./docs/ROADMAP.md)).
+**The two sign-in checks.** They have been the oldest open item since 19 August, they take
+twenty minutes, and they are the only thing between two milestones and a tick. Nothing is
+waiting on code; both are waiting on somebody being logged in.
 
-If you want the notification email to actually arrive while testing, point the Site at the
-local mail container: `docker compose --profile mail up -d mail`, then the SMTP block from
-`starter/.env.example` with `SMTP_HOST=localhost` and `SMTP_PORT=1025`. Its inbox is at
-http://localhost:8025. Real setup, for a real Site, is in [docs/EMAIL.md](./docs/EMAIL.md).
+1. `docker compose up -d db`, `pnpm dev`, sign in at http://localhost:3000/admin.
+2. **Media → Upload** a photograph. Check it lists at the right pixel size, place it on a
+   Page with the image Block, publish. That is the last clause of **M6**.
+3. **Enquiries.** Submit the form on `/contact` as a visitor, then look at that screen while
+   signed in. That is the last clause of **M6.5**.
+
+After that the audit is behind you and everything left is a feature. See *What is next*.
 
 ## What exists today
-
-Nine milestones, each verified against a running Site and a real database rather than
-assumed. Three carry a warning rather than a tick.
 
 | | Milestone | What it means |
 | --- | --- | --- |
@@ -36,172 +28,165 @@ assumed. Three carry a warning rather than a tick.
 | ✅ | **M1** Layout engine | Slot → Section → Column → Block as one validated JSON document; `defineBlock`; renderer |
 | ✅ | **M2** The Editor | Split view, drag between Columns and Slots, forms generated from field declarations |
 | ✅ | **M3** Draft, publish, history | Edits invisible until published; every publish snapshots; restore into the draft |
-| ✅ | **M4** Auth, roles, installer | Better Auth, Owner/Author, Slot locking enforced server-side, two-mode web installer |
+| ✅ | **M4** Auth, roles, installer | Better Auth, Owner/Author, Slot locking enforced server-side, web installer |
 | ✅ | **M5** Pages, Menus, Theme | Path routing, the Menu entity, `theme.ts` → CSS variables, responsive navigation |
 | ⚠️ | **M6** Media and SEO | StorageAdapter, uploads, media library, per-Page SEO, sitemap, robots — one clause unverified |
 | ⚠️ | **M6.5** Forms and email | Contact Block, enquiries in the Dashboard, pluggable spam checks, EmailAdapter — one clause unverified |
-| ⚠️ | **M8.5** Block library | Eight composition Blocks, Section tones, a Theme built around them — started early, six Blocks still missing |
+| ✅ | **M7** AI writing assistant | Rewrite, shorten, alt text, search descriptions, over a chain of providers (ADR-0014) |
+| ❌ | **M8** Packaging, Site two | **Not started.** The milestone that proves ADR-0001 earned its cost |
+| ⚠️ | **M8.5** Block library | 14 Block Types, Section tones, a Theme built around them — six Block Types still missing |
+| ✅ | **M9** Presets | Generate a Theme and Pages together, validated against the registry before they land |
 
-### Proven, not assumed
+Shipped since the last handoff, none of it recorded there: M7, Shared Headers and Footers
+(ADR-0015), M9 Presets, design-from-an-image, and per-Block text colour and typeface.
 
-Yesterday's list still holds. Added today:
+**M8 is the gap worth naming.** The roadmap has said since M0 that v1 ends after M8, and M8
+is what proves the packaged-template architecture works — fix one bug in `packages/core`,
+publish, upgrade two Sites. Everything built since M7 rests on an assumption that has never
+been tested against a second Site.
 
-- **The mobile drawer opens.** Yesterday's open question, driven at 390px in a real browser:
-  tapping the hamburger opens the panel, and all three links land on screen.
-- **The drawer is reachable without a mouse — now.** It was not. The checkbox behind it was
-  `display: none`, which takes an element out of the focus order entirely, so a keyboard user
-  had no way to open the menu and no way to reach any link below 720px. Fixed, and verified
-  by tabbing to it and pressing Space.
-- **The S3 adapter signs correctly**, tested against a real S3-compatible server, including a
-  control that proves a wrong secret is rejected with a 403.
-- **The image-size reader works on real files** — PNG, JPEG, WebP and GIF encoded by a
-  browser at a known size, not headers hand-written to match the parser.
-- **`/sitemap.xml` lists exactly the published Pages.** Checked against a Site carrying a
-  deliberately unpublished Page: three listed, the draft absent, and a visitor asking for it
-  gets a 404.
-- **The media route cannot be walked out of.** Three traversal attempts refused, no `.env`
-  leaked.
-- **A contact form works end to end with no JavaScript.** A visitor filled it in a real
-  browser, was thanked, and the notification arrived at the Owner's address through a real
-  SMTP server — with reply-to set to whoever wrote in, so answering is one keystroke.
-- **Four bot attempts were refused**: no timestamp, honeypot filled, submitted instantly, and
-  a forged timestamp. None of them reached the database.
-- **An enquiry survived a broken mail server.** With SMTP pointed at a dead port, the visitor
-  was still thanked, the row was still written, and the failure was recorded on it. That is
-  the entire argument for storing before sending, and it is now tested rather than asserted.
-- **The form endpoint is not an open redirect.** It was one: `mn_return` is a hidden field,
-  so anybody could post an absolute URL and have the Site itself bounce the visitor onto
-  their domain. Spotted by watching a redirect during testing, fixed, and pinned by tests.
-- **Every request used to leak two database connections.** `createDatabase` opened a pool
-  per call and closed none, and Postgres refused everything at 100 — mid-session, with psql
-  locked out too. Pooled now, and verified by hammering four routes with sixty requests:
-  connections held at three, where the old behaviour would have opened about ninety.
-- **The Site looks designed.** Eight composition Blocks, Sections that carry a tone and a
-  background, and a Theme built around them. Checked at 1280px and at 390px, on all three
-  Pages, by looking at the rendered result rather than at the stylesheet — which is how the
-  broken logo strip, the muddy hero crop, the 130-character line length and the aside
-  floating halfway down the contact form were all found.
-- 108 tests pass, 16 of them against a real database, a real S3 server or a real mail server.
+## The audit is closed
 
-## Decisions you made today
+On 20 August the project was audited end to end, producing
+[specs/project-audit/research.md](./specs/project-audit/research.md) — **85 findings**, each
+with a file and a line number, banded High, Medium, Low and docs-versus-reality.
 
-1. **Local disk is the default storage, R2 is the opt-in.** Recorded as
-   [ADR-0012](./docs/adr/0012-local-disk-is-the-default-storage.md). A cloned Starter accepts
-   an upload with no account anywhere; four environment variables move a Site to a bucket,
-   and no Page needs editing because a layout stores keys rather than URLs. The cost is
-   written down honestly in [HOSTING.md](./docs/HOSTING.md): a Site on the disk is tied to
-   its machine, and on Vercel the disk is not an option at all.
-2. **Spam protection is pluggable.** The honeypot, the timing check and the per-IP rate limit
-   are a list in `starter/lib/spam.ts`, and adding a CAPTCHA means appending one signal to it
-   rather than editing the contact Block. The file says so, with a worked example.
-3. **Resend is the default email provider, SMTP the fallback.** Resend's API is one HTTP
-   POST, so the provider half needs no SDK — the same trade the S3 adapter made. SMTP costs
-   one dependency, because writing an SMTP client by hand means TLS and four authentication
-   mechanisms, which is a different kind of risk from signing a request. Setup for both,
-   including the DNS records Resend needs, is in [docs/EMAIL.md](./docs/EMAIL.md).
+**Twenty were taken on**: the whole High band, plus I-30, I-32 and I-48 promoted from Medium
+because they were security-shaped rather than merely untidy. **All twenty are closed**, on
+`audit/high-severity`, in six seams:
 
-4. **AI is not what makes a Site look good, and doing it first would have been a mistake.**
-   The question was whether a good-looking Site comes from AI. It does not: a generated
-   Preset can only arrange the Block Types that exist, so six of them produce six variations
-   of the same plain page. M8.5 says exactly this, and it is the prerequisite for M9 being
-   worth anything. Blocks and a Theme first; Presets on top.
+| Seam | Findings |
+| --- | --- |
+| Entry points, first pass | I-01 open mail relay, I-02 installer failing open, I-03 Shared Slots destroyed on save |
+| Test foundation | I-08 the suite failing without Docker, I-10 no coverage of any Draft/Published transition, plus CI |
+| Layout integrity | I-04 one bad Block blanking a Page, I-11 a stale tab overwriting a publish |
+| Entry points | I-07 reply-to header injection, I-30 `/media` serving the whole bucket, I-32 an unchecked Theme |
+| Resilience and the Editor | I-05 no error boundaries, I-20 no timeouts, I-06, I-17, I-18, I-19 |
+| Accessibility | I-09 no keyboard path, I-12 alt text, I-13 landmarks, I-14 contrast, I-15 announcements, I-16 focus trap |
+
+**Two findings were rejected rather than implemented**, with the reasoning in their commits.
+I-79 claimed the roadmap misreported the Block count; it did not. I-48 called
+`applySlotsToAllPages` "an UPDATE with no WHERE", which is what the function is for — the
+real omission was a missing `updatedAt`, and that was fixed instead.
+
+Seven problems the audit did not list were found while fixing the ones it did, including
+`deleteSection` discarding a selection in a Section it never touched, and `moveBlock` moving
+the settings panel away from the Block being edited.
+
+**Still open from the audit:** the Medium band beyond the three promoted, the whole Low band,
+and the documentation findings already closed. `research.md` remains the record.
+
+### Tests
+
+`pnpm test` — **246 passing, 7 skipped, about eight seconds.** It was 2 failing, 152 passing
+and red without Docker.
+
+The seven skips are the live-provider suites, off unless asked for:
+
+```bash
+AI_LIVE_TESTS=1 pnpm test     # calls a real model; slow and occasionally flaky by nature
+```
+
+They are opt-in because free models are rate limited and retired without notice, so they
+fail for reasons unrelated to the code — which is the failure I-08 was about, reintroduced
+once a run. Run them before shipping anything that touches the AI stack.
+
+**There are still no component tests.** The vitest environment is `node`, with no jsdom, so
+`BlockBoundary`, the focus trap and the keyboard sensor are verified in a browser rather than
+in CI. One of them shipped broken to review because of it.
 
 ## Not finished
 
 Honest list. None of it is hidden behind a green tick.
 
-- **Nobody has been signed in.** This is the only thing between two milestones and a tick,
-  and it blocks exactly two screens: the Upload button in Media, and the Enquiries list.
-  Everything underneath both is tested. See the top of this file.
-- **Nobody has sent through Resend.** The SMTP adapter is proven against a real mail server;
-  the Resend adapter is not proven against Resend, because that needs an account and a
-  verified domain. Its failure mode is loud — the enquiry is saved and the refusal written on
-  the row — but treat the first real Site's first enquiry as the test.
-- **Provisioning mode of the installer is still untested.** Unchanged since yesterday: the
-  no-database path writes `.env` and applies migrations, but this machine already had a
-  database configured, so it has never been run.
-- **An invalid layout still fails whole.** One bad Block renders an empty Page with an error
-  instead of dropping the offending Block and rendering the rest. Fine while you are the only
-  Author; wrong for a client Site. Worth fixing before the first handover.
-- **Six Block Types from M8.5 are still missing**: accordion, embed, image gallery,
-  carousel, location map, and Markdown prose with its sanitising renderer. The eight that
-  exist are enough for a landing page; a gallery is the first one a real client will ask for.
-- **The emoji in a feature grid are whatever the visitor's platform draws.** Seating each in
-  a tinted square makes the row read as a set, which is what lets the Block take an emoji
-  instead of shipping an icon font — but they are still not a designed icon set.
-- **A form's fields are fixed**: name, email, message. Enough for a brochure Site's contact
-  page and not enough for anything else. Making them editable is a repeater field on the
-  Block, and belongs with the rest of the Block work at M8.5.
-- **The rate limit counts accepted submissions only.** A flood that trips the honeypot every
-  time is refused every time but never accumulates, so it costs a database read per attempt.
-  Fine behind any host doing connection-level limiting; worth revisiting if a Site is ever
-  genuinely targeted.
-- **Deleting a file leaves the Pages that used it pointing at nothing.** Deliberate, and
-  argued in ADR-0012. There is no "where is this used?" view, which is the thing that would
-  make the confirmation dialog honest.
-- **AVIF and SVG upload without dimensions.** One needs a full ISOBMFF walk, the other has no
-  intrinsic pixel size. They render fine, just without width and height.
-- **Sidebar Slot has no styling of its own.** It renders, but no Page uses it meaningfully.
-- **No caching anywhere.** Every request reads the database. Deliberate until a Site needs
-  otherwise — though `/media` sets an immutable cache header, since a key is never reused.
-- **Deleting a Page deletes its history** (cascade), behind a confirmation.
+- **Nobody has been signed in.** Two milestones, two screens, twenty minutes. See the top.
+- **M8 has not been started**, and no second Site exists. v1 does not end until it has.
+- **Six Block Types from M8.5 are missing**: accordion, embed, image gallery, carousel,
+  location map, and Markdown prose with its sanitising renderer (ADR-0011). A carousel and a
+  gallery are the first two a real client asks for.
+- **The nav is one level deep**, deliberately (see `render/context.ts`). A client wanting a
+  dropdown means reopening that decision, and the comment there is right that hover intent,
+  keyboard traps and mobile behaviour make it harder than it looks.
+- **There is no lint.** ESLint cannot run here at all: TypeScript 7.0 is the native Go port
+  and ships a CLI with no compiler API, which typescript-eslint needs. Revisit at 7.1 rather
+  than adding a linter that cannot see types (I-64).
+- **No component tests.** See the note above.
+- **Nobody has sent through Resend.** SMTP is proven against a real mail server; Resend is
+  not, because that needs an account and a verified domain.
+- **Provisioning mode of the installer is still untested.** This machine already had a
+  database configured, so the no-database path has never been run.
+- **A form's fields are fixed**: name, email, message.
+- **Deleting a file leaves the Pages that used it pointing at nothing.** Deliberate, argued
+  in ADR-0012, but there is no "where is this used?" view.
+- **AVIF and SVG upload without dimensions.** They render; just without width and height.
+- **No caching anywhere.** Every request reads the database. Deliberate.
+- **The Medium and Low audit bands are untouched** — 56 findings. `research.md` has them all
+  with a file and a line number, so picking one up costs no investigation.
 
-Closed since yesterday: the mobile drawer is verified and keyboard-operable, `renamePage` has
-a UI on the new Page settings screen, and M6.5 exists.
+## What is next
 
-## Next up
+In the order agreed, and none of it started:
 
-**A Site is now deliverable.** M6.5 was the last thing standing between this and something
-you could hand to a paying client, and it is built. v1 itself is not finished — M7 and M8
-are still inside it, and the roadmap only says "v1 ends here" after M8.
-
-What is worth doing before either is not code:
-
-- The two sign-in checks at the top of this file.
-- Use it on something real. The roadmap has said since M0 that v1 ends before M8 and that a
-  real Site should come first. It is now worth doing — the gaps listed above are the kind
-  that only a real client surfaces.
-
-After that, **M7 — the AI writing assistant**: rewrite, shorten, alt text and SEO
-descriptions, acting on the selected Block's fields, streaming and cancellable, with the key
-held server-side and rate limited per Site. It is also where the provider abstraction that
-Presets later reuse gets built ([ADR-0007](./docs/adr/0007-ai-generated-presets.md)).
+1. **Finish M8.5** — carousel, accordion, image gallery, comparison table, social links row.
+   This is what turns "a plausible landing page" into "we could rebuild that client's Site",
+   and it is the prerequisite for a Preset being worth generating, exactly as M8.5's own text
+   has said since it was written.
+2. **Stock images.** Generated Presets ship with grey rectangles where photographs belong.
+   Behind a `StockAdapter`, in the same shape as StorageAdapter and EmailAdapter. Photos are
+   **downloaded into the Site's own media store at apply time**, never hotlinked — layouts
+   hold keys, not URLs (ADR-0012) — and fetching at apply time rather than generate time
+   means a Preset nobody chooses costs nothing. Media rows record where a photo came from so
+   the Dashboard can show which are still placeholders.
+3. **Effects and a demo page.** Section stagger, slide/scale/blur/wipe, speed as Gentle /
+   Normal / Brisk, parallax. Named options resolving to Theme tokens, never utility classes —
+   the rule from `1dac8e7` holds. Plus an ⓘ explaining each in plain words and a gallery at
+   `/admin/design/effects`, because choosing "Rise" today shows an Author nothing.
+4. **A preview panel in the Design tab**, so a Theme can be seen before it is applied.
+5. **AI provider and model settings.** Gemini and Grok by name, Groq and Mistral as presets
+   over the existing custom endpoint. Model chosen from each provider's live catalogue.
+   Site-wide default in Settings, per-job override kept in Design Studio. Keys stay in the
+   environment: the Settings screen chooses among what the environment already enabled, and
+   never stores a secret.
+6. **The blog** — the Markdown prose Block first, then posts with their own routing and a
+   listing Block. Collections generalise it later.
+7. **A Vercel deploy button** plus a Neon integration. Note that ADR-0012 rules out the local
+   disk on Vercel, so that template must require R2 or S3 rather than offer it.
 
 ## Things to know before you touch the code
 
-Yesterday's notes all still apply — read [CONTEXT.md](./CONTEXT.md), the ADRs record what was
-rejected and why, the registry cannot cross the server/client boundary, the database lives
-behind `@mimnets/core/db`, and server actions are the boundary rather than the Editor. Added:
-
-- **Storage and email live behind `@mimnets/core/storage` and `@mimnets/core/email`**, never
-  the root import, for the same reason the database does: they read the filesystem, hold API
-  keys and sign with `node:crypto`, and none of that belongs in a browser bundle.
+- Read [CONTEXT.md](./CONTEXT.md) first. It is a glossary and nothing else, and it now defines
+  **Enquiry** and the four **Install modes**, both of which are load-bearing.
+- The ADRs record what was rejected and why. Seventeen of them now.
+- The registry cannot cross the server/client boundary. The database lives behind
+  `@mimnets/core/db`; storage and email behind `@mimnets/core/storage` and
+  `@mimnets/core/email`, never the root import — they read the filesystem, hold API keys and
+  sign with `node:crypto`.
+- Server actions are the boundary, not the Editor.
 - **An image field holds a key, not a URL.** Blocks build their own URL from
-  `context.mediaBaseUrl`. If you find yourself putting an absolute URL into a layout, that is
-  the thing ADR-0012 exists to prevent.
-- **A contact form posts to a route handler, not to a server action.** It has to work with no
-  JavaScript, and a plain `<form method="post">` can only reach a URL. That constraint is
-  also why the result message is a query parameter rather than component state.
+  `context.mediaBaseUrl`. An absolute URL in a layout is what ADR-0012 exists to prevent.
+- **A contact form posts to a route handler, not a server action.** It has to work with no
+  JavaScript, and a plain `<form method="post">` can only reach a URL. That is also why the
+  result message is a query parameter rather than component state.
 - **Everything a form sends is attacker-controlled, hidden fields included.** The return path
-  is reduced to a path on this Site, and the timestamp is signed — an unsigned timestamp in a
-  hidden field is a suggestion. Both have tests; read them before changing either.
-- **Spam checks live in `starter/lib/spam.ts`**, as a list. That is the file to edit if a
-  Site starts getting spam, and it is deliberately not the contact Block.
+  is reduced to a path on this Site and the timestamp is signed. Both have tests; read them
+  before changing either. The recipient is no longer sent at all — see ADR-0016's sibling
+  reasoning in the I-01 commit.
+- **Spam checks live in `starter/lib/spam.ts`**, as a list. Adding a CAPTCHA means appending
+  one signal, not editing the contact Block.
 - **A bundler that cannot read a filesystem path statically traces the whole project into the
-  deploy** — every source file and the public folder, shipped as server code.
-  `starter/lib/storage.ts` carries a `turbopackIgnore` for exactly this, and the build warns
-  loudly if it is removed.
-- **The Editor reaches the media library through a prop, not an import.** `Editor` takes a
-  `media` bridge and puts it in React context; the image field reads it from there. Same
-  reason save and publish are props: the admin package cannot import a server action.
+  deploy.** `starter/lib/storage.ts` carries a `turbopackIgnore` for exactly this.
+- **The Editor reaches the media library through a prop, not an import.** Same reason save and
+  publish are props: the admin package cannot import a server action.
+- **A Slot the Page does not own is never written by a Page save** (ADR-0017). Shared Slots
+  change in Headers & Footers and nowhere else.
 
 ## Running it
 
 ```bash
 docker compose up -d db                        # Postgres, stack name mimnets-multisite
 pnpm dev                                       # http://localhost:3000
-pnpm seed                                      # three demo Pages, the main Menu, a placeholder image, a contact form
-pnpm test                                      # 108 tests
+pnpm seed                                      # three demo Pages, the main Menu, an image, a contact form
+pnpm test                                      # see the note on I-08 above
 pnpm typecheck                                 # 4 packages, strict
 pnpm build                                     # must stay warning-free
 
@@ -209,14 +194,12 @@ docker compose --profile storage up -d storage # MinIO on :9000, for the S3 adap
 docker compose --profile mail up -d mail       # Mailpit, SMTP on :1025, inbox on :8025
 ```
 
-Those last two back the tests that would otherwise have been mocks. Both suites skip rather
-than fail when their container is not running, so a green suite without Docker means twelve
-fewer tests rather than twelve passing ones — `pnpm test` prints the count, and it should say
-108.
+Those last two back the tests that would otherwise be mocks. Both suites skip rather than
+fail when their container is absent, so a green suite without Docker means fewer tests rather
+than more passing ones — `pnpm test` prints the count, and the count is the thing to read.
 
-One trap worth knowing: running `pnpm build` while `pnpm dev` is running leaves the dev
-server serving a broken shell, because the production build overwrites the `.next` directory
-underneath it. Stop dev first, or restart it afterwards.
+One trap: running `pnpm build` while `pnpm dev` is running leaves the dev server serving a
+broken shell, because the production build overwrites `.next` underneath it. Stop dev first.
 
 Signed in as `mdmonirulislammonir@gmail.com` (Owner). The Site is installed, so `/install`
 redirects away and public sign-up returns 403 — both by design.

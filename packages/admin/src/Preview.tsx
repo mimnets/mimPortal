@@ -5,6 +5,8 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import type { Dispatch } from "react";
 
+import { BlockBoundary } from "./BlockBoundary";
+
 import type {
   RenderContext,
   BlockInstance,
@@ -45,6 +47,31 @@ function isSelectedBlock(selection: Selection, path: BlockPath): boolean {
   );
 }
 
+/**
+ * Calls a Block Type's `render` from inside a component of its own.
+ *
+ * This exists so the boundary above it can do its job, and the distinction is not cosmetic.
+ * `blockType.render(props, context)` written inline is an ordinary function call made during
+ * *this* component's render, so a throw inside it belongs to BlockCard and unwinds past any
+ * boundary wrapped around the result. A boundary only catches what its descendants throw
+ * while rendering — so the call has to happen in a descendant.
+ *
+ * Verified by making a Block throw on purpose: inline, the whole Editor was replaced by the
+ * Dashboard's error screen and the unsaved draft went with it. Like this, the Block alone
+ * shows a message and everything around it keeps working.
+ */
+function RenderedBlock({
+  blockType,
+  props,
+  context,
+}: {
+  blockType: NonNullable<ReturnType<BlockRegistry["get"]>>;
+  props: BlockInstance["props"];
+  context: RenderContext;
+}) {
+  return <>{blockType.render(props, context)}</>;
+}
+
 function BlockCard({
   block,
   path,
@@ -66,6 +93,14 @@ function BlockCard({
       className={`mn-ed-block${selected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       onClick={(event) => {
+        // The preview renders Blocks with their real `render`, which is the point of it —
+        // and real Blocks emit real anchors. A Menu Block, a Button, a logo: clicking one to
+        // *select* it followed the link instead, leaving the Editor for /about and taking
+        // the unsaved draft with it, silently, because nothing here guards a navigation.
+        //
+        // Selecting is what a click in the preview means. Following a link is what the
+        // preview is for looking at, not for doing.
+        event.preventDefault();
         event.stopPropagation();
         dispatch({ type: "select", selection: { kind: "block", path } });
       }}
@@ -99,7 +134,18 @@ function BlockCard({
         </button>
       </div>
       <div className="mn-ed-block-body">
-        {blockType ? blockType.render(block.props, context) : <em>Unknown Block: {block.type}</em>}
+        {blockType ? (
+          // Keyed on the props, so a Block that threw on a half-typed value recovers by
+          // itself the moment the value becomes valid again.
+          <BlockBoundary
+            resetKey={JSON.stringify(block.props)}
+            label={blockType.label ?? block.type}
+          >
+            <RenderedBlock blockType={blockType} props={block.props} context={context} />
+          </BlockBoundary>
+        ) : (
+          <em>Unknown Block: {block.type}</em>
+        )}
       </div>
     </div>
   );

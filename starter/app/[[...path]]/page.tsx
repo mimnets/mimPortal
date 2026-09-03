@@ -109,8 +109,15 @@ export default async function PublicPage({
 
   return (
     <>
+      {/* First in the document and hidden until focused, so the first Tab on any Page offers
+          a way past the Header. With a Shared Header the same Menu appears on every Page,
+          and without this a keyboard user tabs the whole of it every time. */}
+      <a className="mn-skip" href="#main">
+        Skip to content
+      </a>
+
       <SlotView layout={resolved} slot="header" registry={registry} context={context} />
-      <main>
+      <main id="main">
         <SlotView layout={resolved} slot="main" registry={registry} context={context} />
         <SlotView layout={resolved} slot="sidebar" registry={registry} context={context} />
       </main>

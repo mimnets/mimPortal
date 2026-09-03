@@ -69,6 +69,18 @@ function makeField<TSchema extends z.ZodType>(
 const imageSchema = z.object({
   key: z.string().default(""),
   alt: z.string().default(""),
+  /**
+   * Whether this image carries no meaning a reader would miss.
+   *
+   * Empty alt text already means "decorative" to a screen reader, which is why a Page of
+   * undescribed photographs used to pass every check: forgetting produced the same markup as
+   * deciding. It cannot any more — an image is described, or it is deliberately marked as
+   * decoration, and the Editor can tell the two apart and say so.
+   *
+   * Defaulted so every image written before this still parses; those show as undescribed,
+   * which is what they are.
+   */
+  decorative: z.boolean().default(false),
   width: z.number().nullable().default(null),
   height: z.number().nullable().default(null),
 });
@@ -128,7 +140,7 @@ export const field = {
   },
 
   image(options: { label?: string; help?: string } = {}) {
-    const empty = { key: "", alt: "", width: null, height: null };
+    const empty = { key: "", alt: "", decorative: false, width: null, height: null };
     return makeField("image", options.label ?? "Image", imageSchema.default(empty), {
       help: options.help,
     });
