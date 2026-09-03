@@ -104,7 +104,7 @@ six values in `theme.ts` visibly rebrands every page without touching a Block.
 
 ---
 
-## M6 — Media and SEO ⚠️
+## M6 — Media and SEO ✅
 
 The `StorageAdapter` interface with an S3/R2 implementation and a local-disk implementation.
 Real image uploads with a media library in the Dashboard. Per-Page title, description and
@@ -120,14 +120,24 @@ published ones. An image stored as a key renders on the published Page through `
 and three path-traversal attempts against that route were refused. The S3 adapter signs its
 own requests and is tested against a real S3-compatible server.
 
-**Not yet done by hand:** nobody has clicked Upload in the Dashboard while signed in. Every
-layer beneath that click is tested — the rules that accept or reject a file, the key, the
-write, the row, the render — but the milestone's own standard is a browser, so it is not
-ticked.
+**Done by hand, 3 September.** A 1024×768 PNG was uploaded through Media while signed in and
+listed as `1024×768 · 161 KB · image/png` — the dimension reader parsing the real file rather
+than a header written to match it. Given alt text, placed on the Portfolio Page with the
+image Block, and published. It renders on the public Page as
+
+```html
+<img src="/media/2026/09/test-photo-m1fqqq.png"
+     alt="A soft diagonal gradient in blue and green" width="1024" height="768" ...>
+```
+
+which is the whole milestone in one line: the layout holds a key rather than a URL
+(ADR-0012), the width and height are there so nothing below shifts as the file arrives, and
+`/media` served it at 200 through the row-backed guard that stops the route handing out
+anything else in the bucket.
 
 ---
 
-## M6.5 — Forms and email ⚠️
+## M6.5 — Forms and email ✅
 
 A brochure Site without a working contact form is not deliverable, which is why this sits
 inside v1 rather than after it.
@@ -157,8 +167,16 @@ Also proven: an enquiry submitted while the mail server was unreachable was stil
 still thanked, with the delivery failure recorded on the row. That is the whole argument for
 storing before sending.
 
-**Not yet done by hand:** nobody has looked at the Enquiries screen while signed in. This is
-the same missing sign-in that leaves M6 unticked, and one session covers both.
+**Done by hand, 3 September.** A visitor filled in the contact form on `/contact` and was
+thanked — the result arriving as `?sent=contact`, a query parameter rather than component
+state, because the form has to work with no JavaScript. The enquiry is in the Dashboard with
+the sender's name, their address as a `mailto:` link, the time, the form slug and the Page it
+came from.
+
+The screen also says, in a banner, that no email is configured on this Site and where to fix
+it. That is the "store before sending" decision doing its job: the notification is the part
+that can fail, and it failing is explained rather than silent. The enquiry was never at
+risk.
 
 ---
 ## M7 — AI writing assistant ✅

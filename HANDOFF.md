@@ -8,17 +8,14 @@ copy of that one, discard it: it presents M7 as "next up" and M7 shipped the sam
 
 ## Where to start
 
-**The two sign-in checks.** They have been the oldest open item since 19 August, they take
-twenty minutes, and they are the only thing between two milestones and a tick. Nothing is
-waiting on code; both are waiting on somebody being logged in.
+**M8, or the Blocks.** Nothing is blocked, nothing is half-finished, and the audit is closed.
+Two things are worth doing before either, and neither is code — see *What is next*.
 
-1. `docker compose up -d db`, `pnpm dev`, sign in at http://localhost:3000/admin.
-2. **Media → Upload** a photograph. Check it lists at the right pixel size, place it on a
-   Page with the image Block, publish. That is the last clause of **M6**.
-3. **Enquiries.** Submit the form on `/contact` as a visitor, then look at that screen while
-   signed in. That is the last clause of **M6.5**.
-
-After that the audit is behind you and everything left is a feature. See *What is next*.
+The two sign-in checks that stood open since 19 August are done: M6 and M6.5 are ticked, and
+the roadmap now reads M0 through M7 and M9 all green. What is left in v1 is **M8** — publish
+the packages, clone the Starter into a second Site, fix one bug in `packages/core` and
+upgrade both. That is the milestone that proves ADR-0001 was worth its setup cost, and if
+upgrading turns out to be painful, that is the finding and it is still cheap to act on.
 
 ## What exists today
 
@@ -30,8 +27,8 @@ After that the audit is behind you and everything left is a feature. See *What i
 | ✅ | **M3** Draft, publish, history | Edits invisible until published; every publish snapshots; restore into the draft |
 | ✅ | **M4** Auth, roles, installer | Better Auth, Owner/Author, Slot locking enforced server-side, web installer |
 | ✅ | **M5** Pages, Menus, Theme | Path routing, the Menu entity, `theme.ts` → CSS variables, responsive navigation |
-| ⚠️ | **M6** Media and SEO | StorageAdapter, uploads, media library, per-Page SEO, sitemap, robots — one clause unverified |
-| ⚠️ | **M6.5** Forms and email | Contact Block, enquiries in the Dashboard, pluggable spam checks, EmailAdapter — one clause unverified |
+| ✅ | **M6** Media and SEO | StorageAdapter, uploads, media library, per-Page SEO, sitemap, robots |
+| ✅ | **M6.5** Forms and email | Contact Block, enquiries in the Dashboard, pluggable spam checks, EmailAdapter |
 | ✅ | **M7** AI writing assistant | Rewrite, shorten, alt text, search descriptions, over a chain of providers (ADR-0014) |
 | ❌ | **M8** Packaging, Site two | **Not started.** The milestone that proves ADR-0001 earned its cost |
 | ⚠️ | **M8.5** Block library | 14 Block Types, Section tones, a Theme built around them — six Block Types still missing |
@@ -99,7 +96,6 @@ in CI. One of them shipped broken to review because of it.
 
 Honest list. None of it is hidden behind a green tick.
 
-- **Nobody has been signed in.** Two milestones, two screens, twenty minutes. See the top.
 - **M8 has not been started**, and no second Site exists. v1 does not end until it has.
 - **Six Block Types from M8.5 are missing**: accordion, embed, image gallery, carousel,
   location map, and Markdown prose with its sanitising renderer (ADR-0011). A carousel and a
