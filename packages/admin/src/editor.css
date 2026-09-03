@@ -733,6 +733,69 @@
   justify-content: space-between;
 }
 
+/* Choosing a Page instead of typing its path. Each Page is one target rather than a
+   dropdown plus a confirm, because adding three links should be three clicks. */
+
+.mn-menu-add-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mn-menu-add-pages h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+  color: #6b6b78;
+}
+
+.mn-menu-pages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mn-menu-page {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: #fff;
+  border: 1px solid #e2e2e6;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+}
+
+.mn-menu-page:hover {
+  border-color: #b9b9c2;
+}
+
+.mn-menu-page:focus-visible {
+  outline: 2px solid #1f6feb;
+  outline-offset: 2px;
+}
+
+.mn-menu-page-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mn-menu-page-title {
+  font-weight: 500;
+}
+
+.mn-menu-page code {
+  font-size: 0.75rem;
+  color: #8a8a96;
+}
+
 /* ---- Media -----------------------------------------------------------------
    The library, and the image field that opens it. Thumbnails are the whole
    point: an Author choosing a photograph should be looking at photographs, not
