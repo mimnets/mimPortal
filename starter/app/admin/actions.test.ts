@@ -234,6 +234,107 @@ suite("what restoring does to a Page", () => {
   });
 });
 
+suite("a tab that has gone stale", () => {
+  let pageId: string;
+
+  beforeEach(async () => {
+    pageId = await newPage();
+  });
+
+  /** What the Editor holds: the Page's revision as it was when the screen was rendered. */
+  async function revision(): Promise<number> {
+    return (await readPage(pageId)).revision;
+  }
+
+  it("saves when it is writing against the current revision", async () => {
+    const next = await saveDraft(pageId, layoutSaying("On time"), await revision());
+
+    expect(headingOf((await readPage(pageId)).draftLayout)).toBe("On time");
+    expect(next).toBe(await revision());
+  });
+
+  it("keeps saving through a long session, because each save returns the next revision", async () => {
+    let held: number = await revision();
+    held = await saveDraft(pageId, layoutSaying("One"), held);
+    held = await saveDraft(pageId, layoutSaying("Two"), held);
+    await saveDraft(pageId, layoutSaying("Three"), held);
+
+    expect(headingOf((await readPage(pageId)).draftLayout)).toBe("Three");
+  });
+
+  it("refuses a save built on a revision somebody else has replaced", async () => {
+    const opened = await revision();
+
+    // Somebody else — another person, or the same person in another tab — saves first.
+    await saveDraft(pageId, layoutSaying("Their work"), opened);
+
+    await expect(saveDraft(pageId, layoutSaying("Overwriting them"), opened)).rejects.toThrow(
+      /changed somewhere else/,
+    );
+
+    // The point of the refusal: their work is still there.
+    expect(headingOf((await readPage(pageId)).draftLayout)).toBe("Their work");
+  });
+
+  it("refuses a publish from a stale tab, and leaves the public Page alone", async () => {
+    await publishPage(pageId, layoutSaying("What visitors see"));
+    const stale = (await readPage(pageId)).revision - 1;
+
+    await expect(
+      publishPage(pageId, layoutSaying("A version from before their edit"), stale),
+    ).rejects.toThrow(/changed somewhere else/);
+
+    const row = await readPage(pageId);
+    expect(headingOf(row.publishedLayout)).toBe("What visitors see");
+    // Refused before the transaction, so no snapshot was taken either.
+    expect(await listVersions(pageId)).toHaveLength(1);
+  });
+
+  it("skips the check when no revision is offered, for callers that have none", async () => {
+    await saveDraft(pageId, layoutSaying("No revision given"));
+
+    expect(headingOf((await readPage(pageId)).draftLayout)).toBe("No revision given");
+  });
+
+  /**
+   * The reason the revision is a column and the check is in the UPDATE's WHERE clause.
+   *
+   * Both of these read the same revision before either writes, so a check performed in
+   * JavaScript would pass for both and the second would silently replace the first. Postgres
+   * decides instead: the first UPDATE moves the revision, the second matches no row.
+   */
+  it("lets exactly one of two simultaneous saves through", async () => {
+    const shared = await revision();
+
+    const results = await Promise.allSettled([
+      saveDraft(pageId, layoutSaying("First writer"), shared),
+      saveDraft(pageId, layoutSaying("Second writer"), shared),
+    ]);
+
+    const won = results.filter((one) => one.status === "fulfilled");
+    const lost = results.filter((one) => one.status === "rejected");
+
+    expect(won).toHaveLength(1);
+    expect(lost).toHaveLength(1);
+    expect((lost[0] as PromiseRejectedResult).reason.message).toMatch(/changed somewhere else/);
+
+    // And the winner's work is what is stored — not a mixture, and not the loser's.
+    const stored = headingOf((await readPage(pageId)).draftLayout);
+    expect(["First writer", "Second writer"]).toContain(stored);
+    expect(await revision()).toBe(shared + 1);
+  });
+
+  it("moves the revision on every write, so History and the Editor stay in step", async () => {
+    const start = await revision();
+
+    await saveDraft(pageId, layoutSaying("One"), start);
+    expect(await revision()).toBe(start + 1);
+
+    await publishPage(pageId, layoutSaying("Two"), start + 1);
+    expect(await revision()).toBe(start + 2);
+  });
+});
+
 suite("what deleting a Page takes with it", () => {
   it("removes the Page's versions too", async () => {
     const pageId = await newPage();

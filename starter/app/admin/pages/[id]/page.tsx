@@ -68,6 +68,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
       slotNotes={slotNotes}
       signedInAs={`${person.name} · ${person.role}`}
       context={await renderContext(page.path)}
+      revision={page.revision}
       onSave={saveDraft.bind(null, page.id)}
       onPublish={publishPage.bind(null, page.id)}
       onRestore={restoreVersion.bind(null, page.id)}

@@ -107,11 +107,22 @@ export function parseSections(row: SharedSlotRow): PageLayout["slots"]["header"]
     version: 1,
     slots: { header: row.sections, main: [], sidebar: [], footer: [] },
   };
-  const { layout, error } = registry.safeParseLayout(wrapped);
+  const { layout, error, dropped } = registry.safeParseLayout(wrapped);
+
   if (error) {
     console.error(`[mimnets] Shared Slot "${row.slug}" failed validation: ${error}`);
     return null;
   }
+
+  // A Block that will not parse is dropped, not fatal. Returning null here would blank a
+  // Header on every Page that uses it because one Block Type was removed from the registry.
+  for (const block of dropped) {
+    console.error(
+      `[mimnets] Shared Slot "${row.slug}" dropped a Block` +
+        `${block.type ? ` of type "${block.type}"` : ""}${block.id ? ` (${block.id})` : ""}: ${block.reason}`,
+    );
+  }
+
   return layout.slots.header;
 }
 

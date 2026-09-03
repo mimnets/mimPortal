@@ -42,6 +42,20 @@ export const pages = pgTable(
      */
     headerSlotId: uuid("header_slot_id"),
     footerSlotId: uuid("footer_slot_id"),
+    /**
+     * Bumped by every write to this Page's layout, and checked by the write that bumps it.
+     *
+     * A tab left open while somebody else edits holds a layout that predates their work.
+     * Writing it does not merge; it replaces — and for Publish it replaces what visitors are
+     * looking at. The Editor sends the revision it is working from, the UPDATE matches on it,
+     * and a write that finds no row is a write that would have destroyed something.
+     *
+     * An integer rather than a timestamp, deliberately. `updated_at` is the obvious
+     * candidate and does not work: Postgres keeps `timestamptz` to the microsecond while the
+     * driver hands back a millisecond `Date`, so a round-tripped value never matches itself
+     * and every save looks like a conflict. A counter has no precision to lose.
+     */
+    revision: integer("revision").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

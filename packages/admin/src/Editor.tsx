@@ -31,13 +31,21 @@ export interface EditorProps {
   layout: PageLayout;
   registry: BlockRegistry;
   pageTitle: string;
-  /** Persists the draft. Throwing here surfaces the message to the Author. */
-  onSave: (layout: PageLayout) => Promise<void>;
+  /**
+   * Persists the draft. Throwing here surfaces the message to the Author.
+   *
+   * Takes the revision the Editor is working from and returns the one it just wrote, so a
+   * tab that has been open while somebody else edited is refused rather than silently
+   * replacing their work. A consumer with nothing to guard passes and returns nothing.
+   */
+  onSave: (layout: PageLayout, expectedRevision: number | null) => Promise<number | void>;
   /**
    * Publishes the draft and returns the version list as it now stands, so the panel stays
    * accurate without the Editor knowing anything about routing or revalidation.
    */
-  onPublish: (layout: PageLayout) => Promise<PageVersionSummary[]>;
+  onPublish: (layout: PageLayout, expectedRevision: number | null) => Promise<PublishResult>;
+  /** The Page's revision when this Editor opened. Absent for a shared Slot, which has none. */
+  revision?: number | null;
   /** Loads an old version back into the draft. */
   onRestore: (versionId: string) => Promise<PageLayout>;
   versions: PageVersionSummary[];
@@ -74,6 +82,12 @@ export interface EditorProps {
   assist?: AssistSettings;
 }
 
+export interface PublishResult {
+  versions: PageVersionSummary[];
+  /** The Page's revision after publishing, so the Editor keeps saving without a reload. */
+  revision: number;
+}
+
 type Tab = "settings" | "history";
 
 export function Editor({
@@ -83,6 +97,7 @@ export function Editor({
   onSave,
   onPublish,
   onRestore,
+  revision: openedAt = null,
   versions: initialVersions,
   lockedSlots = [],
   slotNotes,
@@ -102,6 +117,13 @@ export function Editor({
   const [error, setError] = useState<string | null>(null);
   const [versions, setVersions] = useState(initialVersions);
   const [tab, setTab] = useState<Tab>("settings");
+
+  /**
+   * Which revision of the Page this Editor is writing against. Sent with every save and
+   * publish, and replaced by whatever the server says it wrote — so a long editing session
+   * keeps working, while a tab left open across somebody else's edit is refused.
+   */
+  const [revision, setRevision] = useState<number | null>(openedAt);
 
   // A small distance before a drag begins, so clicking a Block to select it does not drag it.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -178,7 +200,8 @@ export function Editor({
             disabled={busy || !state.dirty}
             onClick={() =>
               run("saving", async () => {
-                await onSave(state.layout);
+                const next = await onSave(state.layout, revision);
+                if (typeof next === "number") setRevision(next);
                 return "Draft saved";
               })
             }
@@ -200,7 +223,9 @@ export function Editor({
               disabled={busy}
               onClick={() =>
                 run("publishing", async () => {
-                  setVersions(await onPublish(state.layout));
+                  const result = await onPublish(state.layout, revision);
+                  setVersions(result.versions);
+                  setRevision(result.revision);
                   return "Published";
                 })
               }

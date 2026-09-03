@@ -17,8 +17,31 @@ export interface BlockRegistry {
   layoutSchema: z.ZodType<PageLayout>;
   /** Throws on invalid input — for writes, where bad data must not reach the database. */
   parseLayout(value: unknown): PageLayout;
-  /** Never throws — for reads, where one broken Page must not take down the Site. */
-  safeParseLayout(value: unknown): { layout: PageLayout; error: string | null };
+  /**
+   * Never throws — for reads, where one broken Page must not take down the Site.
+   *
+   * `error` is set only when the document itself is unusable, and `layout` is empty then.
+   * A document whose *structure* is sound but which holds a Block that will not parse is
+   * salvaged instead: the Block is dropped, `dropped` says which, and everything else
+   * renders. Callers that treat any problem as fatal will render an empty Page for one bad
+   * Block, which is the failure this shape exists to prevent.
+   */
+  safeParseLayout(value: unknown): SafeParsedLayout;
+}
+
+export interface DroppedBlock {
+  slot: string;
+  /** The Block's own id where it had a usable one, so it can be found in the document. */
+  id: string | null;
+  /** The `type` it claimed, which is usually the reason — a Block Type this Site dropped. */
+  type: string | null;
+  reason: string;
+}
+
+export interface SafeParsedLayout {
+  layout: PageLayout;
+  error: string | null;
+  dropped: DroppedBlock[];
 }
 
 /**
@@ -65,16 +88,64 @@ export function createRegistry(blocks: AnyBlockType[]): BlockRegistry {
   const blockSchema = z.discriminatedUnion("type", variants) as unknown as z.ZodType<BlockInstance>;
   const layoutSchema = buildLayoutSchema(blockSchema) as unknown as z.ZodType<PageLayout>;
 
+  /**
+   * The same document shape with the Blocks left unread, so a Page can be salvaged when a
+   * single Block will not parse. Every structural rule still applies — a Section must still
+   * have the number of Columns its layout allows — because a document that fails *those* is
+   * not a Page with a bad Block in it, and there is nothing to rescue.
+   */
+  const lenientLayoutSchema = buildLayoutSchema(z.unknown() as z.ZodType<BlockInstance>);
+
   return {
     blocks,
     get: (name) => byName.get(name),
     layoutSchema,
     parseLayout: (value) => layoutSchema.parse(value),
     safeParseLayout: (value) => {
-      const result = layoutSchema.safeParse(value);
-      return result.success
-        ? { layout: result.data, error: null }
-        : { layout: emptyLayout(), error: z.prettifyError(result.error) };
+      const strict = layoutSchema.safeParse(value);
+      if (strict.success) return { layout: strict.data, error: null, dropped: [] };
+
+      // The strict parse failed, but a Page is not all-or-nothing. Re-parse the skeleton
+      // with the Blocks left unvalidated: if the document's *shape* is sound — Slots,
+      // Sections, Columns, the right number of Columns for each layout — then the failure
+      // is one or more Blocks, and those can be dropped while the rest of the Page renders.
+      //
+      // The alternative, and what this used to do, was to return an empty layout. That
+      // turns "somebody removed a Block Type from blocks.config.ts" into "every Page using
+      // it is blank", which a visitor sees before an Author does.
+      const lenient = lenientLayoutSchema.safeParse(value);
+      if (!lenient.success) {
+        // The shape itself is wrong. There is nothing here to salvage.
+        return { layout: emptyLayout(), error: z.prettifyError(strict.error), dropped: [] };
+      }
+
+      const dropped: DroppedBlock[] = [];
+      const slots = {} as PageLayout["slots"];
+
+      for (const [slot, sections] of Object.entries(lenient.data.slots)) {
+        slots[slot as keyof PageLayout["slots"]] = sections.map((section) => ({
+          ...section,
+          columns: section.columns.map((column) => ({
+            ...column,
+            blocks: column.blocks.flatMap((candidate) => {
+              const parsed = blockSchema.safeParse(candidate);
+              if (parsed.success) return [parsed.data];
+
+              const shape = candidate as { id?: unknown; type?: unknown } | null;
+              dropped.push({
+                slot,
+                id: typeof shape?.id === "string" ? shape.id : null,
+                type: typeof shape?.type === "string" ? shape.type : null,
+                reason: z.prettifyError(parsed.error),
+              });
+              return [];
+            }),
+          })),
+        }));
+      }
+
+      // Not an error: the Page is renderable and the caller is told what is missing from it.
+      return { layout: { ...lenient.data, slots }, error: null, dropped };
     },
   };
 }
