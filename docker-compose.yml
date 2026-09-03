@@ -79,6 +79,31 @@ services:
       db:
         condition: service_healthy
 
+  # A private npm registry, for proving the packaging story without publishing to the world.
+  #
+  # M8 asks whether upgrading two Sites from one fix is painful, and the only honest way to
+  # find out is a real publish, real version resolution and a real install. Doing that against
+  # npm proper means a public, effectively permanent release of every experiment — npm
+  # restricts unpublishing and the name is mirrored within minutes. This answers the same
+  # question and can be thrown away.
+  #
+  #   docker compose --profile registry up -d registry
+  #   npm --registry http://localhost:4873 adduser     # any username; it is local
+  registry:
+    profiles: ["registry"]
+    image: verdaccio/verdaccio:6
+    restart: unless-stopped
+    ports:
+      - "4873:4873"
+    volumes:
+      - mimnets-registry:/verdaccio/storage
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4873/-/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
 volumes:
   mimnets-db:
   mimnets-storage:
+  mimnets-registry:

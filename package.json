@@ -13,9 +13,10 @@
     "db:migrate": "pnpm --filter starter db:migrate",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "changeset publish",
+    "release": "pnpm build:packages && changeset publish",
     "seed": "pnpm --filter starter run seed",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:packages": "turbo run build --filter='@mimnets/*'"
   },
   "engines": {
     "node": ">=20"

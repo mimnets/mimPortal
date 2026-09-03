@@ -1,6 +1,9 @@
 node_modules/
 .next/
 dist/
+
+# A cloned Site's own build output and lockfile-adjacent state.
+sites/*/.next/
 .turbo/
 *.tsbuildinfo
 .env
@@ -22,6 +25,7 @@ specs/.current-spec
 # a permanent uncommitted change that flips back and forth. Next's own docs say it
 # should not be tracked.
 starter/next-env.d.ts
+sites/*/next-env.d.ts
 
 # Orchestration state: logs, handoffs, session notepads. Project-scoped skills
 # under .omc/skills/ are the deliberate exception and stay tracked.

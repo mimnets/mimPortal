@@ -221,7 +221,7 @@ own text claims (I-50).
 
 ---
 
-## M8 — Packaging and Site number two
+## M8 — Packaging and Site number two ✅
 
 Publish the packages with Changesets. Clone `starter` into a second Site with a different
 `theme.ts` and one custom Block Type registered in `blocks.config.ts`. Fix a bug in
@@ -234,10 +234,46 @@ still cheap to change.
 **Done when:** one bug is fixed once and both Sites have the fix, each still looking like
 itself.
 
+**Done, 3 September.** The bug was I-33 from the audit: the local storage adapter was handed
+a `contentType` and discarded it, so `get` guessed from the extension and returned
+`application/octet-stream` for a type it had been told. The S3 adapter always kept it, so the
+two disagreed and moving a Site from the disk to a bucket changed behaviour invisibly. Fixed
+once in `packages/core`, released as 0.1.1, and both Sites have it — the Starter through the
+workspace, Ledger by installing the tarball.
+
+`sites/ledger` is Site number two: a chartered accountant, its own Theme, and one Block Type
+of its own — a filing-deadline table, the kind of thing a real client asks for and the
+standard library should never grow. It is deliberately **not** in the pnpm workspace, because
+a workspace link would have tested the monorepo rather than the packaging.
+
+**Four things this milestone found, which is what it was for.**
+
+The packages had no build step — `next.config.ts` said so, "consumed as TypeScript source
+until M8 adds a build step" — and would have published `exports` pointing at `.ts` files.
+Each now emits JavaScript and declarations to `dist` and ships only that.
+
+Pointing `exports` at `dist` broke the monorepo instead: every test began running against
+built output, so a stale `dist` would have produced a green suite for code that was not the
+source. `exports` stays on `src` and `publishConfig.exports` swaps to `dist` at publish time.
+
+That swap is a **pnpm** feature. Publishing with npm silently ignored it and produced a
+package whose `exports` pointed at `./src` while `files` shipped only `./dist` — it installs,
+then fails on the first import. There is now a `prepublishOnly` guard in each package that
+refuses npm and says why.
+
+And pnpm's `minimumReleaseAge` refuses any version published in the last day, which makes a
+publish-then-upgrade loop impossible against a local registry. Ledger turns it off in its own
+`pnpm-workspace.yaml`, with a note to restore the default when it points at npm proper.
+
+**What is not proven.** These packages have never been published to npm itself. The registry
+is Verdaccio, in `docker-compose.yml` behind the `registry` profile, so nothing has been
+released publicly and the `@mimnets` scope is still unclaimed. Everything above — the build,
+the exports, the guard, the install, the upgrade — is real; only the hostname is local.
+
 ---
 
-**v1 ends here.** Use it on a real Site, for a real client, before starting M8.5. Everything
-below is informed by what that reveals.
+**v1 ends here, and it is finished.** Use it on a real Site, for a real client, before
+starting M8.5. Everything below is informed by what that reveals.
 
 ---
 
