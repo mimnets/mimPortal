@@ -98,6 +98,7 @@ different line numbers on `feat/editor-m10`, where those files were rewritten.
 | A-07 | **High** | `sites/ledger` could not generate a migration, and no Site outside the repo could | `7affd37` |
 | A-15 | Medium | The Block library's CSS did not ship with the Block library | *(this commit)* |
 | A-20 | Low | The second Site's bespoke Block was unstyled | `7affd37` |
+| A-08 | Medium | Clicking a Section selected then instantly deselected it | *(this commit)* |
 
 ### A-01 — Markdown images were announced as decorative
 
@@ -227,7 +228,7 @@ restore all three packages.
 
 ## Open — Medium
 
-### A-08 — Clicking a Section selects it and then immediately deselects it
+### A-08 — Clicking a Section selects it and then immediately deselects it *(fixed, confirmed in a browser)*
 
 `packages/admin/src/Preview.tsx:226-228` dispatches `select` for the Section and takes no
 event argument, so it never calls `stopPropagation()`. The click bubbles to the preview root
@@ -238,8 +239,20 @@ at `:312`, which dispatches `selection: null`. Both apply in order; the net sele
 
 An Author clicking a Section's padding to change its tone or background gets an empty panel.
 Section settings are reachable only via Add Section or Duplicate, which set the selection
-inside the reducer. **Worth a click in a browser before fixing — this is the one finding here
-most likely to be wrong in a way source reading cannot show.**
+inside the reducer.
+
+**Confirmed in a browser, which it needed.** Clicking a Section left the panel reading
+"Nothing selected"; clicking a Block in the same Section selected it correctly, which is what
+rules out the panel simply being broken. Fixed by stopping propagation on the Section, and
+confirmed the same way afterwards — the panel now reads "Section" from both the Section's
+padding and its toolbar.
+
+Two things that cost time and are worth writing down. The dev server on :3000 had been serving
+JavaScript hours stale, because `pnpm build` had been run repeatedly while it was up — the
+trap HANDOFF.md documents, which silently makes every code change appear to have no effect.
+Its CSS updated while its JS did not, which is a convincing disguise. And clicking an element
+by accessibility reference clicks its centre, which for a Section is a Block card; only a real
+coordinate in the Section's own padding exercised the handler.
 
 ### A-09 — `setSectionLayout` is the one structural action that skips `followSelection`
 

@@ -223,9 +223,14 @@ function Section({
       ref={setNodeRef}
       className={`mn-ed-section${selected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      onClick={() =>
-        dispatch({ type: "select", selection: { kind: "section", path: { slot, section: index } } })
-      }
+      onClick={(event) => {
+        // Without this the click carries on up to the preview root, whose own handler clears
+        // the selection — so a Section selected itself and then unselected itself, in that
+        // order, and the panel stayed empty. Every Block card and every toolbar button in
+        // here already stops propagation; the Section body was the one that did not.
+        event.stopPropagation();
+        dispatch({ type: "select", selection: { kind: "section", path: { slot, section: index } } });
+      }}
     >
       <div className="mn-ed-section-bar">
         <button
