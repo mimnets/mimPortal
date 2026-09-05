@@ -8,6 +8,7 @@ import { completeTheme, themeSchema } from "@mimnets/core";
 import { createDatabase, pageVersions, pages, siteSettings } from "@mimnets/core/db";
 
 import { registry } from "../../blocks.config";
+import { fillStockImages } from "../../lib/stock-fill";
 import { BUILT_IN_PRESETS, presetBySlug } from "../../presets";
 import { aiProvider, aiProviderNamed, visionProvider, withinRateLimit } from "../../lib/ai";
 import { requireDatabaseUrl } from "../../lib/env";
@@ -142,6 +143,14 @@ export async function applyPreset(payload: string): Promise<{ pages: number }> {
     .where(eq(siteSettings.id, "singleton"));
 
   for (const page of preset.pages) {
+    // The photographs, before the layout is written. A Preset that has just been chosen is
+    // the only moment worth fetching them: the other three nobody picked cost nothing, and
+    // an Author opening the Editor afterwards finds a Page rather than a wireframe.
+    //
+    // Failures here are already absorbed — an image that cannot be fetched stays empty with
+    // its description intact, so this cannot stop a Preset applying.
+    await fillStockImages(page.layout, registry);
+
     const [existing] = await db
       .select({ id: pages.id, published: pages.publishedLayout })
       .from(pages)
@@ -244,6 +253,8 @@ export async function generatePageLayout(input: {
       main: generated.layout.slots.main,
     },
   });
+
+  await fillStockImages(next, registry);
 
   await db
     .update(pages)

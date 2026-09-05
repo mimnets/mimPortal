@@ -14,3 +14,4 @@ export {
 } from "./adapter";
 export { unsplashStock } from "./unsplash";
 export { pexelsStock } from "./pexels";
+export { findEmptyImages, findEmptySectionBackgrounds, type ImageHole } from "./images";

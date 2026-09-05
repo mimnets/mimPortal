@@ -46,6 +46,7 @@ were worth anything.
 | ✅ | **M8** Packaging, Site two | Packages build and publish; `sites/ledger` installs them rather than linking to source |
 | ✅ | **M8.5** Block library | 22 Block Types, Section tones, a Theme built around them |
 | ✅ | **M9** Presets | Generate a Theme and Pages together, validated against the registry before they land |
+| ✅ | **Stock images** | Photographs fetched into the Site's own store when a Preset is applied |
 | ⚠️ | **M10** The Editor an Author lives in | Undo/redo and duplicate built; Blueprints and the responsive preview are not |
 
 ### The Block library — 22 types
@@ -67,6 +68,15 @@ Three are security boundaries and are tested as such:
 - **`prose`** parses with markdown-it at `html: false`, so raw HTML is never admitted rather
   than admitted and scrubbed. There is no `dangerouslySetInnerHTML` anywhere in the repository.
 
+### Stock photographs
+
+`StockAdapter` with Unsplash and Pexels, media provenance columns, and the apply-time fill: a
+Preset describes each photograph in the image's `alt`, and applying it searches, downloads into
+the Site's own media store and records the photographer. Never hotlinked (ADR-0012), never
+fetched for a Preset nobody chose, and a provider having a bad day leaves grey rectangles
+rather than a failed Preset. Optional, and off until a key is set — see
+[docs/STOCK.md](./STOCK.md).
+
 ### Infrastructure
 
 - **Component tests.** The suite had no DOM at all until 5 September; a component test now opts
@@ -75,18 +85,11 @@ Three are security boundaries and are tested as such:
   something to draw the new Blocks with. The Starter's own stylesheet is 33 lines.
 - **A publish guard** that checks the artefact as well as the package manager.
 - **18 architecture decision records** in `docs/adr/`.
-- **498 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
+- **508 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
 
 ---
 
 ## Not built
-
-### In progress
-
-- **Stock images.** The `StockAdapter`, both providers (Unsplash and Pexels) and the media
-  provenance columns are committed. What remains is the apply-time fill: read the photograph
-  descriptions a Preset wrote into each image's `alt`, search, download into the Site's own
-  media store, and write the media rows. Photographs are never hotlinked (ADR-0012).
 
 ### Waiting on a person
 
