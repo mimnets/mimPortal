@@ -1083,3 +1083,121 @@ h3.mn-heading {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
+
+/* ---- Carousel ---- */
+
+.mn-carousel-title {
+  margin: 0 0 1rem;
+  font-family: var(--mn-font-heading);
+}
+
+.mn-carousel-track {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0 0 0.5rem;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  /* The scrollbar is the affordance that says "this moves"; hiding it hides the carousel. */
+  scrollbar-width: thin;
+}
+
+/* Focusable because it scrolls: this is what lets arrow keys move it. */
+.mn-carousel-track:focus-visible {
+  outline: 2px solid var(--mn-color-primary);
+  outline-offset: 4px;
+}
+
+.mn-carousel-slide {
+  flex: none;
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--mn-color-surface);
+  border-radius: var(--mn-radius);
+  overflow: hidden;
+  width: var(--mn-carousel-width, 28rem);
+  max-width: 85vw;
+}
+
+.mn-carousel[data-width="full"] .mn-carousel-slide { --mn-carousel-width: 100%; }
+.mn-carousel[data-width="wide"] .mn-carousel-slide { --mn-carousel-width: 28rem; }
+.mn-carousel[data-width="narrow"] .mn-carousel-slide { --mn-carousel-width: 18rem; }
+
+.mn-carousel[data-width="full"] .mn-carousel-slide {
+  width: 100%;
+  max-width: 100%;
+}
+
+.mn-carousel-slide img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
+.mn-carousel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.mn-carousel-body h3 {
+  margin: 0;
+  font-family: var(--mn-font-heading);
+}
+
+.mn-carousel-body p {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.mn-carousel-link {
+  align-self: flex-start;
+  color: var(--mn-color-primary);
+}
+
+.mn-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.mn-carousel-dots a {
+  /* The hit area is 44px even though the dot drawn inside it is small. */
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.mn-carousel-dots span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+}
+
+.mn-carousel-dots a:hover span,
+.mn-carousel-dots a:focus-visible span {
+  opacity: 1;
+}
+
+.mn-carousel-dots a:focus-visible {
+  outline: 2px solid var(--mn-color-primary);
+  outline-offset: -4px;
+  border-radius: var(--mn-radius);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mn-carousel-track {
+    scroll-behavior: auto;
+  }
+}

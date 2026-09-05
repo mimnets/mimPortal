@@ -488,6 +488,110 @@ export const galleryBlock = defineBlock({
   },
 });
 
+/**
+ * A horizontal run of slides.
+ *
+ * CSS scroll-snap does the work, so there is no timer, no transform and no JavaScript. The
+ * track is a scroll region with a label and a tabindex, which is the pattern that makes a
+ * scrollable box operable from the keyboard — arrow keys scroll it because the browser
+ * scrolls focused overflow containers, not because anything here handles a key. The dots are
+ * links to slide ids, so they work for the same reason the gallery's do.
+ *
+ * There is no autoplay, and that is a decision rather than an omission. A carousel that moves
+ * on its own takes the reading speed out of the reader's hands, and every accessible
+ * implementation ends up shipping a pause button to undo it. If a Site needs motion, a
+ * Section's reveal already provides it.
+ */
+export const carouselBlock = defineBlock({
+  name: "carousel",
+  label: "Carousel",
+  fields: {
+    title: field.text({ label: "Title", default: "" }),
+    items: field.repeater({
+      label: "Slides",
+      fields: {
+        image: field.image({ label: "Image" }),
+        heading: field.text({ label: "Heading", default: "" }),
+        text: field.textarea({ label: "Text", default: "" }),
+        link: field.link({ label: "Link" }),
+      },
+    }),
+    width: field.select({
+      label: "Slide width",
+      options: ["full", "wide", "narrow"],
+      default: "wide",
+    }),
+  },
+  render: ({ title, items, width }, context) => {
+    if (items.length === 0) return null;
+
+    const scope = stableName(
+      items.map((item) => `${item.image.key}${item.heading}`).join("\n"),
+    );
+    const label = title || "Carousel";
+
+    return (
+      <div className="mn-carousel" data-width={width}>
+        {title ? <h2 className="mn-carousel-title">{title}</h2> : null}
+
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+        <ul
+          className="mn-carousel-track"
+          role="region"
+          aria-label={label}
+          tabIndex={0}
+        >
+          {items.map((item, index) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <li className="mn-carousel-slide" id={`mn-car-${scope}-${index}`} key={index}>
+              {item.image.key ? (
+                <img
+                  src={`${context.mediaBaseUrl}/${item.image.key}`}
+                  alt={item.image.decorative ? "" : item.image.alt}
+                  width={item.image.width ?? undefined}
+                  height={item.image.height ?? undefined}
+                  loading={index === 0 ? undefined : "lazy"}
+                />
+              ) : null}
+              {item.heading || item.text || item.link.label ? (
+                <div className="mn-carousel-body">
+                  {item.heading ? <h3>{item.heading}</h3> : null}
+                  {item.text ? <p>{item.text}</p> : null}
+                  {item.link.label ? (
+                    <a
+                      className="mn-carousel-link"
+                      href={item.link.href || "/"}
+                      target={item.link.newTab ? "_blank" : undefined}
+                      rel={item.link.newTab ? "noreferrer" : undefined}
+                    >
+                      {item.link.label}
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+
+        {items.length > 1 ? (
+          <nav className="mn-carousel-dots" aria-label={`${label}: choose a slide`}>
+            {items.map((item, index) => (
+              <a
+                // eslint-disable-next-line react/no-array-index-key
+                key={index}
+                href={`#mn-car-${scope}-${index}`}
+                aria-label={item.heading || `Slide ${index + 1}`}
+              >
+                <span aria-hidden="true" />
+              </a>
+            ))}
+          </nav>
+        ) : null}
+      </div>
+    );
+  },
+});
+
 export const designBlocks = [
   eyebrowBlock,
   buttonBlock,
@@ -499,4 +603,5 @@ export const designBlocks = [
   pricingBlock,
   accordionBlock,
   galleryBlock,
+  carouselBlock,
 ];
