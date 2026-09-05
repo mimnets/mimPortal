@@ -300,8 +300,15 @@ function documentReducer(state: DocumentState, action: EditorAction): DocumentSt
 
       // Directly below the original, which is where an Author building a row expects it,
       // and selected, because the next thing they do is change what makes it different.
+      // structuredClone rather than a spread. `block` is already inside the cloned layout,
+      // so `{ ...block }` would give the copy the *same* props and style objects as the
+      // original — and structuredClone preserves that aliasing every time the document is
+      // cloned afterwards, including into `past`. It is harmless only for as long as every
+      // writer replaces those objects rather than mutating them, which is an invariant
+      // nothing states and one in-place write would break, in two Blocks and all of history
+      // at once.
       const index = action.path.block + 1;
-      column.blocks.splice(index, 0, { ...block, id: newId("blk") });
+      column.blocks.splice(index, 0, { ...structuredClone(block), id: newId("blk") });
       return {
         layout,
         dirty: true,

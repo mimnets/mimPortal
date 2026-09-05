@@ -697,3 +697,72 @@ describe("what a save does to the unsaved-changes flag", () => {
     expect(saved.layout).toBe(state.layout);
   });
 });
+
+
+describe("a duplicated Block is independent of its original", () => {
+  /**
+   * The copy must not share the original's `props` or `style` objects.
+   *
+   * `duplicateBlock` works on a layout that has already been cloned, so spreading the block
+   * gives the copy the very same nested objects — and `structuredClone` preserves that
+   * aliasing on every subsequent change, including into `past`. Editing one Block would edit
+   * two, and every history entry holding that layout with it.
+   *
+   * It was harmless when found, because `setProp` and `setBlockStyle` both replace the object
+   * rather than mutating it. That is an invariant nothing stated and no test held, and the
+   * failure it protects against is silent: two Blocks that look separate and are not.
+   */
+  const path = { slot: "main", section: 0, column: 0, block: 0 } as const;
+
+  function duplicated() {
+    const state = editorReducer(fixture(), { type: "duplicateBlock", path });
+    const blocks = state.layout.slots.main[0]!.columns[0]!.blocks;
+    return { state, original: blocks[0]!, copy: blocks[1]! };
+  }
+
+  it("gives the copy its own props and style objects", () => {
+    const { original, copy } = duplicated();
+
+    expect(copy.props).not.toBe(original.props);
+    expect(copy.style).not.toBe(original.style);
+    expect(copy.id).not.toBe(original.id);
+  });
+
+  it("keeps the copy's content equal to the original's", () => {
+    const { original, copy } = duplicated();
+
+    // Independent, not different — a duplicate that changed the content would be a worse bug.
+    expect(copy.props).toEqual(original.props);
+    expect(copy.type).toBe(original.type);
+  });
+
+  it("does not change the original when the copy is edited", () => {
+    const { state } = duplicated();
+
+    const edited = editorReducer(state, {
+      type: "setProp",
+      path: { ...path, block: 1 },
+      key: "text",
+      value: "Only the copy",
+    });
+
+    expect(blockAt(edited.layout, { ...path, block: 1 })?.props.text).toBe("Only the copy");
+    expect(blockAt(edited.layout, path)?.props.text).toBe("Heading");
+  });
+
+  it("does not reach back into history when the copy is edited", () => {
+    const { state } = duplicated();
+    const before = structuredClone(state.past[state.past.length - 1]!);
+
+    const edited = editorReducer(state, {
+      type: "setProp",
+      path: { ...path, block: 1 },
+      key: "text",
+      value: "Only the copy",
+    });
+
+    // An aliased props object would be reachable from the layout sitting in `past`, so an
+    // edit could rewrite what undo is supposed to return to.
+    expect(edited.past[0]).toEqual(before);
+  });
+});
