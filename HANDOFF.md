@@ -9,27 +9,42 @@ wrong — see the toolchain note below.
 
 ## Where to start
 
-**Read [specs/project-audit-2/research.md](./specs/project-audit-2/research.md) first.** It is
-dated today, it has 21 findings each with a file and a line number, and six of them are already
-fixed. Nothing below is more urgent than the fifteen still open.
+Everything below the line has landed on `main` and is pushed. The repository moved to
+**https://github.com/mimnets/mimPortal.git** on 5 September; if a clone still points at
+`mimnets-typescript-website-builder`, run `git remote set-url origin`.
 
-There are two branches and neither is pushed:
+**Twenty of the second audit's findings are closed** — every High, and all but two Mediums.
+Read [specs/project-audit-2/research.md](./specs/project-audit-2/research.md) before starting:
+each remaining finding carries a file and a line number, so picking one up costs no
+investigation, and the "Verified clean" section records what was checked and found sound so
+nobody pays for it twice.
 
-- **`feat/block-library`** — M8.5's eight Block Types, the toolchain repair, the first
-  component tests, and the audit. 447 passing, 7 skipped. This is the branch to merge.
-- **`feat/editor-m10`** — undo and redo, ADR-0018, and M10 written up. Work from a parallel
-  session that was stopped before it could commit, preserved as found and not reviewed. It
-  branches from `feat/block-library`, so merge that one first. **Three audit findings (A-08,
-  A-09, A-10) live in the files this branch rewrote and belong on it, not on the other.**
+**One branch is unmerged.** `feat/editor-m10` holds undo and redo, ADR-0018 and the M10
+write-up, from a parallel session that was stopped before it could commit. It is preserved as
+found, it is pushed, and **nobody has reviewed it** — I merged `main` into it and fixed A-10
+there, but the undo/redo implementation itself has had no second pair of eyes. Read it before
+merging it. 478 passing on that branch against 459 on `main`.
 
-One thing still needs you and cannot be done for you:
+Three things still need a person:
 
-**Publish, if you want it public.** `npm login` is interactive. Then `pnpm release` — there is
-a changeset now, and `pnpm changeset status` reports all three packages bumping minor. Worth
-knowing first: no package exists under `@mimnets`, so the first publish claims the scope and
-npm publishes are effectively permanent. Two audit findings bear on this — **A-17**, the
-publish guard checks the package manager but never that `dist` exists, and **A-18**, every
-published source map is dangling. Read both before running it.
+**1. Publish, if you want it public.** `npm login` is interactive. Then `pnpm release`; a
+changeset exists and `pnpm changeset status` reports all three packages bumping minor. The
+first publish claims the `@mimnets` scope permanently. Two findings that used to bear on this
+are now fixed — the publish guard checks the artefact as well as the publisher (A-17), and
+published source maps resolve (A-18) — but note **A-28**: `pnpm build:packages` had been
+matching no packages at all and would have published whatever was lying in `dist`. It is fixed;
+it is also the reason to run `pnpm release` and read what it says rather than trusting it.
+
+**2. `sites/ledger` is waiting on that publish.** Its lockfile pins integrity hashes from the
+disposable Verdaccio volume (A-14) and CI never installs it (A-16), and both resolve when the
+packages go to a real registry rather than by editing anything now. Its upgrade step is in the
+changeset: bump the dependency, add `import "@mimnets/blocks/blocks.css";` above
+`import "./globals.css";`, then delete the Block sections from its own `globals.css`.
+
+**3. Two colour decisions were deliberately left to you**, recorded with their numbers in
+`packages/core/src/theme/derive.test.ts`. `readableOn` picks white on the default accent at
+3.27:1 where black would be 5.77:1, and changing it would flip button text on every Site whose
+accent sits in that range. See A-26 and A-27.
 
 ## What exists today
 
@@ -102,7 +117,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **447 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
+`pnpm test` — **459 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -234,7 +249,7 @@ Two other things that were quietly untrue and are now fixed:
   existed to expose it.
 - **A NUL byte sat in `packages/core/src/ai/assist.ts`.** `ASSIST_ERROR` is a NUL on purpose —
   it separates streamed content from a message for the Author — but it had been written as a
-  raw byte rather than ` `, so git and grep both classified the file as binary. It had
+  raw byte rather than `\u0000`, so git and grep both classified the file as binary. It had
   had no readable diff since it was introduced.
 
 Component tests opt into a DOM per file with a `// @vitest-environment jsdom` docblock, so the
