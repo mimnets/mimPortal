@@ -124,6 +124,12 @@ Raised the same day, and written into the roadmap rather than left as wishes. No
 - **M10.5** — a Header that stays (scrolls, sticky or fixed), per-Section width so a gallery or
   a map can run edge to edge, and popovers for a biography or a service's detail. Each is a
   property the layout engine could already carry, sitting one field away from existing.
+- **M11** gains a prerequisite: the Theme's vocabulary. It can currently express colour, two
+  typefaces, **one** corner radius and two spacing values — six token families, one radius token
+  used 26 times, no shadow token, no gradients. That is why every Site reads as the same flat
+  rectangles in a different palette, and why M11's own exit criterion is unreachable as written.
+  Elevation, a radius scale, border weight and a surface treatment come first; glass, mesh
+  gradients, grain and CSS 3D follow, all as tokens and none needing an asset or a dependency.
 - **M12** — what the AI does next, and what it must not: importing a client's existing site as
   a draft, regenerating one Section rather than a whole Page, telling an Author what a Page is
   missing, and generating the catalogue pages. It also writes down the boundary — schemas,

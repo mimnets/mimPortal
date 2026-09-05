@@ -481,6 +481,71 @@ photographs open a biography — none of it needing a line of custom code in a S
 
 ## M11 — Variants, and the end of counting Blocks
 
+### First, the Theme has to be able to say anything
+
+**This is M11's prerequisite, and without it M11 cannot meet its own exit criterion.** A
+variant is styled in the Theme layer, so variants can only differ by as much as a Theme can
+express — and today that is: colour, two typefaces, one corner radius, and two spacing values.
+Six token families in total. There is exactly one radius token, used twenty-six times, so every
+rounded corner on every Site is the same value; there is no shadow token at all, and the two
+`box-shadow` rules in fifteen hundred lines of Block CSS are hard-coded; there are no
+gradients.
+
+Which is why every Site reads as the same flat rectangles in a different palette, and why
+`starter/theme.ts` claiming "your Site will not look like everyone else's" is currently a
+claim the tokens cannot back.
+
+So the vocabulary grows first:
+
+```ts
+elevation: { none, low, high }           // tinted with the primary, never grey
+radius:    { none, sm, base, lg, full }  // a scale, not one value
+border:    { hairline, base, bold }      // 1px against 2px is most of editorial against brutalist
+surface:   "flat" | "bordered" | "raised" | "glass"
+```
+
+**The tinted shadow is the single highest-value line here.** A grey `box-shadow` reads as a
+2015 card; the same shadow mixed with the Site's own primary reads as considered. It is one
+`color-mix()` in a token and it changes every card, quote and pricing plan at once.
+
+### Modern is mostly CSS now, which is the good news
+
+None of the following needs an asset, a dependency or a line of JavaScript, and all of it is
+expressible as Theme tokens — so [ADR-0013](./adr/0013-the-band-is-the-sections-job.md)'s rule
+holds and a Site still cannot produce something off-brand:
+
+- **Glass** — `backdrop-filter: blur()` over a translucent surface.
+- **Mesh gradients** — layered `radial-gradient`s built from the Theme's own colours, which is
+  what most "modern SaaS" backgrounds actually are.
+- **Grain** — an inline SVG `feTurbulence` as a data URI, under a kilobyte and no request. It
+  is what stops a flat colour looking cheap.
+- **Gradient text** on headings, via `background-clip: text`.
+- **CSS 3D** — `transform: perspective()` on hover for card tilt and layered depth. No client
+  component, so the package keeps the property that makes it good.
+
+### What is deliberately not here
+
+**Rendered 3D icons and illustrations are images, not code.** Bundling them into
+`@mimnets/blocks` would cost every Site the download whether it wants them or not, and that
+style will date faster than the code will. They belong in the media library, which since
+5 September already knows how to fetch and store pictures.
+
+**WebGL is not a product feature.** A rotating model in a hero needs a client component and a
+heavy dependency, and `@mimnets/blocks` having neither is not an accident — it is why every
+Block renders before a Site has hydrated.
+
+That refusal costs nothing, and this is the part worth remembering: **a Site can already do it
+itself.** `sites/ledger/blocks/deadlines.tsx` is a Block Type defined in a Site, against the
+installed package, with no change to the product. A client who genuinely needs a Three.js hero
+gets one in their own `blocks/` folder. That is what M8's boundary was for.
+
+**Icons are a separate decision** and not resolved here. There is no `field.icon` today. The
+likely answer is a small bundled outline set for the affordances Blocks structurally need —
+arrow, check, phone, mail — with anything decorative coming from the media library, but the
+bundle cost is a trade worth making on purpose rather than in passing.
+
+### Then, the variants themselves
+
 The library grows by *look* rather than by count. A Block Type declares its variants the way
 it declares its fields, and the Editor generates the control the way it already generates
 every settings form:
@@ -515,6 +580,12 @@ offers a choice still cannot offer an unreadable one.
 
 **Done when:** the same testimonial Block looks like three different Sites without a line of
 new render code, and changing six values in `theme.ts` still rebrands all three.
+
+And the way to know, borrowed from M9's exit criterion because it worked there: generate three
+Sites from the same twenty-two Block Types — a brutalist law firm, a soft wellness brand, a
+dark developer tool — and assert that nobody would guess they share a codebase. M9 already
+makes that assertion about palette and copy against a real model; this extends it to the thing
+a visitor actually notices first.
 
 ---
 
