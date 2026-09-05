@@ -100,11 +100,34 @@ rather than a failed Preset. Optional, and off until a key is set — see
   been done. Eight Block Types have tests and a browser check; nobody has built a client's page
   with a carousel and found out what is annoying about it.
 
+### Partly built
+
+- **Animation.** A Block can be set to appear with `fade` or `rise` as it scrolls into view,
+  chosen from the Theme rather than as a utility class. That is the whole of it: three options
+  on one control. There is no Section stagger, no slide, scale, blur or wipe, no parallax, no
+  speed control, and no gallery showing an Author what any of them look like — choosing "Rise"
+  today shows them nothing.
+- **The blog.** Its prerequisite is built: the `prose` Block stores Markdown and renders it
+  through a shared sanitising renderer (ADR-0011). What does not exist is posts as a thing of
+  their own — their own routing, a listing Block, dates, ordering, or anything a CMS would call
+  a collection.
+
 ### On the roadmap, not started
 
-Effects and a demo page · a preview panel in the Design tab · AI provider and model settings ·
-the blog · a Vercel deploy button with Neon · Blueprints and the responsive preview (the rest
-of M10).
+A preview panel in the Design tab · AI provider and model settings · a Vercel deploy button
+with Neon · Blueprints and the responsive preview (the rest of M10).
+
+### Asked for, not yet planned
+
+Raised on 5 September and not in any milestone. None of these exists in any form:
+
+- **A sticky, fixed or scrolling Header.** A Site's Header scrolls away and there is no option.
+  `position: fixed` appears once in the whole stylesheet and it is the gallery's lightbox.
+- **Per-Section width.** A Section has a tone, a padding and a background, and no width. Every
+  Section is the Theme's one global `measure`, so a full-bleed band — which is what a gallery,
+  a carousel or a map usually wants — cannot be expressed.
+- **Popovers.** Clicking a word or a button to open a panel carrying more detail and a picture.
+  The gallery's `:target` lightbox is a proven no-JavaScript pattern to build it on.
 
 ### Known gaps, deliberate
 
