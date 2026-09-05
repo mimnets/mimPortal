@@ -65,6 +65,46 @@ describe("rendering prose", () => {
   });
 });
 
+describe("images", () => {
+  it("keeps the alt text an Author wrote", () => {
+    const { container } = draw("![A cat asleep on a roof](cat.png)");
+
+    // markdown-it emits alt as an empty attribute and fills it from the token's children in
+    // its own renderer. A walker that copies attributes and ignores children gives every
+    // image alt="" — a described photograph silently announced as decorative, which is a
+    // WCAG 1.1.1 failure that looks perfectly fine on the page.
+    const img = container.querySelector("img")!;
+    expect(img.getAttribute("alt")).toBe("A cat asleep on a roof");
+    expect(img.getAttribute("src")).toBe("cat.png");
+  });
+
+  it("flattens emphasis inside alt text rather than dropping it", () => {
+    const { container } = draw("![A **slate** roof](roof.png)");
+
+    expect(container.querySelector("img")!.getAttribute("alt")).toBe("A slate roof");
+  });
+
+  it("leaves alt empty when the Author wrote none", () => {
+    const { container } = draw("![](spacer.png)");
+
+    // Genuinely decorative, and an empty alt is the correct way to say so.
+    expect(container.querySelector("img")!.getAttribute("alt")).toBe("");
+  });
+
+  it("keeps a title when one was given", () => {
+    const { container } = draw('![A roof](roof.png "Hebden Bridge, 2026")');
+
+    expect(container.querySelector("img")!.getAttribute("title")).toBe("Hebden Bridge, 2026");
+  });
+
+  it("refuses a javascript: image source", () => {
+    const { container } = draw("![x](javascript:alert(1))");
+
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src") ?? "").not.toContain("javascript:");
+  });
+});
+
 describe("refusing to be an HTML editor", () => {
   it("shows a pasted script tag as words on the page", () => {
     const { container } = draw("Hello <script>alert(1)</script> there");

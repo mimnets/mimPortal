@@ -4,6 +4,7 @@ import {
   FORM_FIELDS,
   FORM_RESULT_PARAM,
   renderMarkdown,
+  safeHref,
 } from "@mimnets/core";
 
 import { designBlocks } from "./design";
@@ -192,7 +193,7 @@ export const menuBlock = defineBlock({
           {items.map((item) => (
             <li key={item.id}>
               <a
-                href={item.href}
+                href={safeHref(item.href) || "/"}
                 target={item.newTab ? "_blank" : undefined}
                 rel={item.newTab ? "noreferrer" : undefined}
                 aria-current={item.href === context.currentPath ? "page" : undefined}

@@ -19,3 +19,8 @@ scrubbed.
 `@mimnets/core` gains `renderMarkdown` and `markdownToText`, the shared renderer that
 ADR-0011 requires both the public Site and the Editor preview to use, and takes `markdown-it`
 as a new runtime dependency for it.
+
+It also gains `safeHref`, which reduces an address an Author typed to one a browser may
+follow — http, https, mailto, tel, or a relative path, and nothing else. Every Block that
+turns a field into an `href` now goes through it, including the call to action and the
+pricing plan, which took a free-text address and passed it straight to an anchor.

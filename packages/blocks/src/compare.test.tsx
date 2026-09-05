@@ -167,6 +167,22 @@ describe("the comparison table Block", () => {
     expect(container.querySelectorAll("tbody td")).toHaveLength(2);
   });
 
+  it("refuses a dangerous address in a plan's button", () => {
+    const { container } = draw(
+      props({
+        plans: [
+          {
+            name: "Full",
+            price: "£45",
+            link: { label: "Choose Full", href: "javascript:alert(1)", newTab: false },
+          },
+        ],
+      }),
+    );
+
+    expect(container.querySelector("tfoot a")!.getAttribute("href")).toBe("/");
+  });
+
   it("adds the buttons row only when a plan has one", () => {
     expect(draw(props()).container.querySelector("tfoot")).toBeNull();
 
