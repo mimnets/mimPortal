@@ -16,21 +16,17 @@ done for you. Then `pnpm release`. Worth knowing before you do: no package exist
 permanent. Everything about the packaging is already proven against the local registry, so
 this changes the hostname and nothing else.
 
-**2. Component tests are blocked on a pnpm store mismatch.** Installing jsdom and
-`@testing-library/react` fails with `ERR_PNPM_UNEXPECTED_STORE`: this repo's `node_modules`
-are linked from `~/.pnpm/store/v11` while pnpm now wants `~/AppData/Local/pnpm/store/v11`.
-Either keep the old store, or accept the new one and reinstall:
+**2. Component tests exist now, and the blocker was misdiagnosed.** *(Resolved 5 September.)*
+There was no store mismatch. `pnpm install` was always content with the store it had; what
+failed was `pnpm run`, which performs a pre-flight dependency check by spawning a nested
+synchronous `pnpm install`, and that nested process crashed — first on the no-TTY purge
+prompt, then on `0xC0000409`. Every script inherited the fault, so it looked like a broken
+tree. Installing jsdom and `@testing-library/react` took thirteen seconds once the check was
+switched off, and `ERR_PNPM_UNEXPECTED_STORE` never appeared.
 
-```bash
-pnpm config set store-dir "C:/Users/Monir/.pnpm/store" --global    # keep the old store
-pnpm install                                                        # or accept the new one
-```
-
-The second reinstalls the whole monorepo, which is why it was left rather than started at the
-end of a session. It is worth doing. **There are still no component tests**, the vitest
-environment is `node` with no DOM, and that is precisely why the Block error boundary shipped
-broken to review earlier today: it was wrapped around a function call rather than a child
-component, so it caught nothing, and only a browser showed it.
+The check is off in `pnpm-workspace.yaml` — `verifyDepsBeforeRun: false`, with the reasoning
+beside it. Note that pnpm 11 does not read pnpm settings from `.npmrc`; they live in
+`pnpm-workspace.yaml` now, which `allowBuilds` above it already showed.
 
 **3. A fresh audit.** The last one is dated 20 August and the codebase has moved a long way
 since — twenty findings fixed, a build step, published packages, a second Site. A new pass
@@ -94,7 +90,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **249 passing, 7 skipped, about nine seconds.** It was 2 failing, 152 passing
+`pnpm test` — **260 passing, 7 skipped, about ten seconds.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -107,9 +103,28 @@ They are opt-in because free models are rate limited and retired without notice,
 fail for reasons unrelated to the code — which is the failure I-08 was about, reintroduced
 once a run. Run them before shipping anything that touches the AI stack.
 
-**There are still no component tests.** The vitest environment is `node`, with no jsdom, so
-`BlockBoundary`, the focus trap and the keyboard sensor are verified in a browser rather than
-in CI. One of them shipped broken to review because of it.
+**Component tests start here.** The suite's default environment is still `node` — the 249
+existing tests have no use for a DOM and should not pay for one. A component test opts in
+per file with a `// @vitest-environment jsdom` docblock, which is why there is no new
+configuration to keep in step.
+
+Two files, eleven assertions:
+
+- `BlockBoundary.test.tsx` renders through `Preview`, not the boundary on its own. That is
+  deliberate: the defect that reached review was never in `BlockBoundary`, it was in how the
+  boundary was *called*, and a test that mounts the boundary directly passes either way.
+  Reintroducing the inline `blockType.render(...)` call turns all five red.
+- `media.test.tsx` covers the picker's focus trap against the three-part contract its own
+  comment states. Disabling the Tab handler turns three of the six red.
+
+Each file was checked by breaking the code it covers and watching it fail. A component test
+that has never been seen to fail is the thing that let the boundary ship broken.
+
+**Not covered, and deliberately.** The keyboard sensor is dnd-kit's `KeyboardSensor` with
+`sortableKeyboardCoordinates`, configured in three lines at `Editor.tsx:155`; testing it
+means mounting the Editor with a drag context to re-verify somebody else's library. And the
+focus trap filters on `offsetParent`, which jsdom never sets because it performs no layout —
+the test stubs it, so the *visibility* half of that filter still needs a browser.
 
 ## Not finished
 
@@ -119,9 +134,13 @@ Honest list. None of it is hidden behind a green tick.
   in `docker-compose.yml`, so the `@mimnets` scope is unclaimed and no version is public. The
   build, the exports, the publish guard, the install and the upgrade are all real; only the
   hostname is local.
-- **No component tests.** See the top — blocked on a pnpm store mismatch, not on effort.
-- **Six Block Types from M8.5 are missing**: accordion, embed, image gallery, carousel,
-  location map, and Markdown prose with its sanitising renderer (ADR-0011). A carousel and a
+- **The keyboard sensor and the focus trap's visibility filter are still browser-only.**
+  Everything else about the boundary and the trap is now in CI. See the Tests section.
+- **Six Block Types from M8.5 are missing**, plus two added to the roadmap on 5 September —
+  a comparison table and a social links row. The six: accordion, embed, image gallery,
+  carousel, location map, and Markdown prose with its sanitising renderer (ADR-0011). Only
+  the last of those carries a decision: it is the one that puts a Markdown parser and
+  sanitiser into `core` permanently, and no library has been chosen. A carousel and a
   gallery are the first two a real client asks for.
 - **The nav is one level deep**, deliberately (see `render/context.ts`). A client wanting a
   dropdown means reopening that decision, and the comment there is right that hover intent,
@@ -129,7 +148,6 @@ Honest list. None of it is hidden behind a green tick.
 - **There is no lint.** ESLint cannot run here at all: TypeScript 7.0 is the native Go port
   and ships a CLI with no compiler API, which typescript-eslint needs. Revisit at 7.1 rather
   than adding a linter that cannot see types (I-64).
-- **No component tests.** See the note above.
 - **Nobody has sent through Resend.** SMTP is proven against a real mail server; Resend is
   not, because that needs an account and a verified domain.
 - **Provisioning mode of the installer is still untested.** This machine already had a

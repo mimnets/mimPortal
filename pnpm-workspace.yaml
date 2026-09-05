@@ -3,3 +3,9 @@ packages:
   - "starter"
 allowBuilds:
   esbuild: true
+
+# pnpm runs a pre-flight dependency check before every `pnpm run`, spawning a nested
+# synchronous `pnpm install`. On this monorepo that nested process crashes (0xC0000409) while
+# `pnpm install` on its own reports the tree as up to date — a false positive that made every
+# script unrunnable. Off until pnpm stops crashing on it; run `pnpm install` to check the tree.
+verifyDepsBeforeRun: false

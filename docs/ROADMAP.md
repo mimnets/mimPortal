@@ -314,6 +314,16 @@ since it was written. Presets get built on top of this, not instead of it.
 map, and Markdown prose with its sanitising renderer
 ([ADR-0011](./adr/0011-markdown-for-prose-json-for-layout.md)).
 
+**Two more, added 5 September.** They come from what a Site turned out to want rather than
+from the original list: a **comparison table** — what a pricing page reaches for the moment
+one plan is not enough — and a **social links row**. Both are ordinary `defineBlock` work
+with no decision behind them, which is why they are recorded here rather than argued in an
+ADR. They come after the six above, not instead of any of them.
+
+`field.repeater` already exists and its own comment names "a carousel's slides", so the
+gallery, the carousel and the comparison table need no M1 work. That was the milestone's own
+test of whether the M1 interface was right, and it passes.
+
 ---
 
 ## M9 — Presets ✅

@@ -6,9 +6,6 @@ import { defineConfig } from "vitest/config";
 const loaded = config({ path: new URL("./starter/.env", import.meta.url).pathname.slice(1) });
 
 export default defineConfig({
-  // Packages are consumed as TypeScript source, and their tsconfig leaves JSX for the
-  // bundler to handle. Vitest has to be told which transform to apply.
-  esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
     env: loaded.parsed ?? {},
