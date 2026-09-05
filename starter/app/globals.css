@@ -957,3 +957,129 @@ h3.mn-heading {
     transition: none;
   }
 }
+
+/* ---- Image gallery ---- */
+
+.mn-gallery-title {
+  margin: 0 0 1rem;
+  font-family: var(--mn-font-heading);
+}
+
+.mn-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--mn-gallery-columns, 3), 1fr);
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mn-gallery[data-columns="2"] .mn-gallery-grid { --mn-gallery-columns: 2; }
+.mn-gallery[data-columns="3"] .mn-gallery-grid { --mn-gallery-columns: 3; }
+.mn-gallery[data-columns="4"] .mn-gallery-grid { --mn-gallery-columns: 4; }
+
+/* One column of photographs on a phone beats four thumbnails nobody can make out. */
+@media (max-width: 40rem) {
+  .mn-gallery-grid { --mn-gallery-columns: 1; }
+}
+
+.mn-gallery-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mn-gallery-figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--mn-radius);
+  display: block;
+}
+
+.mn-gallery-figure figcaption {
+  font-size: 0.875rem;
+  opacity: 0.75;
+}
+
+.mn-gallery-open {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--mn-radius);
+}
+
+.mn-gallery-open:focus-visible {
+  outline: 2px solid var(--mn-color-primary);
+  outline-offset: 3px;
+}
+
+/* ---- Enlarged image ---- */
+
+/* Hidden until its id is the fragment in the address bar. No JavaScript is involved. */
+.mn-gallery-full {
+  display: none;
+}
+
+.mn-gallery-full:target {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1.5rem;
+  background: rgb(0 0 0 / 0.88);
+}
+
+.mn-gallery-full img {
+  max-width: min(100%, 72rem);
+  max-height: 78vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--mn-radius);
+}
+
+.mn-gallery-full-caption {
+  margin: 0;
+  color: #fff;
+  text-align: center;
+  max-width: 40rem;
+}
+
+.mn-gallery-close,
+.mn-gallery-step a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.mn-gallery-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0.25rem 0.75rem;
+}
+
+.mn-gallery-step {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.mn-gallery-step a {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: var(--mn-radius);
+}
+
+.mn-gallery-close:focus-visible,
+.mn-gallery-step a:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

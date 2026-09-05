@@ -364,6 +364,130 @@ export const accordionBlock = defineBlock({
   },
 });
 
+/**
+ * A grid of photographs, each one enlargeable.
+ *
+ * The lightbox is CSS `:target` and no JavaScript, which is a deliberate choice with a real
+ * cost attached. What it buys: the gallery works in a Site that has not hydrated, on a slow
+ * connection, and in a feed reader; enlarging an image is a link, so it is keyboard operable
+ * and middle-clickable without anyone implementing either. What it costs: opening an image
+ * pushes a history entry, so Back closes it rather than leaving the Page, and there is no
+ * Escape key.
+ *
+ * Note what is deliberately *absent*: `aria-modal`. Without focus management the attribute is
+ * a claim the keyboard contradicts — the same fault the media picker's trap exists to fix.
+ * An overlay that says it is modal while Tab walks out behind it is worse than one that
+ * never claimed to be. Adding Escape, focus containment and arrow keys means a client
+ * component, which would be the first in this package.
+ */
+export const galleryBlock = defineBlock({
+  name: "gallery",
+  label: "Image gallery",
+  fields: {
+    title: field.text({ label: "Title", default: "" }),
+    items: field.repeater({
+      label: "Images",
+      fields: {
+        image: field.image({ label: "Image" }),
+        caption: field.text({ label: "Caption", default: "" }),
+      },
+    }),
+    columns: field.select({
+      label: "Columns",
+      options: ["2", "3", "4"],
+      default: "3",
+    }),
+    enlarge: field.boolean({
+      label: "Let visitors enlarge an image",
+      help: "Opening an image adds a step to the browser's Back button.",
+      default: true,
+    }),
+  },
+  render: ({ title, items, columns, enlarge }, context) => {
+    const shown = items.filter((item) => item.image.key);
+    if (shown.length === 0) return null;
+
+    // Scoped to this Block so two galleries on a Page cannot target each other's images, on
+    // the same reasoning as the accordion's group name.
+    const scope = stableName(shown.map((item) => item.image.key).join("\n"));
+    const url = (key: string) => `${context.mediaBaseUrl}/${key}`;
+
+    return (
+      <div className="mn-gallery" id={`mn-gal-${scope}`} data-columns={columns}>
+        {title ? <h2 className="mn-gallery-title">{title}</h2> : null}
+
+        <ul className="mn-gallery-grid">
+          {shown.map((item, index) => {
+            const figure = (
+              <figure className="mn-gallery-figure">
+                <img
+                  src={url(item.image.key)}
+                  alt={item.image.decorative ? "" : item.image.alt}
+                  width={item.image.width ?? undefined}
+                  height={item.image.height ?? undefined}
+                  loading="lazy"
+                />
+                {item.caption ? <figcaption>{item.caption}</figcaption> : null}
+              </figure>
+            );
+
+            return (
+              // eslint-disable-next-line react/no-array-index-key
+              <li className="mn-gallery-cell" key={index}>
+                {enlarge ? (
+                  <a
+                    className="mn-gallery-open"
+                    href={`#mn-gal-${scope}-${index}`}
+                    aria-label={`Enlarge: ${item.image.alt || item.caption || `image ${index + 1}`}`}
+                  >
+                    {figure}
+                  </a>
+                ) : (
+                  figure
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        {enlarge
+          ? shown.map((item, index) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <div className="mn-gallery-full" id={`mn-gal-${scope}-${index}`} key={index}>
+                <a
+                  className="mn-gallery-close"
+                  href={`#mn-gal-${scope}`}
+                  aria-label="Close the enlarged image"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </a>
+                <img
+                  src={url(item.image.key)}
+                  alt={item.image.decorative ? "" : item.image.alt}
+                  width={item.image.width ?? undefined}
+                  height={item.image.height ?? undefined}
+                />
+                {item.caption ? <p className="mn-gallery-full-caption">{item.caption}</p> : null}
+                <nav className="mn-gallery-step">
+                  {index > 0 ? (
+                    <a href={`#mn-gal-${scope}-${index - 1}`} rel="prev">
+                      Previous
+                    </a>
+                  ) : null}
+                  {index < shown.length - 1 ? (
+                    <a href={`#mn-gal-${scope}-${index + 1}`} rel="next">
+                      Next
+                    </a>
+                  ) : null}
+                </nav>
+              </div>
+            ))
+          : null}
+      </div>
+    );
+  },
+});
+
 export const designBlocks = [
   eyebrowBlock,
   buttonBlock,
@@ -374,4 +498,5 @@ export const designBlocks = [
   ctaBlock,
   pricingBlock,
   accordionBlock,
+  galleryBlock,
 ];
