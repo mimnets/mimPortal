@@ -147,6 +147,26 @@ describe("the comparison table Block", () => {
     expect(featured.length).toBe(1 + 2);
   });
 
+  it("gives the Editor a usable blank row, values array and all", () => {
+    // This is the codebase's first repeater nested inside a repeater. The Editor builds a new
+    // item by calling `schema.parse(undefined)` on each sub-field (FieldInput.tsx:201), so the
+    // inner repeater's array default is what stands between "Add item" and a Block that throws
+    // on `row.values[i]`. It is one `.default([])` deep in the field builder, and nothing else
+    // would notice if it went.
+    const rows = compareBlock.fields.rows as {
+      fields?: Record<string, { schema: { parse: (value: unknown) => unknown } }>;
+    };
+    const blank = Object.fromEntries(
+      Object.entries(rows.fields ?? {}).map(([key, sub]) => [key, sub.schema.parse(undefined)]),
+    );
+
+    expect(blank).toEqual({ label: "", values: [] });
+
+    // And the Block renders that blank row rather than throwing on it.
+    const { container } = draw(props({ rows: [blank] }));
+    expect(container.querySelectorAll("tbody td")).toHaveLength(2);
+  });
+
   it("adds the buttons row only when a plan has one", () => {
     expect(draw(props()).container.querySelector("tfoot")).toBeNull();
 
