@@ -48,9 +48,16 @@ function describeField(field: Field, indent: string): string {
     case "textarea":
       return "a string, may contain \\n\\n between paragraphs";
     case "image":
-      // A generated layout cannot reference a file that does not exist, so images stay empty
-      // and an Author fills them from the media library.
-      return '{ "key": "", "alt": "", "width": null, "height": null } — always empty; the Site has no images yet';
+      // `key` stays empty because a generated layout cannot reference a file that does not
+      // exist yet. `alt` is where the model says what photograph belongs here — it is read
+      // back at apply time and searched for, and if no provider is configured it is still
+      // the alt text an Author would have had to write. One field doing both jobs, rather
+      // than a second one that only means something to the Preset pipeline.
+      return (
+        '{ "key": "", "alt": "a short description of the photograph that belongs here, ' +
+        'e.g. \"a chef plating a dish in a small kitchen\"", "width": null, "height": null } ' +
+        "— leave key empty; describe the picture in alt"
+      );
     case "link":
       return '{ "label": string, "href": string, "newTab": false }';
     case "repeater":

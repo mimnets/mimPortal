@@ -128,9 +128,28 @@ export const media = pgTable(
     width: integer("width"),
     height: integer("height"),
     alt: text("alt").notNull().default(""),
+    /**
+     * Where this file came from: "upload" for a person, or a stock provider's name.
+     *
+     * Recorded because a Site that applied a Preset has photographs nobody chose, and an
+     * Owner handing the Site to a client needs to know which ones are still placeholders.
+     * A file with no provenance is indistinguishable from one somebody meant.
+     */
+    source: text("source").notNull().default("upload"),
+    /** The photograph's page on the provider, which is half of the attribution. */
+    sourceUrl: text("source_url").notNull().default(""),
+    /** The photographer. Both providers' licences ask for this, and one requires it. */
+    credit: text("credit").notNull().default(""),
+    /** The photographer's own page, which is the other half. */
+    creditUrl: text("credit_url").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("media_created_idx").on(table.createdAt)],
+  (table) => [
+    index("media_created_idx").on(table.createdAt),
+    // The Dashboard's "which of these did nobody choose?" question, which is a filter on
+    // everything that did not arrive by upload.
+    index("media_source_idx").on(table.source),
+  ],
 );
 
 export type MediaRow = typeof media.$inferSelect;

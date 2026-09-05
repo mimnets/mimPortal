@@ -64,6 +64,13 @@
       "when": 1788419287095,
       "tag": "0008_lazy_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788601777139,
+      "tag": "0009_strange_silver_samurai",
+      "breakpoints": true
     }
   ]
 }

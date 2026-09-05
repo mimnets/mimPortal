@@ -11,7 +11,8 @@
     "./storage": "./src/storage/index.ts",
     "./email": "./src/email/index.ts",
     "./forms": "./src/forms/index.ts",
-    "./ai": "./src/ai/index.ts"
+    "./ai": "./src/ai/index.ts",
+    "./stock": "./src/stock/index.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -48,6 +49,10 @@
       "./ai": {
         "types": "./dist/ai/index.d.ts",
         "default": "./dist/ai/index.js"
+      },
+      "./stock": {
+        "types": "./dist/stock/index.d.ts",
+        "default": "./dist/stock/index.js"
       }
     }
   },
