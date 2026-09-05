@@ -81,7 +81,12 @@ export type EditorAction =
   | { type: "loadLayout"; layout: PageLayout }
   | { type: "undo" }
   | { type: "redo" }
-  | { type: "saved" };
+  /**
+   * The layout that was actually sent. `dirty` clears only if the document has not moved on
+   * since — an Author who keeps typing while the request is in flight has unsaved work again
+   * the moment the first keystroke lands, and telling them otherwise loses it.
+   */
+  | { type: "saved"; layout: PageLayout };
 
 /** Far more than anyone reaches for, and small enough that the layouts stay cheap to hold. */
 const HISTORY_LIMIT = 50;
@@ -243,7 +248,10 @@ function documentReducer(state: DocumentState, action: EditorAction): DocumentSt
       return { ...state, selection: action.selection };
 
     case "saved":
-      return { ...state, dirty: false };
+      // Reference equality is the whole check: every action that changes the document builds
+      // a new one with structuredClone, so an unchanged reference means nothing happened
+      // while the save was in flight.
+      return state.layout === action.layout ? { ...state, dirty: false } : state;
 
     // Restoring a version replaces the draft in place. It counts as an unsaved change,
     // because a restore is a proposal until the Author publishes it.

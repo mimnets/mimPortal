@@ -3,6 +3,7 @@ import { standardBlocks } from "@mimnets/blocks";
 import { describe, expect, it } from "vitest";
 
 import {
+  blockAt,
   canRedo,
   canUndo,
   editorReducer,
@@ -479,7 +480,7 @@ describe("undo and redo", () => {
   it("records nothing for a selection or a save", () => {
     const state = editorReducer(fixture(), { type: "select", selection: null });
     expect(state.past).toEqual([]);
-    expect(editorReducer(state, { type: "saved" }).past).toEqual([]);
+    expect(editorReducer(state, { type: "saved", layout: state.layout }).past).toEqual([]);
   });
 
   it("follows the selection back through an undo", () => {
@@ -631,5 +632,68 @@ describe("changing a Section's Column layout", () => {
       kind: "section",
       path: { slot: "main", section: 0 },
     });
+  });
+});
+
+
+describe("what a save does to the unsaved-changes flag", () => {
+  /**
+   * A save reports on the document it sent, not on the one in front of the Author.
+   *
+   * `onSave` receives the layout as it was when the button was pressed. The request then
+   * takes as long as it takes, and an Author who carries on typing has changed the document
+   * before it resolves. Clearing `dirty` unconditionally told them "All changes saved",
+   * disabled the Save button and unregistered the beforeunload guard — so closing the tab
+   * lost the edits, silently, immediately after being told they were safe.
+   */
+  const path = { slot: "main", section: 0, column: 0, block: 0 } as const;
+
+  it("clears the flag when nothing changed while the save was in flight", () => {
+    const state = editorReducer(fixture(), {
+      type: "setProp",
+      path,
+      key: "text",
+      value: "Typed once",
+    });
+    expect(state.dirty).toBe(true);
+
+    const saved = editorReducer(state, { type: "saved", layout: state.layout });
+
+    expect(saved.dirty).toBe(false);
+  });
+
+  it("keeps the flag when the Author typed while the save was in flight", () => {
+    const sent = editorReducer(fixture(), {
+      type: "setProp",
+      path,
+      key: "text",
+      value: "Typed before saving",
+    });
+
+    // The Author keeps typing; the request has not come back yet.
+    const later = editorReducer(sent, {
+      type: "setProp",
+      path,
+      key: "text",
+      value: "Typed while saving",
+    });
+
+    // Now it does, reporting on the document that was actually sent.
+    const saved = editorReducer(later, { type: "saved", layout: sent.layout });
+
+    expect(saved.dirty).toBe(true);
+    expect(blockAt(saved.layout, path)?.props.text).toBe("Typed while saving");
+  });
+
+  it("does not disturb anything else about the state", () => {
+    const state = editorReducer(fixture(), {
+      type: "select",
+      selection: { kind: "block", path },
+    });
+
+    const saved = editorReducer(state, { type: "saved", layout: state.layout });
+
+    expect(saved.selection).toEqual(state.selection);
+    expect(saved.layout).toBe(state.layout);
   });
 });

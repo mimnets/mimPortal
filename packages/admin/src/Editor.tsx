@@ -220,13 +220,22 @@ export function Editor({
     }
   }
 
-  async function run(kind: "saving" | "publishing", work: () => Promise<string>) {
+  /**
+   * `submitted` is the document as it was when the button was pressed, which is what was
+   * sent. It is passed back to the reducer so that an Author who carried on typing during
+   * the request keeps their unsaved-changes state instead of being told they are safe.
+   */
+  async function run(
+    kind: "saving" | "publishing",
+    submitted: PageLayout,
+    work: () => Promise<string>,
+  ) {
     setStatus(kind);
     setError(null);
     setMessage(null);
     try {
       const result = await work();
-      dispatch({ type: "saved" });
+      dispatch({ type: "saved", layout: submitted });
       setMessage(result);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong");
@@ -291,7 +300,7 @@ export function Editor({
             className="mn-button"
             disabled={busy || !state.dirty}
             onClick={() =>
-              run("saving", async () => {
+              run("saving", state.layout, async () => {
                 const next = await onSave(state.layout, revision);
                 if (typeof next === "number") setRevision(next);
                 return "Draft saved";
@@ -314,7 +323,7 @@ export function Editor({
               className="mn-button mn-button-primary"
               disabled={busy}
               onClick={() =>
-                run("publishing", async () => {
+                run("publishing", state.layout, async () => {
                   const result = await onPublish(state.layout, revision);
                   setVersions(result.versions);
                   setRevision(result.revision);
