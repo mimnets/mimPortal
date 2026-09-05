@@ -53,6 +53,28 @@ export const PlusIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const UndoIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M3 8h6.5a3.5 3.5 0 0 1 0 7H6" />
+    <path d="M5.5 5 2.5 8l3 3" />
+  </Icon>
+);
+
+export const RedoIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M13 8H6.5a3.5 3.5 0 0 0 0 7H10" />
+    <path d="M10.5 5l3 3-3 3" />
+  </Icon>
+);
+
+/** Two overlapping sheets — the copy sitting on top of what it was copied from. */
+export const DuplicateIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="5.5" y="5.5" width="8" height="8" rx="1" />
+    <path d="M10.5 2.5H3.5a1 1 0 0 0-1 1v7" />
+  </Icon>
+);
+
 export const SaveIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M3 3h7l3 3v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />

@@ -18,10 +18,12 @@ import { emptyContext } from "@mimnets/core";
 import { History, type PageVersionSummary } from "./History";
 import { AssistProvider, type AssistSettings } from "./assist-context";
 import { MediaProvider, type MediaBridge } from "./media";
-import { SaveIcon } from "./icons";
+import { RedoIcon, SaveIcon, UndoIcon } from "./icons";
 import { Preview } from "./Preview";
 import { SettingsPanel } from "./SettingsPanel";
 import {
+  canRedo,
+  canUndo,
   editorReducer,
   findBlockPath,
   findColumnTarget,
@@ -146,6 +148,31 @@ export function Editor({
     return () => window.removeEventListener("beforeunload", ask);
   }, [state.dirty]);
 
+  /**
+   * Ctrl+Z and Ctrl+Shift+Z, or their Cmd equivalents on a Mac.
+   *
+   * Ignored while the Author is typing, because a text field has its own undo stack and
+   * taking Ctrl+Z away from it would be a worse trade than not having the shortcut at all —
+   * the toolbar button is still there for the Block they just deleted. `isContentEditable`
+   * is checked alongside the input tags so that a rich field added later is covered without
+   * anyone remembering to come back here.
+   */
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "z") return;
+
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+
+      event.preventDefault();
+      dispatch({ type: event.shiftKey ? "redo" : "undo" });
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   // A small distance before a drag begins, so clicking a Block to select it does not drag it.
   //
   // The keyboard sensor is not an extra: dnd-kit's drag handles already announce "To pick up
@@ -193,13 +220,22 @@ export function Editor({
     }
   }
 
-  async function run(kind: "saving" | "publishing", work: () => Promise<string>) {
+  /**
+   * `submitted` is the document as it was when the button was pressed, which is what was
+   * sent. It is passed back to the reducer so that an Author who carried on typing during
+   * the request keeps their unsaved-changes state instead of being told they are safe.
+   */
+  async function run(
+    kind: "saving" | "publishing",
+    submitted: PageLayout,
+    work: () => Promise<string>,
+  ) {
     setStatus(kind);
     setError(null);
     setMessage(null);
     try {
       const result = await work();
-      dispatch({ type: "saved" });
+      dispatch({ type: "saved", layout: submitted });
       setMessage(result);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong");
@@ -233,12 +269,38 @@ export function Editor({
             {error ?? message ?? (state.dirty ? "Unsaved changes" : "All changes saved")}
           </span>
 
+          {/* Before Save, because they are the pair an Author reaches for most and undo is
+              the one that has to be findable in a hurry. Titled rather than labelled: the
+              bar is already crowded, and both icons are conventional enough to read. */}
+          <div className="mn-ed-undo">
+            <button
+              type="button"
+              className="mn-button mn-button-icon"
+              disabled={busy || !canUndo(state)}
+              onClick={() => dispatch({ type: "undo" })}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+            >
+              <UndoIcon />
+            </button>
+            <button
+              type="button"
+              className="mn-button mn-button-icon"
+              disabled={busy || !canRedo(state)}
+              onClick={() => dispatch({ type: "redo" })}
+              title="Redo (Ctrl+Shift+Z)"
+              aria-label="Redo"
+            >
+              <RedoIcon />
+            </button>
+          </div>
+
           <button
             type="button"
             className="mn-button"
             disabled={busy || !state.dirty}
             onClick={() =>
-              run("saving", async () => {
+              run("saving", state.layout, async () => {
                 const next = await onSave(state.layout, revision);
                 if (typeof next === "number") setRevision(next);
                 return "Draft saved";
@@ -261,7 +323,7 @@ export function Editor({
               className="mn-button mn-button-primary"
               disabled={busy}
               onClick={() =>
-                run("publishing", async () => {
+                run("publishing", state.layout, async () => {
                   const result = await onPublish(state.layout, revision);
                   setVersions(result.versions);
                   setRevision(result.revision);

@@ -35,10 +35,33 @@ export type Selection =
   | { kind: "section"; path: SectionPath }
   | null;
 
-export interface EditorState {
+/**
+ * The document and what is selected in it — everything an action changes.
+ *
+ * Kept separate from `EditorState` so that the reducer over it stays unaware of history:
+ * every case below returns one of these, and undo is composed on top rather than threaded
+ * through thirteen switch arms.
+ */
+export interface DocumentState {
   layout: PageLayout;
   selection: Selection;
   dirty: boolean;
+}
+
+export interface EditorState extends DocumentState {
+  /** Layouts as they were before each change, oldest first. Capped at `HISTORY_LIMIT`. */
+  past: PageLayout[];
+  /** Layouts undone away, nearest first. Emptied by any new change. */
+  future: PageLayout[];
+  /**
+   * Which field is being typed into, or null.
+   *
+   * Consecutive edits to the same field collapse into one history entry, so undo returns
+   * the heading as it was before the Author started typing rather than a letter at a time.
+   * The run is identified rather than timed: any other action ends it, which is
+   * deterministic and leaves the reducer pure. A timer would make it neither.
+   */
+  typing: string | null;
 }
 
 export type EditorAction =
@@ -47,14 +70,26 @@ export type EditorAction =
   | { type: "setBlockStyle"; path: BlockPath; style: Partial<BlockStyle> }
   | { type: "addBlock"; target: Omit<DropTarget, "index">; blockType: AnyBlockType }
   | { type: "deleteBlock"; path: BlockPath }
+  | { type: "duplicateBlock"; path: BlockPath }
   | { type: "moveBlock"; from: BlockPath; to: DropTarget }
   | { type: "addSection"; slot: SlotName; layout: ColumnLayout }
   | { type: "deleteSection"; path: SectionPath }
+  | { type: "duplicateSection"; path: SectionPath }
   | { type: "moveSection"; slot: SlotName; from: number; to: number }
   | { type: "setSectionLayout"; path: SectionPath; layout: ColumnLayout }
   | { type: "setSectionStyle"; path: SectionPath; style: Partial<SectionStyle> }
   | { type: "loadLayout"; layout: PageLayout }
-  | { type: "saved" };
+  | { type: "undo" }
+  | { type: "redo" }
+  /**
+   * The layout that was actually sent. `dirty` clears only if the document has not moved on
+   * since — an Author who keeps typing while the request is in flight has unsaved work again
+   * the moment the first keystroke lands, and telling them otherwise loses it.
+   */
+  | { type: "saved"; layout: PageLayout };
+
+/** Far more than anyone reaches for, and small enough that the layouts stay cheap to hold. */
+const HISTORY_LIMIT = 50;
 
 function newId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -73,6 +108,27 @@ export function newSection(layout: ColumnLayout): SectionNode {
     layout,
     columns: Array.from({ length: columnCount(layout) }, emptyColumn),
     ...sectionDefaults(),
+  };
+}
+
+/**
+ * A copy of a Section, with a fresh id for the Section, every Column and every Block.
+ *
+ * The ids are the whole difficulty. A duplicate that kept them would give React two children
+ * with one key and dnd-kit two draggables with one id, and the second Section would appear
+ * to drag the first. `findBlockPath` would also stop at the earlier of the two, so the
+ * settings panel would edit the original while the Author looked at the copy.
+ */
+function copySection(section: SectionNode): SectionNode {
+  const copy = structuredClone(section);
+  return {
+    ...copy,
+    id: newId("sec"),
+    columns: copy.columns.map((column) => ({
+      ...column,
+      id: newId("col"),
+      blocks: column.blocks.map((block) => ({ ...block, id: newId("blk") })),
+    })),
   };
 }
 
@@ -180,14 +236,22 @@ function followSelection(before: PageLayout, after: PageLayout, selection: Selec
 /**
  * Every action produces a new layout document. The Editor holds the whole tree in memory
  * and saves it whole (ADR-0004), so there is no partial state to reconcile.
+ *
+ * Undo is not handled here. This reducer answers "what does the document look like after
+ * this action", and `editorReducer` below wraps it to remember what it looked like before.
+ * An action that cannot be applied — a path that no longer resolves — returns `state`
+ * itself, and the wrapper reads that identity as "nothing happened, record nothing".
  */
-export function editorReducer(state: EditorState, action: EditorAction): EditorState {
+function documentReducer(state: DocumentState, action: EditorAction): DocumentState {
   switch (action.type) {
     case "select":
       return { ...state, selection: action.selection };
 
     case "saved":
-      return { ...state, dirty: false };
+      // Reference equality is the whole check: every action that changes the document builds
+      // a new one with structuredClone, so an unchanged reference means nothing happened
+      // while the save was in flight.
+      return state.layout === action.layout ? { ...state, dirty: false } : state;
 
     // Restoring a version replaces the draft in place. It counts as an unsaved change,
     // because a restore is a proposal until the Author publishes it.
@@ -226,6 +290,30 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       // The deleted Block is gone from `layout`, so following the selection through resolves
       // to null for it and to a corrected path for every Block that shifted up behind it.
       return { layout, dirty: true, selection: followSelection(state.layout, layout, state.selection) };
+    }
+
+    case "duplicateBlock": {
+      const layout = structuredClone(state.layout);
+      const column = columnAt(layout, action.path);
+      const block = column?.blocks[action.path.block];
+      if (!column || !block) return state;
+
+      // Directly below the original, which is where an Author building a row expects it,
+      // and selected, because the next thing they do is change what makes it different.
+      // structuredClone rather than a spread. `block` is already inside the cloned layout,
+      // so `{ ...block }` would give the copy the *same* props and style objects as the
+      // original — and structuredClone preserves that aliasing every time the document is
+      // cloned afterwards, including into `past`. It is harmless only for as long as every
+      // writer replaces those objects rather than mutating them, which is an invariant
+      // nothing states and one in-place write would break, in two Blocks and all of history
+      // at once.
+      const index = action.path.block + 1;
+      column.blocks.splice(index, 0, { ...structuredClone(block), id: newId("blk") });
+      return {
+        layout,
+        dirty: true,
+        selection: { kind: "block", path: { ...action.path, block: index } },
+      };
     }
 
     case "moveBlock": {
@@ -281,6 +369,21 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       // away a selection on a Block in the third. Following it keeps that, and still clears
       // when what was selected is what was deleted.
       return { layout, dirty: true, selection: followSelection(state.layout, layout, state.selection) };
+    }
+
+    case "duplicateSection": {
+      const layout = structuredClone(state.layout);
+      const sections = layout.slots[action.path.slot];
+      const section = sections[action.path.section];
+      if (!section) return state;
+
+      const index = action.path.section + 1;
+      sections.splice(index, 0, copySection(section));
+      return {
+        layout,
+        dirty: true,
+        selection: { kind: "section", path: { slot: action.path.slot, section: index } },
+      };
     }
 
     case "moveSection": {
@@ -352,8 +455,92 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
   }
 }
 
+/**
+ * Identifies a run of typing: the field being edited, not the value.
+ *
+ * Two edits collapse only when they are the same key of the same Block, so tabbing to the
+ * next field starts a fresh history entry and undo lands on a boundary an Author recognises.
+ */
+function editRun(path: BlockPath, key: string): string {
+  return `${path.slot}/${path.section}/${path.column}/${path.block}#${key}`;
+}
+
+/**
+ * The reducer the Editor uses: `documentReducer`, plus the memory of what came before.
+ *
+ * Undo restores a whole layout rather than inverting an action. The Editor already holds
+ * the entire tree and saves it whole (ADR-0004), so a snapshot is the natural unit and
+ * there is no inverse to write for each of the thirteen cases — which is also the reason a
+ * later action can be added without thinking about undo at all.
+ */
+export function editorReducer(state: EditorState, action: EditorAction): EditorState {
+  if (action.type === "undo") {
+    const previous = state.past[state.past.length - 1];
+    if (!previous) return state;
+    return {
+      ...state,
+      layout: previous,
+      past: state.past.slice(0, -1),
+      future: [state.layout, ...state.future],
+      selection: followSelection(state.layout, previous, state.selection),
+      // Always dirty, even when the undo lands back on what was last saved. Claiming a Page
+      // is saved when it might not be is the expensive direction of that mistake; offering a
+      // save that turns out to be a no-op costs nothing.
+      dirty: true,
+      typing: null,
+    };
+  }
+
+  if (action.type === "redo") {
+    const next = state.future[0];
+    if (!next) return state;
+    return {
+      ...state,
+      layout: next,
+      past: [...state.past, state.layout].slice(-HISTORY_LIMIT),
+      future: state.future.slice(1),
+      selection: followSelection(state.layout, next, state.selection),
+      dirty: true,
+      typing: null,
+    };
+  }
+
+  const next = documentReducer(state, action);
+
+  // The document is untouched: a selection, a save, or an action whose path did not resolve.
+  // Nothing to remember, but the typing run ends — the Author has moved on.
+  if (next.layout === state.layout) {
+    // An action that changed nothing at all returns the very same object, so `useReducer`
+    // can skip the re-render. Building a new one here would give every no-op a render.
+    if (next === state && state.typing === null) return state;
+    return { ...state, ...next, typing: null };
+  }
+
+  const typing = action.type === "setProp" ? editRun(action.path, action.key) : null;
+  const continues = typing !== null && typing === state.typing;
+
+  return {
+    ...state,
+    ...next,
+    // A continuing run keeps the entry it already pushed, which holds the layout as it was
+    // before the first keystroke — so one undo returns the whole field, not one character.
+    past: continues ? state.past : [...state.past, state.layout].slice(-HISTORY_LIMIT),
+    // Anything new abandons the redo branch, as every editor does.
+    future: [],
+    typing,
+  };
+}
+
+export function canUndo(state: EditorState): boolean {
+  return state.past.length > 0;
+}
+
+export function canRedo(state: EditorState): boolean {
+  return state.future.length > 0;
+}
+
 export function initialState(layout: PageLayout): EditorState {
-  return { layout, selection: null, dirty: false };
+  return { layout, selection: null, dirty: false, past: [], future: [], typing: null };
 }
 
 export function blockTypeFor(
