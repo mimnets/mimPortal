@@ -1201,3 +1201,40 @@ h3.mn-heading {
     scroll-behavior: auto;
   }
 }
+
+/* ---- Location map ---- */
+
+.mn-map {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.mn-map-frame {
+  width: 100%;
+  height: var(--mn-map-height, 22rem);
+  border: 0;
+  border-radius: var(--mn-radius);
+  display: block;
+  /* A map is a picture of a place, not a document to be read — it stays out of the tab order
+     until a visitor chooses to interact with it. */
+  background: var(--mn-color-surface);
+}
+
+.mn-map[data-height="short"] { --mn-map-height: 14rem; }
+.mn-map[data-height="medium"] { --mn-map-height: 22rem; }
+.mn-map[data-height="tall"] { --mn-map-height: 32rem; }
+
+.mn-map-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  font-size: 0.9375rem;
+}
+
+.mn-map-caption a {
+  color: var(--mn-color-primary);
+}

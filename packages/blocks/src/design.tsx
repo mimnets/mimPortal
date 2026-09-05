@@ -592,6 +592,98 @@ export const carouselBlock = defineBlock({
   },
 });
 
+/** How much of the world a zoom level shows, in degrees of longitude. */
+const MAP_SPANS = { street: 0.006, area: 0.03, city: 0.12 } as const;
+
+/**
+ * A map with a pin in it.
+ *
+ * OpenStreetMap by default, and the default is the point. Its embed needs no API key, no
+ * account and no billing alarm, and it sets no third-party cookies — so a Site can show
+ * visitors where it is without acquiring a consent banner to do it. Google Maps is offered
+ * for Sites that want it, and choosing it is choosing that banner; the help text says so
+ * rather than leaving an Owner to discover it from a compliance email.
+ *
+ * The Google key is an ordinary field rather than an environment variable on purpose. A Maps
+ * Embed key travels in the URL the visitor's browser requests, so it is public by
+ * construction — treating it as a secret would imply a protection that does not exist. What
+ * actually protects it is an HTTP-referrer restriction, which is what the help text asks for.
+ *
+ * Below the frame there is always a plain link to the map. An iframe that a corporate proxy,
+ * a content blocker or a printer drops should still leave a visitor able to find the place.
+ */
+export const mapBlock = defineBlock({
+  name: "map",
+  label: "Location map",
+  fields: {
+    label: field.text({
+      label: "Place name",
+      help: "Shown under the map and used to describe it to a screen reader.",
+      default: "",
+    }),
+    latitude: field.number({ label: "Latitude", default: 0 }),
+    longitude: field.number({ label: "Longitude", default: 0 }),
+    zoom: field.select({
+      label: "Zoom",
+      options: ["street", "area", "city"],
+      default: "street",
+    }),
+    height: field.select({
+      label: "Height",
+      options: ["short", "medium", "tall"],
+      default: "medium",
+    }),
+    provider: field.select({
+      label: "Map provider",
+      help: "OpenStreetMap needs no key and sets no third-party cookies. Google Maps does both.",
+      options: ["openstreetmap", "google"],
+      default: "openstreetmap",
+    }),
+    googleKey: field.text({
+      label: "Google Maps embed key",
+      help: "Only used for Google. Public by design — restrict it by HTTP referrer in the Google console.",
+      default: "",
+    }),
+  },
+  render: ({ label, latitude, longitude, zoom, height, provider, googleKey }) => {
+    // 0,0 is the Gulf of Guinea. It is the schema default rather than anywhere an Author
+    // meant, so an unconfigured map draws nothing instead of pinning the Atlantic.
+    if (latitude === 0 && longitude === 0) return null;
+
+    const useGoogle = provider === "google" && googleKey !== "";
+    const span = MAP_SPANS[zoom as keyof typeof MAP_SPANS] ?? MAP_SPANS.street;
+    const title = label ? `Map showing ${label}` : "Map";
+
+    const src = useGoogle
+      ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(googleKey)}&q=${latitude},${longitude}&zoom=${zoom === "street" ? 17 : zoom === "area" ? 15 : 13}`
+      : `https://www.openstreetmap.org/export/embed.html?bbox=${longitude - span},${latitude - span / 2},${longitude + span},${latitude + span / 2}&layer=mapnik&marker=${latitude},${longitude}`;
+
+    const away = useGoogle
+      ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+      : `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`;
+
+    return (
+      <figure className="mn-map" data-height={height}>
+        <iframe
+          className="mn-map-frame"
+          title={title}
+          src={src}
+          loading="lazy"
+          // The frame needs nothing from this Site and should be able to do nothing to it.
+          referrerPolicy="no-referrer-when-downgrade"
+          sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+        />
+        <figcaption className="mn-map-caption">
+          {label ? <span>{label}</span> : null}
+          <a href={away} target="_blank" rel="noreferrer">
+            Open the map
+          </a>
+        </figcaption>
+      </figure>
+    );
+  },
+});
+
 export const designBlocks = [
   eyebrowBlock,
   buttonBlock,
@@ -604,4 +696,5 @@ export const designBlocks = [
   accordionBlock,
   galleryBlock,
   carouselBlock,
+  mapBlock,
 ];
