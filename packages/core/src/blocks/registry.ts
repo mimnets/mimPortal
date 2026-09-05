@@ -65,27 +65,87 @@ export function createRegistry(blocks: AnyBlockType[]): BlockRegistry {
 
   const byName = new Map(blocks.map((block) => [block.name, block]));
 
-  // Defaulted, so every Block written before Blocks could be styled still parses.
-  const style = z
-    .object({
+  /**
+   * Every value here is defaulted, so a Block written before any of this existed still
+   * parses — which is not a nicety, it is every Block on every Page of every Site.
+   *
+   * Built per Block Type rather than shared, because `variant` is the one style value whose
+   * legal set is not global: a testimonial's "quote" and a button's "outline" have nothing to
+   * do with each other, and only the Block Type knows its own list.
+   */
+  function styleSchema(block: AnyBlockType) {
+    const base = {
       tone: z.enum(BLOCK_TONES).default("default"),
       font: z.enum(BLOCK_FONTS).default("default"),
       animate: z.enum(BLOCK_ANIMATIONS).default("none"),
-    })
-    .default({ tone: "default", font: "default", animate: "none" });
+    };
+
+    if (!block.variants?.length) {
+      return z.object(base).default({ tone: "default", font: "default", animate: "none" });
+    }
+
+    // The first declared variant is what the Block looks like today, so defaulting to it is
+    // what lets this ship without migrating anything.
+    const fallback = block.variants[0];
+    return z
+      .object({ ...base, variant: z.enum(block.variants).default(fallback) })
+      .default({ tone: "default", font: "default", animate: "none", variant: fallback });
+  }
+
+  /**
+   * Lifts a variant out of the field it used to be, for the two Block Types that had one
+   * before there was a mechanism.
+   *
+   * A button's look was `props.style` and prose's was `props.width`. Both are stored that way
+   * on every Page written so far, and `props` is about to stop carrying them — an unknown key
+   * is stripped, silently, and every accent button on every Site would come back primary.
+   *
+   * Done here, at the parse boundary, rather than as a database migration: this is where the
+   * shape of a stored document is already reconciled with the shape the code expects, it
+   * needs no downtime and no script, and a Page rewrites itself into the new shape the next
+   * time an Author saves it. An explicitly stated `style.variant` always wins, so a Page that
+   * has been saved once never consults the old field again.
+   */
+  function liftLegacyVariant(block: AnyBlockType, value: unknown): unknown {
+    if (!block.variantWasField || typeof value !== "object" || value === null) return value;
+
+    const node = value as { props?: unknown; style?: unknown };
+    const style = (node.style ?? {}) as Record<string, unknown>;
+    if (typeof style.variant === "string") return value;
+
+    const props = (node.props ?? {}) as Record<string, unknown>;
+    const legacy = props[block.variantWasField];
+    if (typeof legacy !== "string" || !block.variants?.includes(legacy)) return value;
+
+    return { ...node, style: { ...style, variant: legacy } };
+  }
 
   const variants = blocks.map((block) =>
     z.object({
       id: z.string().min(1),
       type: z.literal(block.name),
       props: block.propsSchema,
-      style,
+      style: styleSchema(block),
     }),
   ) as unknown as [z.ZodObject<z.ZodRawShape>, ...z.ZodObject<z.ZodRawShape>[]];
 
   // A Block whose `type` this Site does not register fails validation here, rather than
   // rendering as a silent gap in the page.
-  const blockSchema = z.discriminatedUnion("type", variants) as unknown as z.ZodType<BlockInstance>;
+  const union = z.discriminatedUnion("type", variants);
+
+  /**
+   * The stored shape is reconciled with the expected one, and then validated.
+   *
+   * The lift sits outside the union rather than on each member: a discriminated union reads
+   * its discriminator off the option schemas themselves and refuses any option it cannot see
+   * a literal `type` through, `z.preprocess` included — "Invalid discriminated union option
+   * at index 0", thrown when the registry is built rather than when a Page is parsed.
+   */
+  const blockSchema = z.preprocess((value) => {
+    const type = (value as { type?: unknown } | null)?.type;
+    const block = typeof type === "string" ? byName.get(type) : undefined;
+    return block ? liftLegacyVariant(block, value) : value;
+  }, union) as unknown as z.ZodType<BlockInstance>;
   const layoutSchema = buildLayoutSchema(blockSchema) as unknown as z.ZodType<PageLayout>;
 
   /**

@@ -623,15 +623,36 @@ those become the first variants rather than staying local conventions. Twenty-tw
 Types with three variants each is a library that reads as far larger than it is, which is
 the only version of that race worth entering.
 
+**Built, 5 September.** `defineBlock` takes `variants`, the registry builds the enum per
+Block Type from that list, the renderer emits `data-variant`, and the Editor generates the
+control the way it generates every settings form. The testimonial has three looks — card,
+quote, minimal — and the exit criterion below is met: the markup is byte-identical in all
+three and the render was not touched.
+
+Two decisions:
+
+- **The first declared variant is what the Block already looked like**, and is the default.
+  That is what let this ship without migrating a single stored Page: a Block written before
+  variants existed parses to the appearance it already had, and nobody chooses anything.
+- **The pair that did it by hand needed a real migration, and got one at the parse boundary.**
+  A button's look is stored in `props.style` on every Page ever written, and `props` has
+  stopped carrying it — an unknown key is stripped in silence, so every accent button on
+  every Site would have come back primary with no error and nothing dropped.
+  `variantWasField` names the old field and the registry lifts the value across as a Page is
+  read; a Page rewrites itself into the new shape the next time an Author saves it. No
+  downtime, no script, and deletable once every Site has re-saved.
+
+Not done here: **Section dividers** and **`field.token`**, both below.
+
 **Section dividers** land here for the same reason: an angled or curved edge between two
 bands is `clip-path` and a Section property, and it does more for how composed a Page looks
-than three more Block Types would.
+than three more Block Types would. *Not built.*
 
 **And a token picker, not a colour picker.** There is no `field.color`, and there should not
 be — a free hex picker is [ADR-0003](./adr/0003-sections-and-columns-not-free-canvas.md)'s
 mistake wearing a different hat, and a client who can put anything behind anything will.
 What is missing is `field.token`: choose one of the Theme's own colours, so a Block that
-offers a choice still cannot offer an unreadable one.
+offers a choice still cannot offer an unreadable one. *Not built.*
 
 **Done when:** the same testimonial Block looks like three different Sites without a line of
 new render code, and changing six values in `theme.ts` still rebrands all three.

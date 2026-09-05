@@ -11,6 +11,31 @@ export interface BlockTypeConfig<F extends FieldsShape> {
   label: string;
   fields: F;
   /**
+   * The looks this Block Type comes in, declared the way its fields are.
+   *
+   * A variant is emitted as `data-variant` on the Block's wrapper and styled in the Theme
+   * layer, next to the tones a Section already carries. The render is not given it and does
+   * not change — which is the test of whether the M1 interface was right, asked a second
+   * time. Twenty-two Block Types with three looks each is a library that reads as far larger
+   * than it is.
+   *
+   * **The first one is what the Block looks like today.** It is the default, so every Block
+   * already stored on every Page keeps the appearance it has, without a migration and
+   * without anybody choosing anything.
+   */
+  variants?: readonly [string, ...string[]];
+  /**
+   * The field this Block's variant used to be, for Pages written before variants existed.
+   *
+   * Two Block Types did this by hand before there was a mechanism — a button had a `style`
+   * field, prose had a `width` — and those are stored in `props`, not in `style`. Naming the
+   * old field here lifts the stored value across at parse time, so an accent button stays an
+   * accent button and nothing has to be migrated in a database.
+   *
+   * Deletable once every Site has re-saved its Pages, and worth deleting then.
+   */
+  variantWasField?: string;
+  /**
    * Blocks are pure functions of their own fields, plus whatever the Site resolved once for
    * this request — Menus, the Site name, the current path. A Block never queries anything.
    */

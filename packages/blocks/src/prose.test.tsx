@@ -4,8 +4,14 @@
  * The prose Block.
  *
  * The rendering itself is core's and tested there; what is left here is the Block's own
- * behaviour — that an empty one draws nothing, and that the line-length choice reaches the
- * element the stylesheet reads.
+ * behaviour — that an empty one draws nothing, and that an Author cannot paste working
+ * markup into a Page.
+ *
+ * The line-length choice used to be a `width` prop and is now a variant, so it is no longer
+ * this render's business at all: it reaches the DOM as `data-variant` on the wrapper, which
+ * core emits. The Block Type's own declaration is asserted below instead, because the *names*
+ * are load-bearing — every prose Block already stored says "readable" or "full" in a field
+ * this Block no longer has, and the registry lifts those across by matching them.
  */
 
 import { emptyContext } from "@mimnets/core";
@@ -47,13 +53,15 @@ describe("the prose Block", () => {
     expect(container.querySelector("strong")!.textContent).toBe("30 days");
   });
 
-  it("carries the line-length choice onto the element", () => {
-    expect(draw().container.querySelector(".mn-prose")!.getAttribute("data-width")).toBe(
-      "readable",
-    );
-    expect(
-      draw({ width: "full" }).container.querySelector(".mn-prose")!.getAttribute("data-width"),
-    ).toBe("full");
+  it("declares the line lengths under the names its stored Pages already use", () => {
+    expect(proseBlock.variants).toEqual(["readable", "full"]);
+    expect(proseBlock.variantWasField).toBe("width");
+    // First is the default, and "readable" is what every prose Block on every Page has.
+    expect(proseBlock.variants?.[0]).toBe("readable");
+  });
+
+  it("no longer takes the choice as a prop, so there is one control and not two", () => {
+    expect(Object.keys(proseBlock.fields)).toEqual(["body"]);
   });
 
   it("does not let an Author paste working markup into a Page", () => {

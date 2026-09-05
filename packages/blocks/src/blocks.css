@@ -525,19 +525,30 @@ h3.mn-heading {
   opacity: 0.92;
 }
 
-.mn-btn[data-style="primary"] {
+/* A button arrives from one of two places and is styled the same either way.
+ *
+ * The standalone button Block carries the Author's choice as a variant on its wrapper. A
+ * Block that draws a button as part of itself — the call to action, a pricing plan, the
+ * comparison table — says which kind it wants with `data-style` on the button, because that
+ * is not a choice anybody is offered. The `:not([data-style])` keeps the second winning over
+ * the first, so a Block that grows variants of its own later cannot silently restyle the
+ * button inside it. */
+.mn-btn[data-style="primary"],
+.mn-block[data-variant="primary"] .mn-btn:not([data-style]) {
   background: var(--mn-color-primary);
   border-color: var(--mn-color-primary);
   color: var(--mn-color-on-primary);
 }
 
-.mn-btn[data-style="accent"] {
+.mn-btn[data-style="accent"],
+.mn-block[data-variant="accent"] .mn-btn:not([data-style]) {
   background: var(--mn-color-accent);
   border-color: var(--mn-color-accent);
   color: var(--mn-color-on-accent);
 }
 
-.mn-btn[data-style="outline"] {
+.mn-btn[data-style="outline"],
+.mn-block[data-variant="outline"] .mn-btn:not([data-style]) {
   background: transparent;
   border-color: currentColor;
   color: inherit;
@@ -654,6 +665,82 @@ h3.mn-heading {
 .mn-quote figcaption span {
   display: flex;
   flex-direction: column;
+}
+
+/* ---- Testimonial variants --------------------------------------------------
+   Three looks for one Block, and not a line of new render code between them: the markup
+   below is identical in all three, and every value here is a Theme token, so all three
+   rebrand together when theme.ts changes.
+
+   "card" is the default and is everything above this comment — it needs no rules of its own,
+   which is the point of the first variant being what the Block already was. */
+
+/* Editorial: no card at all, the words at display size, and the open quote drawn large
+   behind them rather than sitting in the line. What a magazine does with a pull quote. */
+.mn-block[data-variant="quote"] .mn-quotes {
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+
+.mn-block[data-variant="quote"] .mn-quote {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 0 0 0 3.5rem;
+  position: relative;
+}
+
+.mn-block[data-variant="quote"] .mn-quote blockquote {
+  font-family: var(--mn-font-heading);
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.mn-block[data-variant="quote"] .mn-quote blockquote::before {
+  /* Out of the text and into the margin, at a size the line can no longer contain. */
+  content: "\201C";
+  position: absolute;
+  left: 0;
+  top: -0.15em;
+  margin: 0;
+  font-size: 4.5rem;
+  line-height: 1;
+  vertical-align: baseline;
+  color: var(--mn-color-accent);
+  opacity: 0.5;
+}
+
+/* A rule and a name. What a Site with a lot of these wants, and what a Site with two
+   does not. */
+.mn-block[data-variant="minimal"] .mn-quotes {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.mn-block[data-variant="minimal"] .mn-quote {
+  background: none;
+  border: 0;
+  border-top: var(--mn-border-base) solid var(--mn-color-border);
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 1.25rem 0;
+  gap: 0.5rem;
+}
+
+.mn-block[data-variant="minimal"] .mn-quote:last-child {
+  border-bottom: var(--mn-border-base) solid var(--mn-color-border);
+}
+
+.mn-block[data-variant="minimal"] .mn-quote blockquote::before {
+  content: none;
+}
+
+.mn-block[data-variant="minimal"] .mn-quote figcaption img {
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .mn-quote figcaption em {
@@ -1358,8 +1445,8 @@ h3.mn-heading {
   display: flow-root;
 }
 
-.mn-prose[data-width="readable"] { --mn-prose-width: 38rem; }
-.mn-prose[data-width="full"] { --mn-prose-width: none; }
+.mn-block[data-variant="readable"] .mn-prose { --mn-prose-width: 38rem; }
+.mn-block[data-variant="full"] .mn-prose { --mn-prose-width: none; }
 
 .mn-prose > :first-child { margin-top: 0; }
 .mn-prose > :last-child { margin-bottom: 0; }

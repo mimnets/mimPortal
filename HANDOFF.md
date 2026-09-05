@@ -46,9 +46,10 @@ mostly CSS now":
 revert if you disagree with it. `sites/ledger` is deliberately untouched: it installs the
 published `@mimnets/core`, which has none of this until the publish above happens.
 
-**Tests: 545 passing, 7 skipped**, up from 508. The new ones are in
-`packages/core/src/theme/tokens.test.ts` and `packages/core/src/layout/tones.test.ts`, and
-they were checked by reverting the decisions they cover and watching them go red.
+**Tests: 558 passing, 7 skipped**, up from 508. The new ones are in
+`packages/core/src/theme/tokens.test.ts`, `packages/core/src/layout/tones.test.ts` and
+`packages/core/src/blocks/variants.test.ts`, and they were checked by reverting the decisions
+they cover and watching them go red.
 
 **Verified rendered**, as this file asked, and it earned its keep. All four surfaces, the
 mesh band, gradient type and the grain were checked in a browser against the real
@@ -58,13 +59,27 @@ the mobile nav drawer inside their own Section. The Site was reset to `theme.ts`
 <http://localhost:3000> is wearing "Ink & Ember" with `surface: "raised"` and
 `texture: "grain"` rather than the generated Theme it had been.
 
+**And the variants**, which is what the milestone is named for and what its exit criterion
+tests. `defineBlock` takes `variants`, the registry builds the enum per Block Type, the
+renderer emits `data-variant`, and the Editor generates the control from that list the same
+way it generates every settings form. The testimonial has card, quote and minimal — the
+markup is byte-identical in all three and `render` was not touched.
+
+**The migration is the part to know about.** A button's look lived in `props.style` and
+prose's in `props.width`, on every Page ever written, and `props` has stopped carrying them —
+an unknown key is stripped in silence, so without this every accent button on every Site
+would have come back primary with no error and nothing dropped. `variantWasField` names the
+old field and `registry.ts` lifts the value across as a Page is read; a Page rewrites itself
+into the new shape the next time an Author saves it. There is no database migration and no
+script, and the hook is deletable once every Site has re-saved. `variants.test.ts` is mostly
+about this.
+
 ### What is still M11, and not started
 
-- **The variants themselves**, which is what the milestone is actually for: a Block Type
-  declaring `variants: ["card", "quote", "minimal"]` the way it declares its fields, emitted
-  as a data attribute and styled in the Theme layer. A button's `style` field and prose's
-  `width` become the first two.
-- **Section dividers** (`clip-path`) and **`field.token`**.
+- **Section dividers** (`clip-path` on a Section, which is where ADR-0013 says a band's
+  business belongs) and **`field.token`** — choose one of the Theme's own colours, so a Block
+  that offers a choice still cannot offer an unreadable one. There is no `field.color` and
+  there should not be.
 - **CSS 3D**, which is held back rather than missed: a tilt on hover is a hover affordance,
   and a quote is not something a visitor clicks. It belongs on whatever the variants make
   genuinely interactive. The roadmap carries the argument.
@@ -78,6 +93,9 @@ the mobile nav drawer inside their own Section. The Site was reset to `theme.ts`
   [ADR-0019](./docs/adr/0019-a-theme-derives-what-it-can-check.md): ask for what a schema can
   prove, derive what the Theme already knows. `surface` and `texture` *are* accepted, because
   a closed set of words is a design choice rather than a string.
+- **The first declared variant is what the Block already looked like**, and it is the
+  default. That is the rule that let variants ship without migrating anything, and it is the
+  rule to keep when adding variants to the other nineteen Block Types.
 - **Growing a tone enum is the change that can break every stored Page**, which is what
   `tones.test.ts` is for. Both are `.default(...)`, so a Section written before any of this
   still parses; a Block whose tone this Site does not know is dropped rather than blanking

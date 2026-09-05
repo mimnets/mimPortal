@@ -32,19 +32,22 @@ export const eyebrowBlock = defineBlock({
 export const buttonBlock = defineBlock({
   name: "button",
   label: "Button",
+  /**
+   * This was a `style` field before there were variants, which is the reason variants exist
+   * — a look declared as a field is a look only this Block Type knows how to have. Named
+   * identically so every button already stored keeps the one it was given; `variantWasField`
+   * lifts the value out of `props` at parse time.
+   */
+  variants: ["primary", "accent", "outline"],
+  variantWasField: "style",
   fields: {
     label: field.text({ label: "Label", default: "Learn more" }),
     href: field.text({ label: "Links to", default: "/" }),
-    style: field.select({
-      label: "Style",
-      options: ["primary", "accent", "outline"],
-      default: "primary",
-    }),
     size: field.select({ label: "Size", options: ["medium", "large"], default: "medium" }),
   },
-  render: ({ label, href, style, size }) =>
+  render: ({ label, href, size }) =>
     label ? (
-      <a className="mn-btn" data-style={style} data-size={size} href={href || "/"}>
+      <a className="mn-btn" data-size={size} href={href || "/"}>
         {label}
       </a>
     ) : null,
@@ -126,6 +129,17 @@ export const statsBlock = defineBlock({
 export const testimonialBlock = defineBlock({
   name: "testimonial",
   label: "Testimonials",
+  /**
+   * The Block M11's exit criterion is written about: the same testimonial looking like three
+   * different Sites without a line of new render code.
+   *
+   * "card" is what it has always been and is therefore first. "quote" drops the card
+   * entirely and sets the words at display size behind a large open quote — editorial rather
+   * than SaaS. "minimal" is a rule and a name, which is what a Site with a lot of them wants.
+   *
+   * None of this reaches `render` below, which is unchanged.
+   */
+  variants: ["card", "quote", "minimal"],
   fields: {
     items: field.repeater({
       label: "Quotes",

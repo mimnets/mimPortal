@@ -76,28 +76,25 @@ export const textBlock = defineBlock({
 export const proseBlock = defineBlock({
   name: "prose",
   label: "Prose",
+  /**
+   * A `width` field before there were variants, and the other half of the pair that made the
+   * case for them. "readable" keeps lines short enough to read comfortably and stays first,
+   * because that is what every prose Block already stored was given.
+   */
+  variants: ["readable", "full"],
+  variantWasField: "width",
   fields: {
     body: field.textarea({
       label: "Body",
       help: "Markdown. # for a heading, - for a list, [text](address) for a link.",
       default: "",
     }),
-    width: field.select({
-      label: "Line length",
-      help: "Readable keeps lines short enough to read comfortably.",
-      options: ["readable", "full"],
-      default: "readable",
-    }),
   },
-  render: ({ body, width }) => {
+  render: ({ body }) => {
     const content = renderMarkdown(body);
     if (content.length === 0) return null;
 
-    return (
-      <div className="mn-prose" data-width={width}>
-        {content}
-      </div>
-    );
+    return <div className="mn-prose">{content}</div>;
   },
 });
 

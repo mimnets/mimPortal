@@ -93,6 +93,15 @@ export interface BlockStyle {
   tone: BlockTone;
   font: BlockFont;
   animate: BlockAnimation;
+  /**
+   * Which of this Block Type's declared looks, if it declares any.
+   *
+   * Not an enum here, because the set is per Block Type rather than global — a testimonial's
+   * "quote" and a button's "outline" have nothing to do with each other. The registry builds
+   * the enum for each Block Type from its own `variants`, which is the only place that
+   * knows them.
+   */
+  variant?: string;
 }
 
 export interface BlockInstance {
@@ -102,9 +111,20 @@ export interface BlockInstance {
   style: BlockStyle;
 }
 
-/** What a Block looks like before anybody styles it. */
-export function blockStyleDefaults(): BlockStyle {
-  return { tone: "default", font: "default", animate: "none" };
+/**
+ * What a Block looks like before anybody styles it.
+ *
+ * `variants` is the Block Type's own list, and the first is its default — the Editor passes
+ * it when adding a Block so the preview draws the same thing the schema would have defaulted
+ * to on save. Without it a newly dropped Block renders unstyled until it is saved once.
+ */
+export function blockStyleDefaults(variants?: readonly string[]): BlockStyle {
+  return {
+    tone: "default",
+    font: "default",
+    animate: "none",
+    ...(variants?.length ? { variant: variants[0] } : {}),
+  };
 }
 
 export interface ColumnNode {
