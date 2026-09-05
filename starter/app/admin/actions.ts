@@ -120,6 +120,11 @@ export async function savePageSeo(input: {
 /* ---- Layout ------------------------------------------------------------ */
 
 export async function listVersions(pageId: string): Promise<PageVersionSummary[]> {
+  // A server action is an HTTP endpoint, so being unexported from the UI is not a check.
+  // History is Dashboard-only; an Author may read it, which is why this is requireUser
+  // rather than requireOwner.
+  await requireUser();
+
   const rows = await database()
     .select({ id: pageVersions.id, publishedAt: pageVersions.publishedAt })
     .from(pageVersions)
@@ -273,7 +278,10 @@ export async function restoreVersion(pageId: string, versionId: string): Promise
 
   await db
     .update(pages)
-    .set({ draftLayout: parsed, updatedAt: new Date() })
+    // The draft is being replaced wholesale, so any Editor holding this Page is now looking
+    // at something that no longer exists. Bumping `revision` is what makes its next Save fail
+    // the `atRevision` check and say STALE, instead of silently overwriting this.
+    .set({ draftLayout: parsed, revision: sql`${pages.revision} + 1`, updatedAt: new Date() })
     .where(eq(pages.id, pageId));
 
   return parsed;
@@ -321,7 +329,10 @@ export async function copyPageStructure(input: {
 
   await db
     .update(pages)
-    .set({ draftLayout: parsed, updatedAt: new Date() })
+    // The draft is being replaced wholesale, so any Editor holding this Page is now looking
+    // at something that no longer exists. Bumping `revision` is what makes its next Save fail
+    // the `atRevision` check and say STALE, instead of silently overwriting this.
+    .set({ draftLayout: parsed, revision: sql`${pages.revision} + 1`, updatedAt: new Date() })
     .where(eq(pages.id, input.pageId));
 
   revalidatePath("/admin");

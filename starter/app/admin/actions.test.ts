@@ -66,8 +66,15 @@ vi.mock("../../lib/session", () => ({
   lockedSlotsFor: async () => [],
 }));
 
-const { createPage, deletePage, listVersions, publishPage, restoreVersion, saveDraft } =
-  await import("./actions");
+const {
+  copyPageStructure,
+  createPage,
+  deletePage,
+  listVersions,
+  publishPage,
+  restoreVersion,
+  saveDraft,
+} = await import("./actions");
 
 const db = reachable ? createDatabase(url!) : null;
 
@@ -346,5 +353,80 @@ suite("what deleting a Page takes with it", () => {
     expect(await listVersions(pageId)).toHaveLength(0);
     const [row] = await db!.select().from(pages).where(eq(pages.id, pageId)).limit(1);
     expect(row).toBeUndefined();
+  });
+});
+
+
+suite("a draft replaced from somewhere other than the Editor", () => {
+  /**
+   * The stale-tab guard, on the paths that are not `saveDraft`.
+   *
+   * `atRevision` and the `revision` bump used to live only in `saveDraft` and `publishPage`,
+   * so four other writers replaced a Page's draft wholesale and left `revision` alone. An
+   * Author with the Page open at revision 7 then pressed Save, the check matched a number
+   * that had never moved, and the write silently destroyed the restore — with no STALE
+   * message in either tab.
+   *
+   * What these assert is not the number but the consequence: after any of these, an Editor
+   * holding the old revision is refused.
+   */
+  let pageId: string;
+
+  beforeEach(async () => {
+    pageId = await newPage();
+  });
+
+  it("moves the revision on when a version is restored", async () => {
+    await saveDraft(pageId, layoutSaying("First"));
+    await publishPage(pageId, layoutSaying("First"));
+    await saveDraft(pageId, layoutSaying("Second"));
+
+    const before = (await readPage(pageId)).revision;
+    const [version] = await listVersions(pageId);
+    await restoreVersion(pageId, version!.id);
+
+    expect((await readPage(pageId)).revision).toBeGreaterThan(before);
+  });
+
+  it("refuses a save from a tab that was open across the restore", async () => {
+    await saveDraft(pageId, layoutSaying("First"));
+    await publishPage(pageId, layoutSaying("First"));
+    await saveDraft(pageId, layoutSaying("Second"));
+
+    // What the Editor is holding.
+    const openTabRevision = (await readPage(pageId)).revision;
+
+    const [version] = await listVersions(pageId);
+    await restoreVersion(pageId, version!.id);
+
+    // The Author, who saw none of that, presses Save.
+    await expect(
+      saveDraft(pageId, layoutSaying("Typed before the restore"), openTabRevision),
+    ).rejects.toThrow();
+
+    // And the restore survived rather than being overwritten.
+    expect(headingOf((await readPage(pageId)).draftLayout)).toBe("First");
+  });
+
+  it("moves the revision on when structure is copied from another Page", async () => {
+    const source = await newPage();
+    await saveDraft(source, layoutSaying("Copied from here"));
+
+    await saveDraft(pageId, layoutSaying("Original"));
+    const before = (await readPage(pageId)).revision;
+
+    await copyPageStructure({ pageId, fromPageId: source });
+
+    expect((await readPage(pageId)).revision).toBeGreaterThan(before);
+  });
+
+  it("still lets a save through when nothing replaced the draft underneath it", async () => {
+    await saveDraft(pageId, layoutSaying("First"));
+    const revision = (await readPage(pageId)).revision;
+
+    // The guard must refuse stale tabs without refusing ordinary ones.
+    await expect(
+      saveDraft(pageId, layoutSaying("Second"), revision),
+    ).resolves.toBeTypeOf("number");
   });
 });
