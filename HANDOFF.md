@@ -9,42 +9,99 @@ wrong — see the toolchain note below.
 
 ## Where to start
 
-Everything below the line has landed on `main` and is pushed. The repository moved to
+**The next session's job: M11's Theme tokens, on `feat/m11-theme-tokens`.** The branch exists
+and is pushed, sitting exactly on `main` with nothing on it yet. Everything else below is
+context.
+
+Read [docs/ROADMAP.md § M11](./docs/ROADMAP.md), the section headed *"First, the Theme has to
+be able to say anything"*. The short version, with the numbers that make it a prerequisite
+rather than a nice-to-have:
+
+- A Theme can express **six token families** — colour, font, gutter, measure, radius,
+  section-spacing. That is all.
+- There is **one radius token, used 26 times**, so every rounded corner on every Site is the
+  same value.
+- There is **no shadow token at all**. The two `box-shadow` rules in ~1,500 lines of
+  `packages/blocks/src/blocks.css` are hard-coded and unthemeable.
+- There are **no gradients**.
+
+So every Site is the same flat rectangles in a different palette, and `starter/theme.ts`
+claiming *"your Site will not look like everyone else's"* is a claim the tokens cannot back.
+M11 promises the same Block looking like three different Sites; it cannot deliver that until
+this lands.
+
+### What to build, in order
+
+1. `elevation: { none, low, high }` — and **tint the shadow with the Site's primary** via
+   `color-mix()` rather than using grey. This is the highest-value line in the milestone: a
+   grey `box-shadow` reads as a 2015 card, and the same shadow carrying the brand colour reads
+   as considered. One token, and it changes every card, quote and pricing plan at once.
+2. `radius: { none, sm, base, lg, full }` — a scale replacing the single value. Keep `--mn-radius`
+   emitting the base so nothing breaks while the 26 uses are moved over.
+3. `border: { hairline, base, bold }`.
+4. `surface: "flat" | "bordered" | "raised" | "glass"`.
+
+Then the CSS-only looks — glass, mesh gradients built from the Theme's own colours, grain as an
+inline SVG data URI, gradient text — none of which need an asset, a dependency or a client
+component.
+
+### Three things to know before starting
+
+- **This changes how every existing Site looks.** Work on the branch and look at it rendered
+  before merging. `docker compose up -d db && pnpm dev` then <http://localhost:3000>.
+- **`defineTheme` derives four readable colours** and an explicitly stated one always wins
+  (`packages/core/src/theme/index.ts`). New tokens should follow that shape: derived where a
+  sensible value can be computed, overridable where a Site has an opinion.
+- **There is no `field.color` and there should not be.** A free hex picker is
+  [ADR-0003](./docs/adr/0003-sections-and-columns-not-free-canvas.md)'s mistake in a different
+  hat. If a Block needs to offer a choice, it offers Theme tokens.
+
+### What not to do on this branch
+
+Rendered 3D icons and WebGL are **deliberately out of M11** and the reasoning is written into
+the milestone. Icons are an open decision about bundle cost, not something to settle in
+passing.
+
+---
+
+Everything below has landed on `main` and is pushed. The repository moved to
 **https://github.com/mimnets/mimPortal.git** on 5 September; if a clone still points at
 `mimnets-typescript-website-builder`, run `git remote set-url origin`.
 
 **Twenty of the second audit's findings are closed** — every High, and all but two Mediums.
-Read [specs/project-audit-2/research.md](./specs/project-audit-2/research.md) before starting:
-each remaining finding carries a file and a line number, so picking one up costs no
-investigation, and the "Verified clean" section records what was checked and found sound so
-nobody pays for it twice.
+[specs/project-audit-2/research.md](./specs/project-audit-2/research.md) carries the rest, each
+with a file and a line number, plus a "Verified clean" section recording what was checked and
+found sound so nobody pays for it twice.
 
-**One branch is unmerged.** `feat/editor-m10` holds undo and redo, ADR-0018 and the M10
-write-up, from a parallel session that was stopped before it could commit. It is preserved as
-found, it is pushed, and **nobody has reviewed it** — I merged `main` into it and fixed A-10
-there, but the undo/redo implementation itself has had no second pair of eyes. Read it before
-merging it. 478 passing on that branch against 459 on `main`.
+**M10 is merged**, including undo and redo. It was reviewed before merging and one defect was
+found and fixed in review: a duplicated Block shared its original's `props` and `style` objects,
+harmless only because every writer replaces those objects rather than mutating them.
+
+**Stock images shipped.** `StockAdapter` with Unsplash and Pexels, media provenance columns, and
+the apply-time fill — a Preset describes each photograph in the image's `alt`, and applying it
+searches, downloads into the Site's own store and records the photographer. Optional and off
+until a key is set; see [docs/STOCK.md](./docs/STOCK.md).
 
 Three things still need a person:
 
 **1. Publish, if you want it public.** `npm login` is interactive. Then `pnpm release`; a
 changeset exists and `pnpm changeset status` reports all three packages bumping minor. The
-first publish claims the `@mimnets` scope permanently. Two findings that used to bear on this
-are now fixed — the publish guard checks the artefact as well as the publisher (A-17), and
-published source maps resolve (A-18) — but note **A-28**: `pnpm build:packages` had been
-matching no packages at all and would have published whatever was lying in `dist`. It is fixed;
-it is also the reason to run `pnpm release` and read what it says rather than trusting it.
+first publish claims the `@mimnets` scope permanently. Note **A-28**: `pnpm build:packages` had
+been matching no packages at all and would have published whatever was lying in `dist`. It is
+fixed; it is also the reason to read what `pnpm release` says rather than trusting it.
 
 **2. `sites/ledger` is waiting on that publish.** Its lockfile pins integrity hashes from the
-disposable Verdaccio volume (A-14) and CI never installs it (A-16), and both resolve when the
-packages go to a real registry rather than by editing anything now. Its upgrade step is in the
-changeset: bump the dependency, add `import "@mimnets/blocks/blocks.css";` above
-`import "./globals.css";`, then delete the Block sections from its own `globals.css`.
+disposable Verdaccio volume (A-14) and CI never installs it (A-16); both resolve at a real
+registry rather than by editing anything now. Its upgrade step is in the changeset: bump the
+dependency, add `import "@mimnets/blocks/blocks.css";` above `import "./globals.css";`, then
+delete the Block sections from its own `globals.css`.
 
-**3. Two colour decisions were deliberately left to you**, recorded with their numbers in
+**3. Two colour decisions were deliberately left to you**, with their numbers pinned in
 `packages/core/src/theme/derive.test.ts`. `readableOn` picks white on the default accent at
-3.27:1 where black would be 5.77:1, and changing it would flip button text on every Site whose
-accent sits in that range. See A-26 and A-27.
+3.27:1 where black would be 5.77:1, and changing it flips button text on every Site whose accent
+sits in that range — a design decision rather than a bug fix, which is why it was recorded and
+not taken. See A-26 and A-27. **Worth settling as part of M11**, since that milestone is about
+what a Theme can express and this is a question about the same tokens.
 
 ## What exists today
 
@@ -117,7 +174,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **459 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
+`pnpm test` — **508 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -184,45 +241,18 @@ Honest list. None of it is hidden behind a green tick.
 
 ## What is next
 
-In the order agreed. **Item 1 is done**; nothing below it is started, so the next session
-starts at stock images.
+This section used to carry its own numbered ordering, and it drifted — it still listed stock
+images as next after they had shipped. It defers now, which is the only way two documents stay
+in agreement:
 
-~~1. **Finish M8.5.**~~ **Done 5 September.** Eight Block Types landed — accordion, image
-   gallery, carousel, location map, video, Markdown prose, comparison table and social links
-   — taking the library from fourteen to twenty-two. This was the prerequisite for a Preset
-   being worth generating, exactly as M8.5's own text had said since it was written, so
-   everything below it is now unblocked.
+- **[docs/FEATURES.md](./docs/FEATURES.md)** — the inventory. What is built, what is partly
+  built, what is planned, and the sixty-three open audit findings.
+- **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for. M10.5, M11
+  and M12 were all written on 5 September and none is started.
 
-   Worth reading before extending the library. Five of the eight are built on the browser
-   rather than on JavaScript — `<details>`, `:target`, scroll-snap, sandboxed iframes, a real
-   `<table>` — so `packages/blocks` still has one dependency and still contains no client
-   component, and all of it works before a Site has hydrated. Three are security boundaries
-   with tests to match: the video Block allowlists its iframe hosts, the social row parses
-   every address and drops anything that is not http, https, a real email or a real phone
-   number, and prose parses with `html: false`, so raw HTML is never admitted rather than
-   admitted and scrubbed. `core` gained one dependency for that last one, markdown-it, and
-   there is no `dangerouslySetInnerHTML` anywhere in the repo.
+The immediate job is at the top of this file: **M11's Theme tokens, on
+`feat/m11-theme-tokens`**.
 
-2. **Stock images.** Generated Presets ship with grey rectangles where photographs belong.
-   Behind a `StockAdapter`, in the same shape as StorageAdapter and EmailAdapter. Photos are
-   **downloaded into the Site's own media store at apply time**, never hotlinked — layouts
-   hold keys, not URLs (ADR-0012) — and fetching at apply time rather than generate time
-   means a Preset nobody chooses costs nothing. Media rows record where a photo came from so
-   the Dashboard can show which are still placeholders.
-3. **Effects and a demo page.** Section stagger, slide/scale/blur/wipe, speed as Gentle /
-   Normal / Brisk, parallax. Named options resolving to Theme tokens, never utility classes —
-   the rule from `1dac8e7` holds. Plus an ⓘ explaining each in plain words and a gallery at
-   `/admin/design/effects`, because choosing "Rise" today shows an Author nothing.
-4. **A preview panel in the Design tab**, so a Theme can be seen before it is applied.
-5. **AI provider and model settings.** Gemini and Grok by name, Groq and Mistral as presets
-   over the existing custom endpoint. Model chosen from each provider's live catalogue.
-   Site-wide default in Settings, per-job override kept in Design Studio. Keys stay in the
-   environment: the Settings screen chooses among what the environment already enabled, and
-   never stores a secret.
-6. **The blog** — the Markdown prose Block first, then posts with their own routing and a
-   listing Block. Collections generalise it later.
-7. **A Vercel deploy button** plus a Neon integration. Note that ADR-0012 rules out the local
-   disk on Vercel, so that template must require R2 or S3 rather than offer it.
 
 ## The toolchain, and a diagnosis that was wrong
 
