@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { PageLayout } from "@mimnets/core";
 import { generatePreset, PRESET_DIRECTIONS, type GeneratedPreset } from "@mimnets/core/ai";
@@ -157,7 +157,12 @@ export async function applyPreset(payload: string): Promise<{ pages: number }> {
       }
       await db
         .update(pages)
-        .set({ title: page.title, draftLayout: page.layout, updatedAt: new Date() })
+        .set({
+          title: page.title,
+          draftLayout: page.layout,
+          revision: sql`${pages.revision} + 1`,
+          updatedAt: new Date(),
+        })
         .where(eq(pages.id, existing.id));
     } else {
       await db.insert(pages).values({
@@ -242,7 +247,10 @@ export async function generatePageLayout(input: {
 
   await db
     .update(pages)
-    .set({ draftLayout: next, updatedAt: new Date() })
+    // The draft is being replaced wholesale, so any Editor holding this Page is now looking
+    // at something that no longer exists. Bumping `revision` is what makes its next Save fail
+    // the `atRevision` check and say STALE, instead of silently overwriting this.
+    .set({ draftLayout: next, revision: sql`${pages.revision} + 1`, updatedAt: new Date() })
     .where(eq(pages.id, page.id));
 
   revalidatePath("/admin");

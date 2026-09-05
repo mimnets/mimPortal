@@ -1,4 +1,4 @@
-import { defineBlock, field } from "@mimnets/core";
+import { defineBlock, field, safeHref } from "@mimnets/core";
 
 /**
  * Blocks that carry a design.
@@ -230,7 +230,7 @@ export const ctaBlock = defineBlock({
       {heading ? <h2 className="mn-heading">{heading}</h2> : null}
       {body ? <p className="mn-text">{body}</p> : null}
       {buttonLabel ? (
-        <a className="mn-btn" data-style="accent" data-size="large" href={buttonHref || "/"}>
+        <a className="mn-btn" data-style="accent" data-size="large" href={safeHref(buttonHref) || "/"}>
           {buttonLabel}
         </a>
       ) : null}
@@ -281,7 +281,7 @@ export const pricingBlock = defineBlock({
         <a
           className="mn-btn"
           data-style={featured ? "primary" : "outline"}
-          href={buttonHref || "/"}
+          href={safeHref(buttonHref) || "/"}
         >
           {buttonLabel}
         </a>
@@ -560,7 +560,7 @@ export const carouselBlock = defineBlock({
                   {item.link.label ? (
                     <a
                       className="mn-carousel-link"
-                      href={item.link.href || "/"}
+                      href={safeHref(item.link.href) || "/"}
                       target={item.link.newTab ? "_blank" : undefined}
                       rel={item.link.newTab ? "noreferrer" : undefined}
                     >
@@ -921,7 +921,7 @@ export const compareBlock = defineBlock({
                         <a
                           className="mn-button"
                           data-style={plan.featured ? "primary" : "outline"}
-                          href={plan.link.href || "/"}
+                          href={safeHref(plan.link.href) || "/"}
                           target={plan.link.newTab ? "_blank" : undefined}
                           rel={plan.link.newTab ? "noreferrer" : undefined}
                         >

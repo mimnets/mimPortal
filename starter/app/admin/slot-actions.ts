@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { PageLayout } from "@mimnets/core";
 import { createDatabase, pages, sharedSlots } from "@mimnets/core/db";
@@ -208,6 +208,10 @@ export async function setPageSlots(input: {
       headerSlotId: input.headerSlotId,
       footerSlotId: input.footerSlotId,
       draftLayout: draft === layout ? page.draftLayout : draft,
+      // Only when the document actually changed. Swapping which Shared Slot a Page points at
+      // without rewriting its layout leaves an open Editor's copy still correct, and
+      // `applySlotsToAllPages` documents the same reasoning for its own case.
+      ...(draft === layout ? {} : { revision: sql`${pages.revision} + 1` }),
       updatedAt: new Date(),
     })
     .where(eq(pages.id, input.pageId));

@@ -1,3 +1,4 @@
+import { isSafeStorageKey, UNSAFE_KEY_MESSAGE } from "./storage-key";
 import { z } from "zod";
 
 /**
@@ -134,7 +135,12 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
       padding: z.enum(SECTION_PADDINGS).default("normal"),
       background: z
         .object({
-          key: z.string().default(""),
+          // Constrained because this key is interpolated into a CSS url() in an inline
+          // style. See storage-key.ts.
+          key: z
+            .string()
+            .default("")
+            .refine((key) => key === "" || isSafeStorageKey(key), UNSAFE_KEY_MESSAGE),
           overlay: z.number().min(0).max(1).default(0.45),
         })
         .default({ key: "", overlay: 0.45 }),

@@ -43,6 +43,26 @@ const KEEP: Record<string, readonly string[]> = {
   pre: [],
 };
 
+/**
+ * The plain text inside an inline token's children.
+ *
+ * markdown-it puts an image's alt text in `children`, not in the `alt` attribute — the
+ * attribute it emits is always the empty string, and its own renderer fills it from the
+ * children at render time. A walker that copies attributes and ignores children therefore
+ * produces `alt=""` on every image an Author writes, which is a silent WCAG 1.1.1 failure:
+ * a described photograph announced as decorative.
+ */
+function inlineText(tokens: Token[] | null): string {
+  if (!tokens) return "";
+  return tokens
+    .map((token) =>
+      token.type === "text" || token.type === "code_inline"
+        ? token.content
+        : inlineText(token.children),
+    )
+    .join("");
+}
+
 function propsFor(token: Token, key: number): Record<string, unknown> {
   const props: Record<string, unknown> = { key };
   const allowed = KEEP[token.tag] ?? [];
@@ -147,6 +167,15 @@ function build(tokens: Token[], start: number, stop: number): ReactNode[] {
         );
       }
       i = end + 1;
+      continue;
+    }
+
+    if (token.type === "image") {
+      // The alt text lives in the children; see `inlineText`.
+      const props = propsFor(token, key++);
+      props.alt = inlineText(token.children);
+      out.push(createElement("img", props));
+      i += 1;
       continue;
     }
 

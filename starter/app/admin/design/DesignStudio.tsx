@@ -149,7 +149,14 @@ export function DesignStudio({
 
   return (
     <>
-      {error ? <p className="mn-media-error">{error}</p> : null}
+      {/* role="alert" rather than a live region: this element only exists when something
+          failed, so it is announced on insertion, and somebody who has just pressed a
+          button and is waiting should be interrupted. */}
+      {error ? (
+        <p className="mn-media-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
       {status ? <p className="mn-preset-status">{status}</p> : null}
 
       <section className="mn-field-group">

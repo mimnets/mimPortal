@@ -881,3 +881,56 @@ h3.mn-heading {
 .mn-skip:focus {
   left: 0;
 }
+
+/* ---- Filing deadlines ------------------------------------------------------
+   This Site's own Block. Styled here rather than in @mimnets/blocks for the same
+   reason it is defined here: it is specific to accountancy and would be dead
+   weight in every other Site. */
+
+.ledger-deadlines {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ledger-deadlines-scroll {
+  overflow-x: auto;
+}
+
+.ledger-deadlines table {
+  width: 100%;
+  border-collapse: collapse;
+  /* Dates line up in a column when the digits are the same width. */
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-deadlines caption {
+  text-align: left;
+  padding-bottom: 0.75rem;
+  font-size: 0.9375rem;
+}
+
+.ledger-deadlines th,
+.ledger-deadlines td {
+  padding: 0.75rem 1rem 0.75rem 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--mn-color-border);
+}
+
+.ledger-deadlines thead th {
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mn-color-muted);
+  border-bottom-width: 2px;
+}
+
+.ledger-deadlines tbody th[scope="row"] {
+  font-weight: 600;
+}
+
+.ledger-deadlines tbody tr:last-child th,
+.ledger-deadlines tbody tr:last-child td {
+  border-bottom: none;
+}

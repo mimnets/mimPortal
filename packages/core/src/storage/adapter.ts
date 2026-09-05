@@ -1,3 +1,5 @@
+import { isSafeStorageKey } from "../layout/storage-key";
+
 /**
  * Where a Site's uploaded files live.
  *
@@ -64,7 +66,7 @@ export function mediaKey(filename: string, contentType: string, now = new Date()
  * a URL, rather than trusting the caller.
  */
 export function assertSafeKey(key: string): void {
-  if (!/^[A-Za-z0-9][A-Za-z0-9/_.-]*$/.test(key) || key.includes("..") || key.includes("//")) {
+  if (!isSafeStorageKey(key)) {
     throw new Error(`Refusing to handle an unsafe storage key: ${JSON.stringify(key)}`);
   }
 }

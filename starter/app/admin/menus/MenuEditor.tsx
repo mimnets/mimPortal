@@ -68,7 +68,14 @@ export function MenuEditor({
         the Header and the Footer together.
       </p>
 
-      {error ? <p className="mn-ed-error">{error}</p> : null}
+      {/* role="alert" rather than a live region: this element only exists when something
+          failed, so it is announced on insertion, and somebody who has just pressed a
+          button and is waiting should be interrupted. */}
+      {error ? (
+        <p className="mn-ed-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
       {message ? <p className="mn-ed-hint">{message}</p> : null}
 
       <ul className="mn-menu-items">

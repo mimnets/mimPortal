@@ -152,6 +152,26 @@ describe("the carousel Block", () => {
     expect(link.getAttribute("rel")).toBe("noreferrer");
   });
 
+  it("refuses a dangerous address in a slide's link", () => {
+    const { container } = draw(
+      props({
+        items: [
+          {
+            image: image("uploads/a.jpg", "A kitchen"),
+            heading: "Kitchens",
+            text: "",
+            link: { label: "See more", href: "vbscript:msgbox(1)", newTab: false },
+          },
+        ],
+      }),
+    );
+
+    // React neutralises javascript: on its own but not vbscript:, so this has to be refused
+    // here. The link falls back to the Site's root rather than disappearing, because a button
+    // an Author labelled should still be a button.
+    expect(container.querySelector(".mn-carousel-link")!.getAttribute("href")).toBe("/");
+  });
+
   it("leaves out the body entirely when a slide is only a photograph", () => {
     const { container } = draw(
       props({

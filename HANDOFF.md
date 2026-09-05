@@ -1,36 +1,35 @@
-# Handoff — 3 September 2026
+# Handoff — 5 September 2026
 
 Where Mimnets stands, what is not finished, and where to pick up. Read this first; it is
 written to be the only thing you need before starting.
 
-The previous handoff was dated 19 August and went eleven commits stale. If you are reading a
-copy of that one, discard it: it presents M7 as "next up" and M7 shipped the same afternoon.
+The previous handoff was dated 3 September. If you are reading a copy of that one, discard
+it: it says component tests are blocked on a pnpm store mismatch, and that diagnosis was
+wrong — see the toolchain note below.
 
 ## Where to start
 
-Three things are queued. None is blocked on code, and two need you.
+**Read [specs/project-audit-2/research.md](./specs/project-audit-2/research.md) first.** It is
+dated today, it has 21 findings each with a file and a line number, and six of them are already
+fixed. Nothing below is more urgent than the fifteen still open.
 
-**1. Publish, if you want it public.** `npm login` first — it is interactive, so it cannot be
-done for you. Then `pnpm release`. Worth knowing before you do: no package exists under
-`@mimnets` today, so the first publish claims the scope, and npm publishes are effectively
-permanent. Everything about the packaging is already proven against the local registry, so
-this changes the hostname and nothing else.
+There are two branches and neither is pushed:
 
-**2. Component tests exist now, and the blocker was misdiagnosed.** *(Resolved 5 September.)*
-There was no store mismatch. `pnpm install` was always content with the store it had; what
-failed was `pnpm run`, which performs a pre-flight dependency check by spawning a nested
-synchronous `pnpm install`, and that nested process crashed — first on the no-TTY purge
-prompt, then on `0xC0000409`. Every script inherited the fault, so it looked like a broken
-tree. Installing jsdom and `@testing-library/react` took thirteen seconds once the check was
-switched off, and `ERR_PNPM_UNEXPECTED_STORE` never appeared.
+- **`feat/block-library`** — M8.5's eight Block Types, the toolchain repair, the first
+  component tests, and the audit. 447 passing, 7 skipped. This is the branch to merge.
+- **`feat/editor-m10`** — undo and redo, ADR-0018, and M10 written up. Work from a parallel
+  session that was stopped before it could commit, preserved as found and not reviewed. It
+  branches from `feat/block-library`, so merge that one first. **Three audit findings (A-08,
+  A-09, A-10) live in the files this branch rewrote and belong on it, not on the other.**
 
-The check is off in `pnpm-workspace.yaml` — `verifyDepsBeforeRun: false`, with the reasoning
-beside it. Note that pnpm 11 does not read pnpm settings from `.npmrc`; they live in
-`pnpm-workspace.yaml` now, which `allowBuilds` above it already showed.
+One thing still needs you and cannot be done for you:
 
-**3. A fresh audit.** The last one is dated 20 August and the codebase has moved a long way
-since — twenty findings fixed, a build step, published packages, a second Site. A new pass
-would find what those changes introduced, which is where problems hide after a big change.
+**Publish, if you want it public.** `npm login` is interactive. Then `pnpm release` — there is
+a changeset now, and `pnpm changeset status` reports all three packages bumping minor. Worth
+knowing first: no package exists under `@mimnets`, so the first publish claims the scope and
+npm publishes are effectively permanent. Two audit findings bear on this — **A-17**, the
+publish guard checks the package manager but never that `dist` exists, and **A-18**, every
+published source map is dangling. Read both before running it.
 
 ## What exists today
 
@@ -56,7 +55,21 @@ is a chartered accountant with its own Theme and one Block Type of its own, deli
 outside the pnpm workspace so that it installs the published packages rather than linking to
 their source. A workspace link would have tested the monorepo rather than the packaging.
 
-## The audit is closed
+## The audits
+
+**There are two now.** The second, [specs/project-audit-2/research.md](./specs/project-audit-2/research.md),
+is dated 5 September and covers everything the first could not know about: the packaging
+pipeline, the second Site, the twenty fixes, and the eight Block Types written that morning.
+21 findings, six already fixed, fifteen open. Its own summary is worth the minute: what it
+found was not a new class of hole but a recurring shape — decisions made correctly, written
+down correctly, and enforced nowhere.
+
+It also records what was checked and found sound, so the next audit does not pay for it
+again: `sites/ledger` was forked after every security fix and is byte-identical across all 98
+tracked files, no secrets are committed, and 25 crafted Markdown inputs found no XSS in the
+new Block library.
+
+### The first audit
 
 On 20 August the project was audited end to end, producing
 [specs/project-audit/research.md](./specs/project-audit/research.md) — **85 findings**, each
@@ -89,7 +102,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **377 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
+`pnpm test` — **447 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -195,6 +208,37 @@ starts at stock images.
    listing Block. Collections generalise it later.
 7. **A Vercel deploy button** plus a Neon integration. Note that ADR-0012 rules out the local
    disk on Vercel, so that template must require R2 or S3 rather than offer it.
+
+## The toolchain, and a diagnosis that was wrong
+
+The 3 September handoff said component tests were blocked on a pnpm store mismatch. They were
+not, and the misdiagnosis cost more than the bug would have.
+
+`pnpm install` was always content with the store it had. What failed was `pnpm run`, which
+performs a pre-flight dependency check by spawning a nested synchronous `pnpm install`, and
+that nested process crashed — first on the no-TTY purge prompt, then on `0xC0000409` after
+`--force`. Every script inherited the fault, so a broken dependency tree was the obvious
+explanation and the wrong one. Run directly, `vitest` was green the whole time.
+
+The check is off in **`pnpm-workspace.yaml`** — `verifyDepsBeforeRun: false`, with the
+reasoning beside it. Note *where*: pnpm 11 no longer reads pnpm settings from `.npmrc`, which
+the `allowBuilds` key already sitting in the yaml had been showing all along. With it off,
+jsdom and `@testing-library/react` installed in thirteen seconds and
+`ERR_PNPM_UNEXPECTED_STORE` never appeared at all.
+
+Two other things that were quietly untrue and are now fixed:
+
+- **`vitest.config.ts` carried dead configuration.** It set `esbuild: { jsx: "automatic" }`
+  with a comment explaining why it was required. Vitest 4 uses oxc, printed that it was
+  ignoring the option, and infers JSX from the file extension on its own. No `.tsx` test file
+  existed to expose it.
+- **A NUL byte sat in `packages/core/src/ai/assist.ts`.** `ASSIST_ERROR` is a NUL on purpose —
+  it separates streamed content from a message for the Author — but it had been written as a
+  raw byte rather than ` `, so git and grep both classified the file as binary. It had
+  had no readable diff since it was introduced.
+
+Component tests opt into a DOM per file with a `// @vitest-environment jsdom` docblock, so the
+node tests stay fast and there is no new configuration to keep in step.
 
 ## Things to know before you touch the code
 

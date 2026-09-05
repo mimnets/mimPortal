@@ -423,7 +423,16 @@ function documentReducer(state: DocumentState, action: EditorAction): DocumentSt
       } else {
         while (section.columns.length < wanted) section.columns.push(emptyColumn());
       }
-      return { layout, dirty: true, selection: state.selection };
+
+      // Blocks keep their ids but change Column, so the selected path is stale the moment
+      // Columns merge. Carrying it over unchanged is worse than losing it: a path into a
+      // Column that still exists stays *valid* and addresses a different Block, which is the
+      // I-17 failure the audit closed as a class. `followSelection` re-finds it by id.
+      return {
+        layout,
+        dirty: true,
+        selection: followSelection(state.layout, layout, state.selection),
+      };
     }
 
     default:

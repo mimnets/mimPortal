@@ -8,8 +8,10 @@
 packages:
   - "."
 
+# esbuild ships a platform binary and needs its install script to run. The monorepo root
+# allows it for the same reason; a Site that refuses it gets a package that cannot start.
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
 
 # pnpm refuses a version published within the last day, on the reasoning that a compromised
 # release is usually caught within hours. Exactly right for a Site installing from npm, and

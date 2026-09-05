@@ -36,7 +36,14 @@ export function PageList({ pages, canManage }: { pages: PageSummary[]; canManage
 
   return (
     <div className="mn-dash-body">
-      {error ? <p className="mn-ed-error">{error}</p> : null}
+      {/* role="alert" rather than a live region: this element only exists when something
+          failed, so it is announced on insertion, and somebody who has just pressed a
+          button and is waiting should be interrupted. */}
+      {error ? (
+        <p className="mn-ed-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
 
       <ul className="mn-page-list">
         {pages.map((page) => (

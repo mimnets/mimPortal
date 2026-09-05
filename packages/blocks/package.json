@@ -5,12 +5,13 @@
   "license": "UNLICENSED",
   "type": "module",
   "exports": {
-    ".": "./src/index.tsx"
+    ".": "./src/index.tsx",
+    "./blocks.css": "./src/blocks.css"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('src/blocks.css','dist/blocks.css')\"",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "node -e \"const p=require('./package.json');if(!process.env.npm_config_user_agent||!/pnpm/.test(process.env.npm_config_user_agent)){console.error('\\n  Publish '+p.name+' with pnpm, not npm.\\n\\n'+'  npm ignores publishConfig.exports, so it would ship a package whose exports\\n'+'  point at ./src while files ships only ./dist. It installs and then fails on\\n'+'  the first import, which is a worse failure than refusing to publish.\\n');process.exit(1)}\""
+    "prepublishOnly": "node ../../scripts/check-publish.mjs"
   },
   "publishConfig": {
     "access": "public",
@@ -18,7 +19,8 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
-      }
+      },
+      "./blocks.css": "./dist/blocks.css"
     }
   },
   "peerDependencies": {
@@ -32,6 +34,7 @@
     "react": "^19.2.8"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ]
 }

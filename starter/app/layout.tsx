@@ -4,6 +4,9 @@ import { themeToCss } from "@mimnets/core";
 
 import { theme } from "../theme";
 import { activeTheme } from "../lib/theme";
+// The standard Blocks bring their own structural CSS; this Site's stylesheet comes
+// after it, so anything it says wins.
+import "@mimnets/blocks/blocks.css";
 import "./globals.css";
 
 /**
