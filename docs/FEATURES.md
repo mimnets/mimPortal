@@ -102,6 +102,17 @@ rather than a failed Preset. Optional, and off until a key is set — see
 
 ### Partly built
 
+- **M11's Theme tokens and its CSS-only looks.** The vocabulary is built and wired through
+  the Block library: `elevation` mixed from the Site's primary, a five-step `radius` scale,
+  three `border` weights, `surface` as one of four keywords, and `texture` as grain or
+  nothing. On top of them, a **mesh** Section tone built from the Site's own two brand
+  colours, and **gradient** headings run between the two readable ones. None of it needs an
+  asset, a request or a dependency. And **variants**: a Block Type declares its looks the way
+  it declares its fields, the renderer emits `data-variant`, and the Editor generates the
+  control. The testimonial has three; a button's `style` field and prose's `width` became the
+  first two, migrated out of `props` at the parse boundary rather than in a database. Still
+  missing from M11: Section dividers and `field.token`. CSS 3D is deliberately held back; the
+  roadmap says why.
 - **Animation.** A Block can be set to appear with `fade` or `rise` as it scrolls into view,
   chosen from the Theme rather than as a utility class. That is the whole of it: three options
   on one control. There is no Section stagger, no slide, scale, blur or wipe, no parallax, no
@@ -119,17 +130,22 @@ with Neon · Blueprints and the responsive preview (the rest of M10).
 
 ### Planned on 5 September
 
-Raised the same day, and written into the roadmap rather than left as wishes. None exists yet:
+Raised the same day, and written into the roadmap rather than left as wishes. One of the
+three has since been started — M11's prerequisite — and the other two are untouched:
 
 - **M10.5** — a Header that stays (scrolls, sticky or fixed), per-Section width so a gallery or
   a map can run edge to edge, and popovers for a biography or a service's detail. Each is a
   property the layout engine could already carry, sitting one field away from existing.
-- **M11** gains a prerequisite: the Theme's vocabulary. It can currently express colour, two
-  typefaces, **one** corner radius and two spacing values — six token families, one radius token
-  used 26 times, no shadow token, no gradients. That is why every Site reads as the same flat
-  rectangles in a different palette, and why M11's own exit criterion is unreachable as written.
-  Elevation, a radius scale, border weight and a surface treatment come first; glass, mesh
-  gradients, grain and CSS 3D follow, all as tokens and none needing an asset or a dependency.
+- **M11**'s prerequisite is built; the milestone itself is not. The Theme could express
+  colour, two typefaces, one corner radius and two spacing values — six token families, one
+  radius token used 26 times, no shadow token, no gradients — which is why every Site read as
+  the same flat rectangles in a different palette. It now carries four families more:
+  **`elevation`** (three steps, mixed from the Site's own primary with `color-mix()`, never
+  grey and never asked for), **`radius`** as a five-step scale derived from the one value a
+  Site states, **`border`** as three weights, and **`surface`** — one word, `flat`,
+  `bordered`, `raised` or `glass`, that redraws every card in the library at once — plus
+  `texture`, the mesh band and gradient headings built on top of them, and the variants the
+  whole milestone is named for. Still to come in M11: Section dividers and `field.token`.
 - **M12** — what the AI does next, and what it must not: importing a client's existing site as
   a draft, regenerating one Section rather than a whole Page, telling an Author what a Page is
   missing, and generating the catalogue pages. It also writes down the boundary — schemas,

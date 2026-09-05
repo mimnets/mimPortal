@@ -40,6 +40,10 @@ function BlockView({
       data-tone={block.style?.tone !== "default" ? block.style?.tone : undefined}
       data-font={block.style?.font !== "default" ? block.style?.font : undefined}
       data-animate={block.style?.animate !== "none" ? block.style?.animate : undefined}
+      // The variant is emitted whatever it is, including the first one. A Block Type's looks
+      // are a set of equals rather than a default and some deviations, so there is no value
+      // here that means "unstyled" and nothing to leave off.
+      data-variant={block.style?.variant}
     >
       {blockType.render(block.props, context)}
     </div>

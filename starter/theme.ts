@@ -44,8 +44,35 @@ export const theme = defineTheme({
     heading: 'var(--mn-font-display), "Segoe UI", system-ui, sans-serif',
     body: 'var(--mn-font-text), "Segoe UI", system-ui, sans-serif',
   },
-  // Enough to read as contemporary, not enough to read as a toy. Buttons and cards share it.
+  // Enough to read as contemporary, not enough to read as a toy. Stating `base` derives the
+  // whole scale from it — 5px on a button, 20px on a lightbox image — so the corners vary
+  // the way a designer would vary them without any of them being decided twice.
   radius: { base: "10px" },
+  // One pixel. "Ink & Ember" argues that a rigid structure is what lets the content be
+  // inviting, and a rigid structure drawn in three-pixel rules is a different argument.
+  border: { base: "1px" },
+  /**
+   * Raised, which is the point of the whole family.
+   *
+   * A card lifted on a shadow mixed from this Site's own jade, rather than sitting in a grey
+   * wash. The shadow is derived from `primary` above, so moving that one colour moves the
+   * shadow with it and nothing here has to be kept in step by hand.
+   *
+   * The other three are "flat" (a wash of the surface colour, which is what this was),
+   * "bordered" (a hairline outline) and "glass" — which is worth having but wants something
+   * behind it to be translucent against, so it belongs to a Site with an image or a gradient
+   * under its cards rather than to this one.
+   */
+  surface: "raised",
+  /**
+   * Grain, at five and a half percent.
+   *
+   * "Ink & Ember" is a warm argument made in cool colours, and a flat wash of either at full
+   * width is the thing that reads as a template. It is an inline `feTurbulence` under a
+   * kilobyte — no request, no asset, no dependency — and if you cannot see it, that is the
+   * intended result: you can see the flat version, once you have looked at this one.
+   */
+  texture: "grain",
   // 6rem left adjacent bands looking disconnected rather than generous; two stacked
   // Sections are 9rem apart at this value, which is enough air without a gap.
   spacing: { section: "4.5rem", gutter: "3rem" },

@@ -32,6 +32,7 @@
   --color-ink: var(--mn-color-text);
   --color-surface: var(--mn-color-surface);
   --font-heading: var(--mn-font-heading);
+  /* The base of the corner scale, under the name a Site's own Tailwind classes use. */
   --radius-site: var(--mn-radius);
 }
 
@@ -53,8 +54,21 @@ a {
 
 /* ---- Layout ---- */
 
+/* Grain, if the Theme wears any, as a background layer of the band itself.
+ *
+ * Deliberately not an absolutely-positioned overlay, which is what this was first. An
+ * overlay has to be painted above the band and below its content, and the only ways to
+ * arrange that put a stacking context on the Section or on `.mn-columns` — which traps the
+ * gallery lightbox (`z-index: 50`) and the mobile nav drawer (`z-index: 30`) inside the
+ * Section they happen to live in. An open drawer painted underneath the Page below it is a
+ * mobile navigation bug, in exchange for a texture nobody can consciously see.
+ *
+ * A background layer needs none of that: layers paint above `background-color` and below
+ * content by definition. When the Theme's texture is "none" this is `background-image: none`
+ * and paints nothing — no opacity to juggle, no second rule to keep in step. */
 .mn-section {
   padding: var(--mn-section-spacing) 1.5rem;
+  background-image: var(--mn-texture);
 }
 
 .mn-slot[data-slot="header"] .mn-section,
@@ -98,8 +112,43 @@ a {
 
 .mn-slot[data-slot="header"],
 .mn-slot[data-slot="footer"] {
-  border-block: 1px solid var(--mn-color-border);
+  border-block: var(--mn-border-base) solid var(--mn-color-border);
   background: var(--mn-color-background);
+}
+
+/* ---- Surfaces -------------------------------------------------------------
+   Every card in the library — a quote, a plan, an accordion item, a carousel slide — is
+   drawn from these four properties rather than from literal values, so a Theme's `surface`
+   ("flat", "bordered", "raised" or "glass") restyles all of them at once. The properties
+   themselves are emitted by themeToCss; nothing here decides what they contain.
+
+   Focus rings are deliberately *not* on a token. A visible focus indicator is the keyboard
+   path (I-09), and a Theme able to set its width is a Theme able to set it to zero. */
+
+.mn-quote,
+.mn-plan,
+.mn-accordion-item,
+.mn-carousel-slide {
+  background: var(--mn-surface-background);
+  border: var(--mn-surface-border-width) solid var(--mn-surface-border-color);
+  box-shadow: var(--mn-surface-shadow);
+  backdrop-filter: var(--mn-surface-backdrop);
+}
+
+/* A pale card inside a coloured band punches a hole in it, so the card borrows the band's
+   own light instead. One override, inherited by every card, rather than one rule per Block
+   — which is what this was before, and it had already been forgotten twice. */
+.mn-section[data-tone="primary"],
+.mn-section[data-tone="dark"],
+.mn-section[data-has-image] {
+  --mn-surface-background: rgb(255 255 255 / 0.12);
+  --mn-surface-border-color: rgb(255 255 255 / 0.24);
+}
+
+/* And the opposite failure: a "flat" card is the surface colour, which is exactly the colour
+   a surface-toned band is painted in, so on that one band it steps off the page instead. */
+.mn-section[data-tone="surface"] {
+  --mn-surface-background: var(--mn-color-background);
 }
 
 /* ---- Blocks ---- */
@@ -144,7 +193,7 @@ h3.mn-heading {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
 }
 
 .mn-image figcaption {
@@ -186,7 +235,7 @@ h3.mn-heading {
   text-decoration: none;
   color: var(--mn-color-text);
   padding-block: 0.25rem;
-  border-bottom: 2px solid transparent;
+  border-bottom: var(--mn-border-bold) solid transparent;
 }
 
 .mn-nav-list a:hover {
@@ -242,8 +291,8 @@ h3.mn-heading {
     height: 2.5rem;
     padding: 0.5rem;
     cursor: pointer;
-    border: 1px solid var(--mn-color-border);
-    border-radius: var(--mn-radius);
+    border: var(--mn-border-base) solid var(--mn-color-border);
+    border-radius: var(--mn-radius-sm);
   }
 
   .mn-nav-button span {
@@ -263,9 +312,9 @@ h3.mn-heading {
     min-width: 12rem;
     padding: 0.5rem;
     background: var(--mn-color-background);
-    border: 1px solid var(--mn-color-border);
-    border-radius: var(--mn-radius);
-    box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+    border: var(--mn-border-base) solid var(--mn-color-border);
+    border-radius: var(--mn-radius-base);
+    box-shadow: var(--mn-elevation-high);
   }
 
   .mn-nav-toggle:checked ~ .mn-nav-list {
@@ -312,8 +361,8 @@ h3.mn-heading {
   padding: 0.625rem 0.75rem;
   color: var(--mn-color-text);
   background: var(--mn-color-background);
-  border: 1px solid var(--mn-color-border);
-  border-radius: var(--mn-radius);
+  border: var(--mn-border-base) solid var(--mn-color-border);
+  border-radius: var(--mn-radius-sm);
 }
 
 .mn-form-field input:focus-visible,
@@ -333,17 +382,17 @@ h3.mn-heading {
   font-weight: 600;
   color: var(--mn-color-background);
   background: var(--mn-color-primary);
-  border: 1px solid var(--mn-color-primary);
-  border-radius: var(--mn-radius);
+  border: var(--mn-border-base) solid var(--mn-color-primary);
+  border-radius: var(--mn-radius-sm);
   cursor: pointer;
 }
 
 .mn-form-error {
   margin: 0;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--mn-color-border);
+  border: var(--mn-border-base) solid var(--mn-color-border);
   border-left: 3px solid var(--mn-color-primary);
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
 }
 
 .mn-form-done p {
@@ -382,6 +431,17 @@ h3.mn-heading {
   color: var(--mn-color-background);
 }
 
+/* Four soft radial blobs of the Site's own two brand colours over its surface colour,
+   composed by themeToCss. It sets no foreground: every blob is a tint of the band it sits
+   on, capped so the band stays a version of `surface` rather than becoming a colour of its
+   own — which is what lets body text keep the colour it already had, and the contrast it
+   was already checked at. */
+.mn-section[data-tone="mesh"] {
+  background-color: var(--mn-color-surface);
+  /* Grain first, because the first layer of a background is the top one. */
+  background-image: var(--mn-texture), var(--mn-mesh);
+}
+
 .mn-section[data-tone="primary"] .mn-heading,
 .mn-section[data-tone="dark"] .mn-heading,
 .mn-section[data-tone="primary"] .mn-eyebrow,
@@ -409,6 +469,10 @@ h3.mn-heading {
 
 /* A photograph behind text. The overlay is applied in the renderer, because how
    much a given picture needs is a property of that picture. */
+/* A band with a photograph behind it sets `background-image` inline, so it has no grain —
+   and wants none. `background-size: cover` applies to every layer, so a 140px tile of noise
+   would be stretched across the whole band and stop being noise; and a photograph is already
+   made of grain. */
 .mn-section[data-has-image] {
   background-size: cover;
   background-position: center;
@@ -450,8 +514,8 @@ h3.mn-heading {
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
-  border: 2px solid transparent;
-  border-radius: var(--mn-radius);
+  border: var(--mn-border-bold) solid transparent;
+  border-radius: var(--mn-radius-sm);
   transition: transform 0.12s ease, opacity 0.12s ease;
 }
 
@@ -461,19 +525,30 @@ h3.mn-heading {
   opacity: 0.92;
 }
 
-.mn-btn[data-style="primary"] {
+/* A button arrives from one of two places and is styled the same either way.
+ *
+ * The standalone button Block carries the Author's choice as a variant on its wrapper. A
+ * Block that draws a button as part of itself — the call to action, a pricing plan, the
+ * comparison table — says which kind it wants with `data-style` on the button, because that
+ * is not a choice anybody is offered. The `:not([data-style])` keeps the second winning over
+ * the first, so a Block that grows variants of its own later cannot silently restyle the
+ * button inside it. */
+.mn-btn[data-style="primary"],
+.mn-block[data-variant="primary"] .mn-btn:not([data-style]) {
   background: var(--mn-color-primary);
   border-color: var(--mn-color-primary);
   color: var(--mn-color-on-primary);
 }
 
-.mn-btn[data-style="accent"] {
+.mn-btn[data-style="accent"],
+.mn-block[data-variant="accent"] .mn-btn:not([data-style]) {
   background: var(--mn-color-accent);
   border-color: var(--mn-color-accent);
   color: var(--mn-color-on-accent);
 }
 
-.mn-btn[data-style="outline"] {
+.mn-btn[data-style="outline"],
+.mn-block[data-variant="outline"] .mn-btn:not([data-style]) {
   background: transparent;
   border-color: currentColor;
   color: inherit;
@@ -552,15 +627,7 @@ h3.mn-heading {
   gap: 1rem;
   margin: 0;
   padding: 1.75rem;
-  background: var(--mn-color-surface);
-  border-radius: var(--mn-radius);
-}
-
-/* A quote inside a coloured band should not punch a pale hole in it. */
-.mn-section[data-tone="primary"] .mn-quote,
-.mn-section[data-tone="dark"] .mn-quote,
-.mn-section[data-has-image] .mn-quote {
-  background: rgb(255 255 255 / 0.12);
+  border-radius: var(--mn-radius-base);
 }
 
 .mn-quote blockquote {
@@ -590,12 +657,90 @@ h3.mn-heading {
   width: 2.75rem;
   height: 2.75rem;
   object-fit: cover;
-  border-radius: 50%;
+  /* A circle on a square element, which is what "full" means — and squarable by a Theme
+     that says so, which a hard-coded 50% never was. */
+  border-radius: var(--mn-radius-full);
 }
 
 .mn-quote figcaption span {
   display: flex;
   flex-direction: column;
+}
+
+/* ---- Testimonial variants --------------------------------------------------
+   Three looks for one Block, and not a line of new render code between them: the markup
+   below is identical in all three, and every value here is a Theme token, so all three
+   rebrand together when theme.ts changes.
+
+   "card" is the default and is everything above this comment — it needs no rules of its own,
+   which is the point of the first variant being what the Block already was. */
+
+/* Editorial: no card at all, the words at display size, and the open quote drawn large
+   behind them rather than sitting in the line. What a magazine does with a pull quote. */
+.mn-block[data-variant="quote"] .mn-quotes {
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+
+.mn-block[data-variant="quote"] .mn-quote {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 0 0 0 3.5rem;
+  position: relative;
+}
+
+.mn-block[data-variant="quote"] .mn-quote blockquote {
+  font-family: var(--mn-font-heading);
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.mn-block[data-variant="quote"] .mn-quote blockquote::before {
+  /* Out of the text and into the margin, at a size the line can no longer contain. */
+  content: "\201C";
+  position: absolute;
+  left: 0;
+  top: -0.15em;
+  margin: 0;
+  font-size: 4.5rem;
+  line-height: 1;
+  vertical-align: baseline;
+  color: var(--mn-color-accent);
+  opacity: 0.5;
+}
+
+/* A rule and a name. What a Site with a lot of these wants, and what a Site with two
+   does not. */
+.mn-block[data-variant="minimal"] .mn-quotes {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.mn-block[data-variant="minimal"] .mn-quote {
+  background: none;
+  border: 0;
+  border-top: var(--mn-border-base) solid var(--mn-color-border);
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 1.25rem 0;
+  gap: 0.5rem;
+}
+
+.mn-block[data-variant="minimal"] .mn-quote:last-child {
+  border-bottom: var(--mn-border-base) solid var(--mn-color-border);
+}
+
+.mn-block[data-variant="minimal"] .mn-quote blockquote::before {
+  content: none;
+}
+
+.mn-block[data-variant="minimal"] .mn-quote figcaption img {
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .mn-quote figcaption em {
@@ -675,15 +820,16 @@ h3.mn-heading {
   gap: 1rem;
   height: 100%;
   padding: 2rem;
-  background: var(--mn-color-background);
-  border: 1px solid var(--mn-color-border);
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
 }
 
 .mn-plan[data-featured] {
-  /* The highlighted plan is raised rather than recoloured, so it still belongs to the row. */
+  /* The highlighted plan is raised rather than recoloured, so it still belongs to the row.
+     The width is restated because three of the four surfaces have no border to recolour,
+     and a featured plan that differs only by a shadow is not different enough. */
+  border-width: var(--mn-border-base);
   border-color: var(--mn-color-primary);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 0.09);
+  box-shadow: var(--mn-elevation-high);
 }
 
 .mn-plan-price {
@@ -775,7 +921,7 @@ h3.mn-heading {
   font-size: 1.375rem;
   line-height: 1;
   background: var(--mn-color-surface);
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-sm);
 }
 
 .mn-section[data-tone="primary"] .mn-feature-icon,
@@ -813,18 +959,52 @@ h3.mn-heading {
    painting the colour on itself, which is not low contrast but none at all.
    Within a band, the text colour that band already established is the only
    correct answer, so these tones stop overriding it. */
-.mn-section[data-tone="primary"] .mn-block[data-tone],
-.mn-section[data-tone="dark"] .mn-block[data-tone] {
+.mn-section[data-tone="primary"] .mn-block[data-tone]:not([data-tone="gradient"]),
+.mn-section[data-tone="dark"] .mn-block[data-tone]:not([data-tone="gradient"]) {
   color: inherit;
 }
 
 /* Headings inherit rather than keeping their own colour, or setting the tone on
    a Block containing one would appear to do nothing. */
-.mn-block[data-tone] .mn-heading,
-.mn-block[data-tone] .mn-eyebrow,
-.mn-block[data-tone] .mn-muted,
-.mn-block[data-tone] .mn-text p {
+/* Excluding the gradient tone, whose whole mechanism is a transparent colour over a clipped
+   background — `color: inherit` here would paint the glyphs solid and hide the gradient. */
+.mn-block[data-tone]:not([data-tone="gradient"]) .mn-heading,
+.mn-block[data-tone]:not([data-tone="gradient"]) .mn-eyebrow,
+.mn-block[data-tone]:not([data-tone="gradient"]) .mn-muted,
+.mn-block[data-tone]:not([data-tone="gradient"]) .mn-text p {
   color: inherit;
+}
+
+/* ---- Gradient type ---------------------------------------------------------
+   A run between the two readable brand colours, clipped to the glyphs. The gradient itself
+   is composed by themeToCss from `primaryText` and `accentText` rather than the raw brand
+   colours, because gradient text is still text and half of a run between two brand colours
+   is usually below 4.5:1.
+
+   Headings only, and that is a width decision rather than a taste one. A gradient needs
+   room to be a gradient: run between two colours across a box two characters wide and every
+   glyph lands near the midpoint, so a row of statistics came out as three identical muddy
+   olives — worse than either brand colour, and not recognisable as a gradient at all. Body
+   copy is excluded for a different reason: a paragraph set this way is still a paragraph
+   somebody has to read. */
+.mn-block[data-tone="gradient"] .mn-heading {
+  background-image: var(--mn-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Without this the clip box is the line box and a descender is cut off mid-gradient. */
+  -webkit-text-fill-color: transparent;
+}
+
+/* Clipped text has no colour of its own, so a forced-colours mode has nothing to override
+   and the heading disappears entirely. Hand it back its colour and drop the gradient — the
+   whole point of that mode is that the user's palette wins. */
+@media (forced-colors: active) {
+  .mn-block[data-tone="gradient"] .mn-heading {
+    background-image: none;
+    color: CanvasText;
+    -webkit-text-fill-color: currentColor;
+  }
 }
 
 .mn-block[data-font="heading"],
@@ -891,16 +1071,8 @@ h3.mn-heading {
 }
 
 .mn-accordion-item {
-  background: var(--mn-color-surface);
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
   padding: 0 1.25rem;
-}
-
-/* The same reasoning as a quote: a pale card inside a coloured band punches a hole in it. */
-.mn-section[data-tone="primary"] .mn-accordion-item,
-.mn-section[data-tone="dark"] .mn-accordion-item,
-.mn-section[data-has-image] .mn-accordion-item {
-  background: rgb(255 255 255 / 0.12);
 }
 
 .mn-accordion-item summary {
@@ -990,7 +1162,7 @@ h3.mn-heading {
   height: 100%;
   object-fit: cover;
   aspect-ratio: 4 / 3;
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
   display: block;
 }
 
@@ -1003,7 +1175,7 @@ h3.mn-heading {
   display: block;
   text-decoration: none;
   color: inherit;
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
 }
 
 .mn-gallery-open:focus-visible {
@@ -1037,7 +1209,7 @@ h3.mn-heading {
   width: auto;
   height: auto;
   object-fit: contain;
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-lg);
 }
 
 .mn-gallery-full-caption {
@@ -1069,8 +1241,8 @@ h3.mn-heading {
 
 .mn-gallery-step a {
   padding: 0.5rem 1rem;
-  border: 1px solid rgb(255 255 255 / 0.4);
-  border-radius: var(--mn-radius);
+  border: var(--mn-border-base) solid rgb(255 255 255 / 0.4);
+  border-radius: var(--mn-radius-sm);
 }
 
 .mn-gallery-close:focus-visible,
@@ -1111,8 +1283,7 @@ h3.mn-heading {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: var(--mn-color-surface);
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
   overflow: hidden;
   width: var(--mn-carousel-width, 28rem);
   max-width: 85vw;
@@ -1175,7 +1346,7 @@ h3.mn-heading {
 .mn-carousel-dots span {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 50%;
+  border-radius: var(--mn-radius-full);
   background: currentColor;
   opacity: 0.35;
 }
@@ -1188,7 +1359,7 @@ h3.mn-heading {
 .mn-carousel-dots a:focus-visible {
   outline: 2px solid var(--mn-color-primary);
   outline-offset: -4px;
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-full);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1210,7 +1381,7 @@ h3.mn-heading {
   width: 100%;
   height: var(--mn-map-height, 22rem);
   border: 0;
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-lg);
   display: block;
   /* A map is a picture of a place, not a document to be read — it stays out of the tab order
      until a visitor chooses to interact with it. */
@@ -1240,7 +1411,7 @@ h3.mn-heading {
   position: relative;
   width: 100%;
   aspect-ratio: var(--mn-embed-ratio, 16 / 9);
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-lg);
   overflow: hidden;
   background: #000;
 }
@@ -1274,8 +1445,8 @@ h3.mn-heading {
   display: flow-root;
 }
 
-.mn-prose[data-width="readable"] { --mn-prose-width: 38rem; }
-.mn-prose[data-width="full"] { --mn-prose-width: none; }
+.mn-block[data-variant="readable"] .mn-prose { --mn-prose-width: 38rem; }
+.mn-block[data-variant="full"] .mn-prose { --mn-prose-width: none; }
 
 .mn-prose > :first-child { margin-top: 0; }
 .mn-prose > :last-child { margin-bottom: 0; }
@@ -1314,13 +1485,13 @@ h3.mn-heading {
 .mn-prose code {
   font-size: 0.9375em;
   padding: 0.125em 0.3em;
-  border-radius: calc(var(--mn-radius) / 2);
+  border-radius: var(--mn-radius-sm);
   background: var(--mn-color-surface);
 }
 
 .mn-prose pre {
   padding: 1rem 1.25rem;
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
   background: var(--mn-color-surface);
   overflow-x: auto;
 }
@@ -1333,7 +1504,7 @@ h3.mn-heading {
 .mn-prose img {
   max-width: 100%;
   height: auto;
-  border-radius: var(--mn-radius);
+  border-radius: var(--mn-radius-base);
 }
 
 /* ---- Shared ---- */
@@ -1375,7 +1546,7 @@ h3.mn-heading {
 .mn-compare td {
   padding: 0.875rem 1rem;
   text-align: center;
-  border-bottom: 1px solid var(--mn-color-border, rgb(128 128 128 / 0.2));
+  border-bottom: var(--mn-border-base) solid var(--mn-color-border, rgb(128 128 128 / 0.2));
   vertical-align: middle;
 }
 
@@ -1418,8 +1589,8 @@ h3.mn-heading {
 }
 
 .mn-compare thead [data-featured] {
-  border-top-left-radius: var(--mn-radius);
-  border-top-right-radius: var(--mn-radius);
+  border-top-left-radius: var(--mn-radius-base);
+  border-top-right-radius: var(--mn-radius-base);
 }
 
 .mn-compare-yes {
@@ -1465,8 +1636,8 @@ h3.mn-heading {
   /* 44px of hit area even on the shortest name in the row. */
   min-height: 2.75rem;
   padding: 0.5rem 1rem;
-  border: 1px solid var(--mn-color-border, rgb(128 128 128 / 0.3));
-  border-radius: var(--mn-radius);
+  border: var(--mn-border-base) solid var(--mn-color-border, rgb(128 128 128 / 0.3));
+  border-radius: var(--mn-radius-sm);
   text-decoration: none;
   color: inherit;
 }

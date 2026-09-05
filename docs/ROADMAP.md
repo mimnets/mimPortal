@@ -504,6 +504,32 @@ border:    { hairline, base, bold }      // 1px against 2px is most of editorial
 surface:   "flat" | "bordered" | "raised" | "glass"
 ```
 
+**Built, 5 September, on `feat/m11-theme-tokens`.** All four, wired through the Block library
+rather than only declared: the two hard-coded `box-shadow` rules are `--mn-elevation-high`, the
+twenty-six radius uses are spread across the scale by what they are (a button is `sm`, a
+lightbox image is `lg`, an avatar is `full`), and the four card Blocks — quote, plan, accordion
+item, carousel slide — are drawn from four `--mn-surface-*` properties instead of from literal
+values. `--mn-radius` is still emitted as the base of the scale, because Ledger's stylesheet is
+written against it.
+
+Three decisions came out of building it, and they are the ones worth arguing with rather than
+the code:
+
+- **A scale is derived from `base`, not merged onto the default's.** Merging leaves a Site that
+  states `base: "0"` holding the default's 3px `sm` — Ledger asking for square corners and
+  getting two rounded ones it could not see in its own file. The same shape as the readable
+  colours: derive from what this Theme says, and let an explicit value win.
+- **`elevation` is not in `themeSchema` at all.** A `box-shadow` has no shape a regex can check
+  and it is compiled into a `<style>` tag on every Page, so accepting one from a model reopens
+  the injection the schema exists to close — in exchange for a shadow that by definition does
+  not match the Site's own primary. `surface` *is* accepted, because an enum of four words is
+  a design choice rather than a string. [ADR-0019](./adr/0019-a-theme-derives-what-it-can-check.md).
+- **The default is `flat`, which is what three of the four cards already were.** Chosen to
+  leave existing Sites looking as they did rather than to be the best of the four. A token that
+  changes every Site the day it lands is a token nobody trusts.
+
+Still to build below: the variants themselves, Section dividers and `field.token`.
+
 **The tinted shadow is the single highest-value line here.** A grey `box-shadow` reads as a
 2015 card; the same shadow mixed with the Site's own primary reads as considered. It is one
 `color-mix()` in a token and it changes every card, quote and pricing plan at once.
@@ -522,6 +548,35 @@ holds and a Site still cannot produce something off-brand:
 - **Gradient text** on headings, via `background-clip: text`.
 - **CSS 3D** — `transform: perspective()` on hover for card tilt and layered depth. No client
   component, so the package keeps the property that makes it good.
+
+**Built, 5 September, except the last one.** Glass shipped with the surface token above.
+Mesh is a fifth Section tone: four soft radial blobs of the Site's own two brand colours over
+its surface colour, composed by `themeToCss` and never stated, so a Site cannot take it
+off-brand. Grain is `theme.texture` — one word, an inline `feTurbulence` under a kilobyte,
+laid over every band. Gradient text is a fifth Block tone.
+
+Three things that came out of building them:
+
+- **The mesh caps every blob at 32%.** Above that the band stops being a tint of `surface`
+  and becomes a colour of its own, at which point body text is being read against something
+  nobody checked. Capped, it needs none of the foreground override rules `[data-tone="primary"]`
+  carries — the text keeps the colour and the contrast it already had.
+- **Gradient text runs between `primaryText` and `accentText`, not the brand colours,** and
+  applies to headings only. Gradient text is still text, and the Starter's own accent is
+  3.7:1 on white. The width limit is separate and was found by looking: across a box two
+  characters wide every glyph lands on the gradient's midpoint, so a row of statistics came
+  out as three identical muddy olives — worse than either colour and not a gradient at all.
+- **Grain is a background layer, not an overlay.** The overlay version needed a stacking
+  context on the Section or on `.mn-columns`, either of which traps the gallery lightbox
+  (`z-index: 50`) and the mobile nav drawer (`z-index: 30`) inside the Section they live in.
+  An open drawer painted under the Page below it is a navigation bug on every phone, in
+  exchange for a texture nobody can consciously see.
+
+**CSS 3D is not built**, and it is the one item here held back rather than finished. A tilt
+on hover is a hover affordance, and the four things it would apply to — a quote, a plan, an
+accordion item, a slide — are not things a visitor clicks. The tinted elevation above already
+carries the depth this was for. It is worth doing on whatever M11's variants make genuinely
+interactive, and worth doing there rather than here.
 
 ### What is deliberately not here
 
@@ -568,15 +623,36 @@ those become the first variants rather than staying local conventions. Twenty-tw
 Types with three variants each is a library that reads as far larger than it is, which is
 the only version of that race worth entering.
 
+**Built, 5 September.** `defineBlock` takes `variants`, the registry builds the enum per
+Block Type from that list, the renderer emits `data-variant`, and the Editor generates the
+control the way it generates every settings form. The testimonial has three looks — card,
+quote, minimal — and the exit criterion below is met: the markup is byte-identical in all
+three and the render was not touched.
+
+Two decisions:
+
+- **The first declared variant is what the Block already looked like**, and is the default.
+  That is what let this ship without migrating a single stored Page: a Block written before
+  variants existed parses to the appearance it already had, and nobody chooses anything.
+- **The pair that did it by hand needed a real migration, and got one at the parse boundary.**
+  A button's look is stored in `props.style` on every Page ever written, and `props` has
+  stopped carrying it — an unknown key is stripped in silence, so every accent button on
+  every Site would have come back primary with no error and nothing dropped.
+  `variantWasField` names the old field and the registry lifts the value across as a Page is
+  read; a Page rewrites itself into the new shape the next time an Author saves it. No
+  downtime, no script, and deletable once every Site has re-saved.
+
+Not done here: **Section dividers** and **`field.token`**, both below.
+
 **Section dividers** land here for the same reason: an angled or curved edge between two
 bands is `clip-path` and a Section property, and it does more for how composed a Page looks
-than three more Block Types would.
+than three more Block Types would. *Not built.*
 
 **And a token picker, not a colour picker.** There is no `field.color`, and there should not
 be — a free hex picker is [ADR-0003](./adr/0003-sections-and-columns-not-free-canvas.md)'s
 mistake wearing a different hat, and a client who can put anything behind anything will.
 What is missing is `field.token`: choose one of the Theme's own colours, so a Block that
-offers a choice still cannot offer an unreadable one.
+offers a choice still cannot offer an unreadable one. *Not built.*
 
 **Done when:** the same testimonial Block looks like three different Sites without a line of
 new render code, and changing six values in `theme.ts` still rebrands all three.

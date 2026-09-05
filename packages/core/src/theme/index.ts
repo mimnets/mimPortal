@@ -1,6 +1,28 @@
 import { z } from "zod";
 
 /**
+ * The four ways a card can be drawn.
+ *
+ * A closed set rather than a free style string, because this value reaches CSS. `surface`
+ * arrives from a model in a generated Preset, and an enum is the whole of the difference
+ * between offering a design choice and offering a way to write arbitrary CSS into every
+ * Page of a Site.
+ */
+export const SURFACE_STYLES = ["flat", "bordered", "raised", "glass"] as const;
+
+export type SurfaceStyle = (typeof SURFACE_STYLES)[number];
+
+/**
+ * A finish laid over every band, or none.
+ *
+ * Site-wide rather than per-Section because it is a finish, like a paper stock: a Page with
+ * grain on two bands out of five looks like a mistake, not a choice.
+ */
+export const TEXTURES = ["none", "grain"] as const;
+
+export type Texture = (typeof TEXTURES)[number];
+
+/**
  * A Site's visual identity, as tokens.
  *
  * This is what makes one Block library look like five different brands. Blocks are styled
@@ -38,10 +60,79 @@ export interface Theme {
     body: string;
     heading: string;
   };
+  /**
+   * The corner scale.
+   *
+   * A Site still states one value — `base` — and the rest is derived from it, so rebranding
+   * is unchanged. What is new is that a Block no longer has to use the same corner as every
+   * other Block: small chrome can be tighter than a card and a lightbox image softer, which
+   * is most of what stops a Site reading as one radius applied twenty-six times.
+   *
+   * `none` and `full` are the two ends and do not scale. A square corner is square at any
+   * base and a pill is a pill; both stay overridable, which is how a Site that wants square
+   * avatars gets them.
+   */
   radius: {
-    /** Applied to cards, images and inputs. "0" reads as formal, "1rem" as friendly. */
+    none: string;
+    /** Small chrome: buttons, inputs, badges, inline code. */
+    sm: string;
+    /** The default. Cards, images, panels. "0" reads as formal, "1rem" as friendly. */
     base: string;
+    /** Large media: a lightbox image, a map, an embed. */
+    lg: string;
+    /** A pill, or a circle on a square element. */
+    full: string;
   };
+  /**
+   * Line weights.
+   *
+   * One pixel against two is most of the difference between editorial and brutalist, and
+   * until now a Theme had no way to say which it was — every rule in the Block library was
+   * a hard-coded `1px`.
+   */
+  border: {
+    /** The thinnest rule a display can draw. Deliberately does not scale with `base`. */
+    hairline: string;
+    /** Card edges and rules. */
+    base: string;
+    /** Deliberate weight: a featured plan, a quoted panel, a brutalist Site's everything. */
+    bold: string;
+  };
+  /**
+   * Shadows, tinted with the Site's own primary rather than grey.
+   *
+   * A grey `box-shadow` reads as a 2015 card; the same shadow carrying the brand colour
+   * reads as considered. That is the whole of the difference and it is one `color-mix()`.
+   *
+   * Derived from the palette and, unlike every other family here, not accepted from a
+   * generated Preset at all — see `themeSchema`. A shadow that does not belong to the
+   * palette is the exact mistake this token exists to prevent, so there is nothing to gain
+   * by letting a model name one.
+   */
+  elevation: {
+    none: string;
+    /** A card that is lifted off the page. */
+    low: string;
+    /** A thing that is *over* the page: a drawer, a featured plan. */
+    high: string;
+  };
+  /**
+   * How a card is drawn — the quote, the plan, the accordion item, the carousel slide.
+   *
+   * One word, and it changes the character of all of them at once. It is a Theme decision
+   * rather than a Block field for the same reason a Section has four tones and not a colour
+   * picker (ADR-0013): a Site that can put anything behind anything will.
+   */
+  surface: SurfaceStyle;
+  /**
+   * Grain, or nothing.
+   *
+   * A flat colour at full width is the thing that reads as cheap, and a kilobyte of
+   * `feTurbulence` inlined as a data URI is what fixes it — no request, no asset, no
+   * dependency. Off by default: it is a decision, and a Site that has not made it should not
+   * be wearing it.
+   */
+  texture: Texture;
   spacing: {
     /** Vertical rhythm between Sections. */
     section: string;
@@ -52,13 +143,16 @@ export interface Theme {
   measure: string;
 }
 
+/** Named once, because `defaultTheme.elevation` is mixed from it and must not drift. */
+const DEFAULT_PRIMARY = "#3b6cf6";
+
 export const defaultTheme: Theme = {
   colors: {
     background: "#ffffff",
     surface: "#f6f6f8",
     text: "#16161a",
     muted: "#6b6b78",
-    primary: "#3b6cf6",
+    primary: DEFAULT_PRIMARY,
     onPrimary: "#ffffff",
     accent: "#f0568c",
     onAccent: "#ffffff",
@@ -70,10 +164,178 @@ export const defaultTheme: Theme = {
     body: 'system-ui, -apple-system, "Segoe UI", sans-serif',
     heading: 'system-ui, -apple-system, "Segoe UI", sans-serif',
   },
-  radius: { base: "6px" },
+  radius: radiusScale("6px"),
+  border: borderScale("1px"),
+  elevation: elevationScale(DEFAULT_PRIMARY),
+  /**
+   * Flat, because that is what three of the library's four cards already were.
+   *
+   * The default is chosen to leave existing Sites looking as they did rather than to be the
+   * best of the four — a token that changes every Site the day it lands is a token nobody
+   * trusts. A Site says `surface: "raised"` and means it.
+   */
+  surface: "flat",
+  texture: "none",
   spacing: { section: "4rem", gutter: "2rem" },
   measure: "72rem",
 };
+
+/**
+ * A length multiplied, keeping its unit.
+ *
+ * Arithmetic here rather than `calc()` in the emitted CSS, because a Site is allowed to
+ * write `radius: { base: "0" }` — Ledger does, and squareness is its whole character — and
+ * `calc(0 / 2)` resolves to a <number> rather than a <length>, which `border-radius` refuses.
+ * A value this cannot parse falls back to `calc()`, which is right for everything that is
+ * not zero.
+ */
+function scaleLength(value: string, factor: number): string {
+  const parsed = /^(\d*\.?\d+)([a-z%]*)$/i.exec(value.trim());
+  if (!parsed) return `calc(${value} * ${factor})`;
+
+  const scaled = Number(parsed[1]) * factor;
+  return scaled === 0 ? "0" : `${Number(scaled.toFixed(4))}${parsed[2]}`;
+}
+
+/** The corner scale a Site gets from stating one value. */
+function radiusScale(base: string): Theme["radius"] {
+  return {
+    none: "0",
+    sm: scaleLength(base, 0.5),
+    base,
+    lg: scaleLength(base, 2),
+    // Not derived: a pill is a pill whatever the base is. Overridable, which is how a Site
+    // whose corners are all square gets square avatars too.
+    full: "999px",
+  };
+}
+
+/** The line-weight scale. `hairline` is a device pixel by definition, so it does not scale. */
+function borderScale(base: string): Theme["border"] {
+  return { hairline: "1px", base, bold: scaleLength(base, 2) };
+}
+
+/**
+ * Shadows built from the Site's own primary.
+ *
+ * `color-mix(… , transparent)` is how a hex colour becomes a translucent one without the
+ * Theme having to hold an rgba string — which matters, because the palette is validated as
+ * six-digit hex and nothing else, and that constraint is a security boundary rather than a
+ * style preference.
+ *
+ * Two layers each: a tight one that reads as contact with the page and a wide one that reads
+ * as distance from it. One layer alone looks like a drop shadow from a menu bar.
+ */
+function elevationScale(primary: string): Theme["elevation"] {
+  const tint = (percent: number) => `color-mix(in oklab, ${primary} ${percent}%, transparent)`;
+
+  return {
+    none: "none",
+    low: `0 1px 2px ${tint(10)}, 0 4px 12px ${tint(12)}`,
+    high: `0 2px 6px ${tint(10)}, 0 16px 40px ${tint(18)}`,
+  };
+}
+
+/**
+ * Grain, as an inline SVG.
+ *
+ * `feTurbulence` is a noise generator the browser already has, so this is under a kilobyte,
+ * costs no request and needs no asset in the media library. Desaturated, because coloured
+ * noise is not grain, and laid on at 5.5% — high enough to break a flat colour, low enough
+ * that nobody looking at the Page can say what changed.
+ *
+ * It is a constant rather than a token: there is one grain, and a Site either wears it or
+ * does not. A Site wanting a different one writes a rule in its own stylesheet, which is what
+ * `blocks.css` says it is for.
+ */
+const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E")`;
+
+/**
+ * A mesh gradient, which is what most "modern SaaS background" actually is: four soft
+ * radial blobs of the Site's own two brand colours, over its own surface colour.
+ *
+ * Derived and never stated, per [ADR-0019]: it is a composition of the palette rather than a
+ * value a Site has an opinion about, and a Site that states its own would be stating four
+ * colours nobody validated.
+ *
+ * The strongest blob is capped at 32%. Above that the band stops being a tint of the surface
+ * and becomes a colour of its own, at which point body text set in `--mn-color-text` is
+ * being read against something nobody checked the contrast of.
+ */
+function meshGradient(colors: Theme["colors"]): string {
+  const blob = (colour: string, percent: number, x: string, y: string, reach: string) =>
+    `radial-gradient(circle at ${x} ${y}, ` +
+    `color-mix(in oklab, ${colour} ${percent}%, transparent), transparent ${reach})`;
+
+  return [
+    blob(colors.primary, 32, "18%", "20%", "55%"),
+    blob(colors.accent, 26, "82%", "16%", "50%"),
+    blob(colors.primary, 20, "70%", "86%", "55%"),
+    blob(colors.accent, 16, "10%", "80%", "48%"),
+  ].join(", ");
+}
+
+/**
+ * The gradient a heading is painted with, between the two *readable* brand colours.
+ *
+ * `primaryText` and `accentText` rather than `primary` and `accent`, and that is the whole
+ * point of the token existing: gradient text is still text. A gradient run between the two
+ * raw brand colours is a heading that fails contrast for however much of its width the
+ * lighter end occupies — and the Starter's own accent is 3.7:1 on white, so that is not a
+ * hypothetical. These two are already moved as far as they must be to be read.
+ */
+function textGradient(colors: Theme["colors"]): string {
+  return `linear-gradient(100deg, ${colors.primaryText}, ${colors.accentText})`;
+}
+
+/**
+ * The four properties every card in the library is drawn from, for one `surface` keyword.
+ *
+ * Emitted as custom properties rather than selected by an attribute so that the choice
+ * cascades the same way every other token does — including into the Editor's preview, which
+ * renders Blocks outside the Site's own document tree.
+ */
+function surfaceVariables(theme: Theme): Record<string, string> {
+  const { colors, border, elevation } = theme;
+
+  switch (theme.surface) {
+    case "bordered":
+      return {
+        background: colors.background,
+        "border-width": border.base,
+        "border-color": colors.border,
+        shadow: elevation.none,
+        backdrop: "none",
+      };
+    case "raised":
+      return {
+        background: colors.background,
+        "border-width": "0",
+        "border-color": "transparent",
+        shadow: elevation.low,
+        backdrop: "none",
+      };
+    case "glass":
+      return {
+        // Translucent rather than pale: the point of glass is that what is behind it shows
+        // through, so this has to be an alpha value and not a lighter colour.
+        background: `color-mix(in oklab, ${colors.background} 62%, transparent)`,
+        "border-width": border.hairline,
+        "border-color": `color-mix(in oklab, ${colors.text} 14%, transparent)`,
+        shadow: elevation.low,
+        backdrop: "blur(14px) saturate(140%)",
+      };
+    case "flat":
+    default:
+      return {
+        background: colors.surface,
+        "border-width": "0",
+        "border-color": "transparent",
+        shadow: elevation.none,
+        backdrop: "none",
+      };
+  }
+}
 
 /** Merges a Site's overrides onto the defaults, so a theme.ts only states what differs. */
 export function defineTheme(overrides: DeepPartial<Theme> = {}): Theme {
@@ -102,7 +364,32 @@ export function defineTheme(overrides: DeepPartial<Theme> = {}): Theme {
       accentText: supplied.accentText ?? readableText(colors.accent, colors.background),
     },
     fonts: { ...defaultTheme.fonts, ...overrides.fonts },
-    radius: { ...defaultTheme.radius, ...overrides.radius },
+    /**
+     * The three scales are rebuilt from whatever `base` ends up being, and only then are a
+     * Site's own values laid over the top.
+     *
+     * Merging onto `defaultTheme` instead would hand a Site that states `base: "0"` the
+     * default's 3px `sm` and 12px `lg`, so a Theme asking for square corners would get two
+     * rounded ones it never mentioned. Same rule as the readable colours above: derive from
+     * what this Theme says, and let an explicit value win.
+     */
+    radius: {
+      ...radiusScale(overrides.radius?.base ?? defaultTheme.radius.base),
+      ...overrides.radius,
+    },
+    border: {
+      ...borderScale(overrides.border?.base ?? defaultTheme.border.base),
+      ...overrides.border,
+    },
+    /**
+     * Elevation is a function of the merged primary and is never inherited, for exactly the
+     * reason `primaryText` is not: a shadow carried over from the defaults tints one Site's
+     * cards with another Site's brand colour, which is the one thing a tinted shadow must
+     * not do.
+     */
+    elevation: { ...elevationScale(colors.primary), ...overrides.elevation },
+    surface: overrides.surface ?? defaultTheme.surface,
+    texture: overrides.texture ?? defaultTheme.texture,
     spacing: { ...defaultTheme.spacing, ...overrides.spacing },
     measure: overrides.measure ?? defaultTheme.measure,
   };
@@ -120,7 +407,31 @@ export function themeToCss(theme: Theme): string {
   const declarations: string[] = [
     ...Object.entries(theme.colors).map(([key, value]) => `--mn-color-${kebab(key)}: ${value};`),
     ...Object.entries(theme.fonts).map(([key, value]) => `--mn-font-${kebab(key)}: ${value};`),
+    /**
+     * The base of the scale, kept under its old name.
+     *
+     * Twenty-six rules across the Block library were written against `--mn-radius`, and a
+     * Site's own stylesheet may be too — Ledger's is. It is an alias for `--mn-radius-base`
+     * rather than a deprecated spelling: "the Site's corner radius" is a thing worth being
+     * able to say without choosing a step on a scale.
+     */
     `--mn-radius: ${theme.radius.base};`,
+    ...Object.entries(theme.radius).map(([key, value]) => `--mn-radius-${kebab(key)}: ${value};`),
+    ...Object.entries(theme.border).map(([key, value]) => `--mn-border-${kebab(key)}: ${value};`),
+    ...Object.entries(theme.elevation).map(
+      ([key, value]) => `--mn-elevation-${kebab(key)}: ${value};`,
+    ),
+    // The keyword itself, so a Site's own CSS can branch on it; then the four properties the
+    // Block library actually draws with.
+    `--mn-surface: ${theme.surface};`,
+    ...Object.entries(surfaceVariables(theme)).map(
+      ([key, value]) => `--mn-surface-${key}: ${value};`,
+    ),
+    // Compositions of the palette rather than values a Site states — derived here for the
+    // same reason elevation is, and absent from `themeSchema` for the same reason too.
+    `--mn-mesh: ${meshGradient(theme.colors)};`,
+    `--mn-gradient-text: ${textGradient(theme.colors)};`,
+    `--mn-texture: ${theme.texture === "grain" ? GRAIN : "none"};`,
     `--mn-section-spacing: ${theme.spacing.section};`,
     `--mn-gutter: ${theme.spacing.gutter};`,
     `--mn-measure: ${theme.measure};`,
@@ -137,6 +448,20 @@ function kebab(value: string): string {
 const colour = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/, "Colours must be six-digit hex, for example #0b6b62");
+
+/**
+ * A CSS length a model is allowed to produce: a number and a unit from a closed set.
+ *
+ * These reach `border-radius` and `border-width` in a `<style>` tag on every Page, so the
+ * same reasoning applies as to `colour` — this is a validation boundary, not a nicety.
+ */
+const length = z
+  .string()
+  // Bare "0" is admitted because it is a valid CSS length and the scales produce it: `none`
+  // is always "0", and every step of a Site that states `base: "0"` is too — Ledger's whole
+  // character. Requiring a unit meant the Dashboard could not save a Theme it had itself
+  // derived, which is a round trip nobody would have run until a client did.
+  .regex(/^(0|\d{1,3}(\.\d{1,2})?(px|rem))$/, "A length like 8px, 0.5rem or 0");
 
 /** A font stack. Punctuation that could close a CSS declaration is refused. */
 const stack = z.string().min(1).max(200).regex(/^[^;{}()@]+$/, "A font stack, not a declaration");
@@ -184,7 +509,39 @@ export const themeSchema = z.object({
       heading: stack.optional(),
     })
     .optional(),
-  radius: z.object({ base: z.string().regex(/^\d{1,3}(px|rem)$/) }).optional(),
+  /**
+   * A Site normally states `base` and takes the derived scale. Every step is accepted
+   * individually because `defineTheme` lets an explicit value win, and a design that wants
+   * square corners everywhere *except* its avatars has to be able to say so.
+   */
+  radius: z
+    .object({
+      none: length.optional(),
+      sm: length.optional(),
+      base: length.optional(),
+      lg: length.optional(),
+      full: length.optional(),
+    })
+    .optional(),
+  border: z
+    .object({
+      hairline: length.optional(),
+      base: length.optional(),
+      bold: length.optional(),
+    })
+    .optional(),
+  /**
+   * One of four words, and nothing else.
+   *
+   * `elevation` is deliberately absent from this schema entirely — it is derived from the
+   * palette and never asked for, like `primaryText` and `accentText`. A `box-shadow` is a
+   * free-form CSS value with no shape a regex can usefully check, so accepting one from a
+   * model would reopen the injection this schema exists to close, in exchange for a shadow
+   * that by definition does not match the Site's own primary.
+   */
+  surface: z.enum(SURFACE_STYLES).optional(),
+  /** One of two words. The grain itself is a constant, so there is no value to check. */
+  texture: z.enum(TEXTURES).optional(),
   spacing: z
     .object({
       section: z.string().regex(/^\d{1,2}(\.\d)?rem$/).optional(),
@@ -291,7 +648,13 @@ export function completeTheme(input: ThemeInput, base: Theme = defaultTheme): Th
       body: input.fonts?.body ?? base.fonts.body,
       heading: input.fonts?.heading ?? input.fonts?.body ?? base.fonts.heading,
     },
-    radius: { base: input.radius?.base ?? base.radius.base },
+    // Each family is stated rather than spread, so a key this schema does not carry cannot
+    // arrive here from a cast. `elevation` is the one that matters: it has no place in
+    // ThemeInput at all and is rebuilt from the palette by `defineTheme`.
+    radius: { ...input.radius, base: input.radius?.base ?? base.radius.base },
+    border: { ...input.border, base: input.border?.base ?? base.border.base },
+    surface: input.surface ?? base.surface,
+    texture: input.texture ?? base.texture,
     spacing: {
       section: input.spacing?.section ?? base.spacing.section,
       gutter: input.spacing?.gutter ?? base.spacing.gutter,

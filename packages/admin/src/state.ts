@@ -136,7 +136,9 @@ function copySection(section: SectionNode): SectionNode {
 export function newBlock(blockType: AnyBlockType): BlockInstance {
   return {
     id: newId("blk"),
-    style: blockStyleDefaults(),
+    // The Block Type's own variants, so the preview draws what the schema would have
+    // defaulted to on save rather than an unstyled Block until the first save.
+    style: blockStyleDefaults(blockType.variants),
     type: blockType.name,
     props: blockType.propsSchema.parse({}) as Record<string, unknown>,
   };

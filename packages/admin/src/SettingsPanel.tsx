@@ -18,6 +18,16 @@ import { LayoutPicker } from "./pickers";
 import { blockAt, blockTypeFor, type EditorAction, type Selection } from "./state";
 
 /**
+ * "no-image" reads as "No image". Variants are declared as the strings that reach CSS, so
+ * this is the one place they are turned into something an Author reads — a label map on the
+ * Block Type would be a second thing to keep in step for no gain.
+ */
+function variantLabel(variant: string): string {
+  const words = variant.replace(/-/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/**
  * A Section background reuses the image field, so it opens the same media library an image
  * Block does. Declared once out here rather than rebuilt on every render.
  */
@@ -72,6 +82,36 @@ export function SettingsPanel({
         <fieldset className="mn-field-group">
           <legend>Appearance</legend>
 
+          {/* Generated from the Block Type's own `variants`, the same way every field above
+              is generated from its `fields`. A Block Type with no variants declared gets no
+              control, rather than a control with one option in it. */}
+          {blockType.variants?.length ? (
+            <label className="mn-field" htmlFor="block-variant">
+              <span>Look</span>
+              <select
+                id="block-variant"
+                value={block.style?.variant ?? blockType.variants[0]}
+                onChange={(event) =>
+                  dispatch({
+                    type: "setBlockStyle",
+                    path: selection.path,
+                    style: { variant: event.target.value },
+                  })
+                }
+              >
+                {blockType.variants.map((variant) => (
+                  <option key={variant} value={variant}>
+                    {variantLabel(variant)}
+                  </option>
+                ))}
+              </select>
+              <small>
+                The same content, arranged differently. Every look is styled in the Site's
+                Theme, so all of them stay on-brand and all of them change when it does.
+              </small>
+            </label>
+          ) : null}
+
           <label className="mn-field" htmlFor="block-tone">
             <span>Text colour</span>
             <select
@@ -89,6 +129,7 @@ export function SettingsPanel({
               <option value="muted">Muted</option>
               <option value="primary">Primary colour</option>
               <option value="accent">Accent colour</option>
+              <option value="gradient">Gradient (headings)</option>
             </select>
             <small>
               From the Site's Theme, not a colour picker — so changing the Theme still
@@ -188,6 +229,7 @@ export function SettingsPanel({
             <option value="surface">Tinted</option>
             <option value="primary">Primary colour</option>
             <option value="dark">Dark</option>
+            <option value="mesh">Mesh gradient</option>
           </select>
           <small>
             A Section is a full-width band, so this paints the whole width. Alternating bands

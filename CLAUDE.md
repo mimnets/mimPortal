@@ -20,7 +20,7 @@ four documents that hold the real information, so nothing has to be rediscovered
 4. **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for, including
    the exit criterion each was judged against.
 
-`docs/adr/` holds eighteen decision records. They are the answer to "why is it like this?", and
+`docs/adr/` holds nineteen decision records. They are the answer to "why is it like this?", and
 several record what was *rejected*, which is usually the more useful half.
 
 ## Each document has one job

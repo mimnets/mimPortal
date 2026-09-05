@@ -40,8 +40,14 @@ export function columnCount(layout: ColumnLayout): number {
  * belongs — not on a Block, which is constrained to its Column and would need a CSS breakout
  * hack to reach the edges. Alternating tones down a Page is most of what separates a
  * designed layout from a wall of text.
+ *
+ * "mesh" is four soft radial blobs of the Site's own two brand colours over its surface
+ * colour, which is what most of what reads as a modern background actually is. It is a tone
+ * rather than a Theme-wide finish because it is a *band* — the same reasoning that put every
+ * other one of these here (ADR-0013) — and it is built from the palette, so a Site still
+ * cannot produce something off-brand with it.
  */
-export const SECTION_TONES = ["default", "surface", "primary", "dark"] as const;
+export const SECTION_TONES = ["default", "surface", "primary", "dark", "mesh"] as const;
 export type SectionTone = (typeof SECTION_TONES)[number];
 
 /** Vertical breathing room. A hero wants "large"; a band between two wants "flush". */
@@ -64,9 +70,15 @@ export interface SectionBackground {
  * Every option here resolves to a Theme token. There is no colour picker and there will not
  * be one: a client who can set any colour will set one that does not belong to the Site,
  * and the whole argument of this product is constraints they cannot break — the same
- * reasoning that gave Sections four tones instead of a palette (ADR-0013).
+ * reasoning that gave Sections a handful of tones instead of a palette (ADR-0013).
+ *
+ * "gradient" paints a heading with a run between the two *readable* brand colours. Headings
+ * and nothing else: a gradient needs width to read as one, and across a box two characters
+ * wide every glyph lands on the midpoint — a row of statistics came out as three identical
+ * muddy olives. Body copy is excluded for a different reason, which is that a paragraph set
+ * in gradient text is still a paragraph somebody has to read.
  */
-export const BLOCK_TONES = ["default", "muted", "primary", "accent"] as const;
+export const BLOCK_TONES = ["default", "muted", "primary", "accent", "gradient"] as const;
 export type BlockTone = (typeof BLOCK_TONES)[number];
 
 /** Which of the Theme's two families. A Text Block set in the display face reads as a lead. */
@@ -81,6 +93,15 @@ export interface BlockStyle {
   tone: BlockTone;
   font: BlockFont;
   animate: BlockAnimation;
+  /**
+   * Which of this Block Type's declared looks, if it declares any.
+   *
+   * Not an enum here, because the set is per Block Type rather than global — a testimonial's
+   * "quote" and a button's "outline" have nothing to do with each other. The registry builds
+   * the enum for each Block Type from its own `variants`, which is the only place that
+   * knows them.
+   */
+  variant?: string;
 }
 
 export interface BlockInstance {
@@ -90,9 +111,20 @@ export interface BlockInstance {
   style: BlockStyle;
 }
 
-/** What a Block looks like before anybody styles it. */
-export function blockStyleDefaults(): BlockStyle {
-  return { tone: "default", font: "default", animate: "none" };
+/**
+ * What a Block looks like before anybody styles it.
+ *
+ * `variants` is the Block Type's own list, and the first is its default — the Editor passes
+ * it when adding a Block so the preview draws the same thing the schema would have defaulted
+ * to on save. Without it a newly dropped Block renders unstyled until it is saved once.
+ */
+export function blockStyleDefaults(variants?: readonly string[]): BlockStyle {
+  return {
+    tone: "default",
+    font: "default",
+    animate: "none",
+    ...(variants?.length ? { variant: variants[0] } : {}),
+  };
 }
 
 export interface ColumnNode {
