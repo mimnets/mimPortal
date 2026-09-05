@@ -9,49 +9,61 @@ wrong — see the toolchain note below.
 
 ## Where to start
 
-**The next session's job: M11's Theme tokens, on `feat/m11-theme-tokens`.** The branch exists
-and is pushed, sitting exactly on `main` with nothing on it yet. Everything else below is
-context.
+**M11's Theme tokens are built, on `feat/m11-theme-tokens`. The branch is not merged and not
+pushed.** The next session's job is either to review and merge it, or to carry on with the
+rest of M11 on top of it. Everything else below is context.
 
-Read [docs/ROADMAP.md § M11](./docs/ROADMAP.md), the section headed *"First, the Theme has to
-be able to say anything"*. The short version, with the numbers that make it a prerequisite
-rather than a nice-to-have:
+### What landed
 
-- A Theme can express **six token families** — colour, font, gutter, measure, radius,
-  section-spacing. That is all.
-- There is **one radius token, used 26 times**, so every rounded corner on every Site is the
-  same value.
-- There is **no shadow token at all**. The two `box-shadow` rules in ~1,500 lines of
-  `packages/blocks/src/blocks.css` are hard-coded and unthemeable.
-- There are **no gradients**.
+The prerequisite in [docs/ROADMAP.md § M11](./docs/ROADMAP.md) — the section headed *"First,
+the Theme has to be able to say anything"*. A Theme could express six token families; it now
+expresses ten:
 
-So every Site is the same flat rectangles in a different palette, and `starter/theme.ts`
-claiming *"your Site will not look like everyone else's"* is a claim the tokens cannot back.
-M11 promises the same Block looking like three different Sites; it cannot deliver that until
-this lands.
+- **`elevation: { none, low, high }`**, mixed from the Site's own primary with `color-mix()`
+  rather than grey. The two hard-coded `box-shadow` rules in `packages/blocks/src/blocks.css`
+  are gone.
+- **`radius: { none, sm, base, lg, full }`** — a scale derived from the one value a Site still
+  states. The twenty-six uses are spread across it by what each thing is: a button is `sm`, a
+  lightbox image is `lg`, an avatar is `full`. `--mn-radius` is still emitted as the base,
+  because Ledger's own stylesheet is written against it.
+- **`border: { hairline, base, bold }`**.
+- **`surface: "flat" | "bordered" | "raised" | "glass"`** — one word that redraws the quote,
+  the plan, the accordion item and the carousel slide at once, through four `--mn-surface-*`
+  properties.
 
-### What to build, in order
+`starter/theme.ts` states `surface: "raised"`, which is the demonstration and a one-word
+revert if you disagree with it. `sites/ledger` is deliberately untouched: it installs the
+published `@mimnets/core`, which has none of this until the publish above happens.
 
-1. `elevation: { none, low, high }` — and **tint the shadow with the Site's primary** via
-   `color-mix()` rather than using grey. This is the highest-value line in the milestone: a
-   grey `box-shadow` reads as a 2015 card, and the same shadow carrying the brand colour reads
-   as considered. One token, and it changes every card, quote and pricing plan at once.
-2. `radius: { none, sm, base, lg, full }` — a scale replacing the single value. Keep `--mn-radius`
-   emitting the base so nothing breaks while the 26 uses are moved over.
-3. `border: { hairline, base, bold }`.
-4. `surface: "flat" | "bordered" | "raised" | "glass"`.
+**Tests: 530 passing, 7 skipped**, up from 508. The new ones are in
+`packages/core/src/theme/tokens.test.ts`, and ten of the twenty-two were checked by reverting
+the four decisions they cover and watching them go red.
 
-Then the CSS-only looks — glass, mesh gradients built from the Theme's own colours, grain as an
-inline SVG data URI, gradient text — none of which need an asset, a dependency or a client
-component.
+**Verified rendered**, as this file asked. The Site at <http://localhost:3000> is running a
+generated Theme and its cards pick up the new properties correctly; all four surfaces were
+checked against the real `blocks.css` in a browser, including on a `surface`-toned band and a
+coloured one.
 
-### Three things to know before starting
+### What is still M11, and not started
 
-- **This changes how every existing Site looks.** Work on the branch and look at it rendered
-  before merging. `docker compose up -d db && pnpm dev` then <http://localhost:3000>.
-- **`defineTheme` derives four readable colours** and an explicitly stated one always wins
-  (`packages/core/src/theme/index.ts`). New tokens should follow that shape: derived where a
-  sensible value can be computed, overridable where a Site has an opinion.
+- **The CSS-only looks** — mesh gradients built from the Theme's own colours, grain as an
+  inline SVG data URI, gradient text, CSS 3D. `glass` exists as a surface but is only worth
+  its blur over an image or a gradient, which is the next thing to build.
+- **The variants themselves**, which is what the milestone is actually for: a Block Type
+  declaring `variants: ["card", "quote", "minimal"]` the way it declares its fields, emitted
+  as a data attribute and styled in the Theme layer. A button's `style` field and prose's
+  `width` become the first two.
+- **Section dividers** (`clip-path`) and **`field.token`**.
+
+### Three things to know before continuing
+
+- **`elevation` is deliberately absent from `themeSchema`** and always derived. A `box-shadow`
+  has no shape a regex can check, and it is compiled into a `<style>` tag on every Page — see
+  [ADR-0019](./docs/adr/0019-a-theme-derives-what-it-can-check.md), which is the rule the
+  gradients and the grain should be built against too: ask for what a schema can prove, derive
+  what the Theme already knows.
+- **A scale is derived from `base`, never merged onto the default's.** Merging hands a Site
+  that states `base: "0"` the default's 3px `sm`. There is a test named for that failure.
 - **There is no `field.color` and there should not be.** A free hex picker is
   [ADR-0003](./docs/adr/0003-sections-and-columns-not-free-canvas.md)'s mistake in a different
   hat. If a Block needs to offer a choice, it offers Theme tokens.
@@ -174,7 +186,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **508 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
+`pnpm test` — **530 passing, 7 skipped, about thirty seconds.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -248,9 +260,10 @@ in agreement:
 - **[docs/FEATURES.md](./docs/FEATURES.md)** — the inventory. What is built, what is partly
   built, what is planned, and the sixty-three open audit findings.
 - **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for. M10.5, M11
-  and M12 were all written on 5 September and none is started.
+  and M12 were all written on 5 September. M11's prerequisite is built; M10.5 and M12 are
+  untouched.
 
-The immediate job is at the top of this file: **M11's Theme tokens, on
+The immediate job is at the top of this file: **review or continue
 `feat/m11-theme-tokens`**.
 
 
@@ -289,7 +302,7 @@ node tests stay fast and there is no new configuration to keep in step.
 
 - Read [CONTEXT.md](./CONTEXT.md) first. It is a glossary and nothing else, and it now defines
   **Enquiry** and the four **Install modes**, both of which are load-bearing.
-- The ADRs record what was rejected and why. Seventeen of them now.
+- The ADRs record what was rejected and why. Nineteen of them now.
 - The registry cannot cross the server/client boundary. The database lives behind
   `@mimnets/core/db`; storage and email behind `@mimnets/core/storage` and
   `@mimnets/core/email`, never the root import — they read the filesystem, hold API keys and
@@ -322,11 +335,11 @@ docker compose --profile registry up -d registry
 docker compose up -d db                        # Postgres, stack name mimnets-multisite
 pnpm dev                                       # http://localhost:3000
 pnpm seed                                      # three demo Pages, the main Menu, an image, a contact form
-pnpm test                                      # 249 in about nine seconds
+pnpm test                                      # the count is the thing to read
 AI_LIVE_TESTS=1 pnpm test                      # plus the seven that call a real model
 pnpm build:packages                            # dist for the three packages
 pnpm release                                   # changeset publish — pnpm, never npm
-pnpm typecheck                                 # 4 packages, strict
+pnpm typecheck                                 # 7 tasks, strict
 pnpm build                                     # must stay warning-free
 
 docker compose --profile storage up -d storage # MinIO on :9000, for the S3 adapter's tests

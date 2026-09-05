@@ -61,7 +61,9 @@ export default async function DesignPage() {
         theme={{
           colors: { ...active.colors },
           fonts: { body: active.fonts.body, heading: active.fonts.heading },
-          radius: { base: active.radius.base },
+          radius: { ...active.radius },
+          border: { ...active.border },
+          surface: active.surface,
           spacing: { section: active.spacing.section, gutter: active.spacing.gutter },
           measure: active.measure,
         }}

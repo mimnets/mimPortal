@@ -90,6 +90,16 @@ function buildPrompt(options: {
     "",
     describeComposition(),
     "",
+    // One word that restyles every card on the site at once, so it is worth spending four
+    // lines of the prompt on. The alternative — leaving it out — is four sites that differ
+    // only in palette, which is the thing this whole milestone exists to stop.
+    "SURFACE",
+    "The theme's `surface` decides how every card, quote, plan and slide is drawn:",
+    '"flat" is a wash of the surface colour, "bordered" is a hairline outline on the page',
+    'colour, "raised" is a shadow tinted with your own primary, and "glass" is translucent',
+    "and blurred. Pick the one the business would pick. It is the single strongest signal of",
+    "era and character in the whole theme.",
+    "",
     // A literal skeleton rather than a description of one. Small models follow an example
     // they can copy; they drop keys from prose every time, and the ones they dropped were
     // fonts and spacing on every attempt during testing.
@@ -111,6 +121,7 @@ function buildPrompt(options: {
     "    },",
     '    "fonts": { "body": "Georgia, serif", "heading": "Georgia, serif" },',
     '    "radius": { "base": "4px" },',
+    '    "surface": "bordered",',
     '    "spacing": { "section": "5rem", "gutter": "2.5rem" },',
     '    "measure": "68rem"',
     "  },",

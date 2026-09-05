@@ -504,6 +504,33 @@ border:    { hairline, base, bold }      // 1px against 2px is most of editorial
 surface:   "flat" | "bordered" | "raised" | "glass"
 ```
 
+**Built, 5 September, on `feat/m11-theme-tokens`.** All four, wired through the Block library
+rather than only declared: the two hard-coded `box-shadow` rules are `--mn-elevation-high`, the
+twenty-six radius uses are spread across the scale by what they are (a button is `sm`, a
+lightbox image is `lg`, an avatar is `full`), and the four card Blocks — quote, plan, accordion
+item, carousel slide — are drawn from four `--mn-surface-*` properties instead of from literal
+values. `--mn-radius` is still emitted as the base of the scale, because Ledger's stylesheet is
+written against it.
+
+Three decisions came out of building it, and they are the ones worth arguing with rather than
+the code:
+
+- **A scale is derived from `base`, not merged onto the default's.** Merging leaves a Site that
+  states `base: "0"` holding the default's 3px `sm` — Ledger asking for square corners and
+  getting two rounded ones it could not see in its own file. The same shape as the readable
+  colours: derive from what this Theme says, and let an explicit value win.
+- **`elevation` is not in `themeSchema` at all.** A `box-shadow` has no shape a regex can check
+  and it is compiled into a `<style>` tag on every Page, so accepting one from a model reopens
+  the injection the schema exists to close — in exchange for a shadow that by definition does
+  not match the Site's own primary. `surface` *is* accepted, because an enum of four words is
+  a design choice rather than a string. [ADR-0019](./adr/0019-a-theme-derives-what-it-can-check.md).
+- **The default is `flat`, which is what three of the four cards already were.** Chosen to
+  leave existing Sites looking as they did rather than to be the best of the four. A token that
+  changes every Site the day it lands is a token nobody trusts.
+
+Still to build below: the CSS-only looks, the variants themselves, Section dividers and
+`field.token`.
+
 **The tinted shadow is the single highest-value line here.** A grey `box-shadow` reads as a
 2015 card; the same shadow mixed with the Site's own primary reads as considered. It is one
 `color-mix()` in a token and it changes every card, quote and pricing plan at once.

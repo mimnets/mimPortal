@@ -36,7 +36,16 @@ const FONT_STACKS = [
 export interface EditableTheme {
   colors: Record<string, string>;
   fonts: { body: string; heading: string };
-  radius: { base: string };
+  /**
+   * Carried, not edited.
+   *
+   * `save` posts the whole draft and the action replaces the stored Theme with it, so
+   * anything missing here is silently dropped — a Site that had stated a corner scale or a
+   * surface style in `theme.ts` would lose it the first time somebody moved a colour.
+   */
+  radius: Record<string, string>;
+  border: Record<string, string>;
+  surface: string;
   spacing: { section: string; gutter: string };
   measure: string;
 }
@@ -157,8 +166,9 @@ export function ThemeEditor({
       </div>
 
       <p className="mn-media-meta">
-        Spacing, corner radius and page width stay in <code>theme.ts</code>. They are design
-        decisions a colour picker does not help anybody make, and that file explains each one.
+        Spacing, corner radius, line weight, elevation and page width stay in{" "}
+        <code>theme.ts</code>. They are design decisions a colour picker does not help anybody
+        make, and that file explains each one.
       </p>
     </section>
   );
