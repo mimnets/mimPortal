@@ -95,7 +95,11 @@ export async function POST(request: Request) {
               ? cause.message
               : "The assistant failed.";
         console.error(`[mimnets] Assist failed: ${reason}`);
-        controller.enqueue(encoder.encode(`\n\n[${reason}]`));
+        // The sentinel, not prose. Assist.tsx splits on it, restores what the field held
+        // before, and shows the rest as a message. Writing this as ordinary stream text is
+        // what put "[Every provider failed…]" into a heading as content an Author could
+        // publish, and only the reading half of that repair had landed.
+        controller.enqueue(encoder.encode(ASSIST_ERROR + reason));
       } finally {
         controller.close();
       }
