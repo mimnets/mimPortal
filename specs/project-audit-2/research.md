@@ -91,6 +91,10 @@ different line numbers on `feat/editor-m10`, where those files were rewritten.
 | A-11 | Medium | Four writers replaced a draft without moving `revision` | `a0dd088` |
 | A-12 | Medium | `listVersions` had no authorisation check | `a0dd088` |
 | A-13 | Medium | Thirteen Dashboard error banners were unannounced | *(this commit)* |
+| A-17 | Medium | The publish guard checked the publisher, never the artifact | *(this commit)* |
+| A-18 | Medium | Every published source map was dangling | *(this commit)* |
+| A-19 | Medium | Unfinished config committed as a value | *(this commit)* |
+| A-28 | **High** | `pnpm build:packages` built nothing, and `pnpm release` runs it | *(this commit)* |
 
 ### A-01 — Markdown images were announced as decorative
 
@@ -192,6 +196,29 @@ are byte-identical to starter's and consistent with the schema.
 
 Needs a decision, not just an edit: whether drizzle-kit can read a compiled `.js` schema, or
 whether the packages must ship `schema.ts`.
+
+---
+
+### A-28 — `pnpm build:packages` silently built nothing
+
+*Found while fixing A-17, not by any reviewer.*
+
+`package.json` declared `turbo run build --filter='@mimnets/*'`. The single quotes reached
+turbo as part of the filter string, so it matched no package and exited successfully:
+
+```
+WARNING  No tasks were executed as part of this run.
+Tasks:    0 successful, 0 total
+```
+
+`pnpm release` is `pnpm build:packages && changeset publish`. A release would therefore have
+built nothing and published whatever happened to be sitting in `dist` — or, with `dist`
+absent, a package containing only `package.json`. That is precisely the failure A-17's guard
+was written for, and the two were found within minutes of each other: the guard caught a
+missing `dist` on the first run.
+
+Double quotes survive. Verified by deleting `packages/blocks/dist` and watching the script
+restore all three packages.
 
 ---
 

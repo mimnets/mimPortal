@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "node -e \"const p=require('./package.json');if(!process.env.npm_config_user_agent||!/pnpm/.test(process.env.npm_config_user_agent)){console.error('\\n  Publish '+p.name+' with pnpm, not npm.\\n\\n'+'  npm ignores publishConfig.exports, so it would ship a package whose exports\\n'+'  point at ./src while files ships only ./dist. It installs and then fails on\\n'+'  the first import, which is a worse failure than refusing to publish.\\n');process.exit(1)}\""
+    "prepublishOnly": "node ../../scripts/check-publish.mjs"
   },
   "publishConfig": {
     "access": "public",
@@ -32,6 +32,7 @@
     "react": "^19.2.8"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ]
 }
