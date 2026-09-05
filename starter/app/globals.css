@@ -1340,3 +1340,154 @@ h3.mn-heading {
   height: auto;
   border-radius: var(--mn-radius);
 }
+
+/* ---- Shared ---- */
+
+/* Present to a screen reader, absent from the page. Used wherever a glyph carries meaning
+   that the glyph alone does not convey — a tick in a comparison table, for one. */
+.mn-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Comparison table ---- */
+
+.mn-compare-title {
+  margin: 0 0 1rem;
+  font-family: var(--mn-font-heading);
+}
+
+/* The table scrolls inside its own box; the page never scrolls sideways because of it. */
+.mn-compare-scroll {
+  overflow-x: auto;
+}
+
+.mn-compare table {
+  width: 100%;
+  border-collapse: collapse;
+  /* Prices and counts line up in a column when the digits are the same width. */
+  font-variant-numeric: tabular-nums;
+}
+
+.mn-compare th,
+.mn-compare td {
+  padding: 0.875rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--mn-color-border, rgb(128 128 128 / 0.2));
+  vertical-align: middle;
+}
+
+.mn-compare thead th {
+  display: table-cell;
+  vertical-align: bottom;
+}
+
+.mn-compare tbody th[scope="row"] {
+  text-align: left;
+  font-weight: 500;
+}
+
+.mn-compare-corner {
+  border-bottom-color: transparent;
+}
+
+.mn-compare-name {
+  display: block;
+  font-family: var(--mn-font-heading);
+  font-size: 1.0625rem;
+}
+
+.mn-compare-price {
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 600;
+}
+
+.mn-compare-note {
+  display: block;
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+/* The highlighted plan is one tinted column, not a card lifted out of the table — pulling a
+   column out of a table breaks the row alignment that is the whole point of it. */
+.mn-compare [data-featured] {
+  background: var(--mn-color-surface);
+}
+
+.mn-compare thead [data-featured] {
+  border-top-left-radius: var(--mn-radius);
+  border-top-right-radius: var(--mn-radius);
+}
+
+.mn-compare-yes {
+  color: var(--mn-color-primary);
+  font-size: 1.125rem;
+}
+
+.mn-compare-no {
+  opacity: 0.4;
+}
+
+.mn-compare tfoot td {
+  border-bottom: none;
+  padding-top: 1.25rem;
+}
+
+/* ---- Social links ---- */
+
+.mn-social-title {
+  margin: 0 0 0.75rem;
+  font-family: var(--mn-font-heading);
+}
+
+.mn-social[data-align="center"] { text-align: center; }
+.mn-social[data-align="right"] { text-align: right; }
+
+.mn-social-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mn-social[data-align="center"] .mn-social-row { justify-content: center; }
+.mn-social[data-align="right"] .mn-social-row { justify-content: flex-end; }
+
+.mn-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* 44px of hit area even on the shortest name in the row. */
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--mn-color-border, rgb(128 128 128 / 0.3));
+  border-radius: var(--mn-radius);
+  text-decoration: none;
+  color: inherit;
+}
+
+.mn-social-link:hover {
+  border-color: var(--mn-color-primary);
+  color: var(--mn-color-primary);
+}
+
+.mn-social-link:focus-visible {
+  outline: 2px solid var(--mn-color-primary);
+  outline-offset: 2px;
+}
+
+/* A Theme that wants glyphs hangs them here, keyed by network, and hides the word if it
+   wants to — no logo ships with the Block. */
+.mn-social-link::before {
+  content: var(--mn-social-glyph, none);
+}

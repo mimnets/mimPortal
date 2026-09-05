@@ -46,11 +46,10 @@ would find what those changes introduced, which is where problems hide after a b
 | ✅ | **M6.5** Forms and email | Contact Block, enquiries in the Dashboard, pluggable spam checks, EmailAdapter |
 | ✅ | **M7** AI writing assistant | Rewrite, shorten, alt text, search descriptions, over a chain of providers (ADR-0014) |
 | ✅ | **M8** Packaging, Site two | Packages build and publish; `sites/ledger` installs them and upgraded from 0.1.0 to 0.1.1 |
-| ⚠️ | **M8.5** Block library | 20 Block Types, Section tones, a Theme built around them — a comparison table and a social links row still missing |
+| ✅ | **M8.5** Block library | 22 Block Types, Section tones, a Theme built around them |
 | ✅ | **M9** Presets | Generate a Theme and Pages together, validated against the registry before they land |
 
-**v1 is finished.** M8.5 is the only partial, and it sits after the v1 boundary in the
-roadmap by design.
+**v1 is finished, and M8.5 closed on 5 September.** Every milestone from M0 to M9 is done.
 
 There are two Sites now. `starter` is the one the monorepo develops against; `sites/ledger`
 is a chartered accountant with its own Theme and one Block Type of its own, deliberately
@@ -90,7 +89,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **344 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
+`pnpm test` — **377 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -136,8 +135,7 @@ Honest list. None of it is hidden behind a green tick.
   hostname is local.
 - **The keyboard sensor and the focus trap's visibility filter are still browser-only.**
   Everything else about the boundary and the trap is now in CI. See the Tests section.
-- **Two Block Types remain from M8.5**: a comparison table and a social links row. The six
-  the roadmap named all landed on 5 September, taking the library to twenty.
+
 - **The nav is one level deep**, deliberately (see `render/context.ts`). A client wanting a
   dropdown means reopening that decision, and the comment there is right that hover intent,
   keyboard traps and mobile behaviour make it harder than it looks.
@@ -158,19 +156,25 @@ Honest list. None of it is hidden behind a green tick.
 
 ## What is next
 
-In the order agreed. Item 1 is most of the way done; nothing below it is started.
+In the order agreed. **Item 1 is done**; nothing below it is started, so the next session
+starts at stock images.
 
-1. **Finish M8.5.** Six landed on 5 September — accordion, image gallery, carousel, location
-   map, video and Markdown prose — taking the library from fourteen Block Types to twenty.
-   **A comparison table and a social links row remain.** This is what turns "a plausible
-   landing page" into "we could rebuild that client's Site", and it is the prerequisite for a
-   Preset being worth generating, exactly as M8.5's own text has said since it was written.
+~~1. **Finish M8.5.**~~ **Done 5 September.** Eight Block Types landed — accordion, image
+   gallery, carousel, location map, video, Markdown prose, comparison table and social links
+   — taking the library from fourteen to twenty-two. This was the prerequisite for a Preset
+   being worth generating, exactly as M8.5's own text had said since it was written, so
+   everything below it is now unblocked.
 
-   Worth reading before extending it: four of the six are built on the browser rather than on
-   JavaScript — `<details>`, `:target`, scroll-snap, sandboxed iframes — so `packages/blocks`
-   still has one dependency and no client component. Two are security boundaries with tests
-   to match: the video Block allowlists its iframe hosts, and prose parses with
-   `html: false`, so raw HTML is never admitted rather than admitted and scrubbed.
+   Worth reading before extending the library. Five of the eight are built on the browser
+   rather than on JavaScript — `<details>`, `:target`, scroll-snap, sandboxed iframes, a real
+   `<table>` — so `packages/blocks` still has one dependency and still contains no client
+   component, and all of it works before a Site has hydrated. Three are security boundaries
+   with tests to match: the video Block allowlists its iframe hosts, the social row parses
+   every address and drops anything that is not http, https, a real email or a real phone
+   number, and prose parses with `html: false`, so raw HTML is never admitted rather than
+   admitted and scrubbed. `core` gained one dependency for that last one, markdown-it, and
+   there is no `dangerouslySetInnerHTML` anywhere in the repo.
+
 2. **Stock images.** Generated Presets ship with grey rectangles where photographs belong.
    Behind a `StockAdapter`, in the same shape as StorageAdapter and EmailAdapter. Photos are
    **downloaded into the Site's own media store at apply time**, never hotlinked — layouts

@@ -791,6 +791,290 @@ export const embedBlock = defineBlock({
   },
 });
 
+/** Cell values that mean "this plan has it" and "it does not", however an Author wrote them. */
+const CELL_YES = new Set(["yes", "y", "true", "included", "✓", "✔"]);
+const CELL_NO = new Set(["no", "n", "false", "-", "–", "—", "✗", "✘", "none"]);
+
+/**
+ * A feature-by-plan comparison.
+ *
+ * A real `<table>`, because that is what this is: `<th scope="col">` on each plan and
+ * `<th scope="row">` on each feature is what lets a screen reader say "Priority support,
+ * Standard, no" instead of reading a wall of ticks with nothing to attach them to. A grid of
+ * divs looks identical and says nothing.
+ *
+ * The shape is the awkward part and worth explaining. A comparison is two-dimensional and a
+ * repeater is a list, so plans are one list, features are another, and each feature carries a
+ * list of values positionally matched to the plans. That means an Author has to keep them in
+ * order, which is a real cost — so the render is forgiving: a row with too few values gets
+ * empty cells rather than a broken table, and extra values are ignored rather than spilling
+ * a column no header covers.
+ *
+ * Ticks are never bare glyphs. "✓" alone is announced as nothing useful, so every one carries
+ * the word next to it, hidden from the page and not from the reader.
+ */
+export const compareBlock = defineBlock({
+  name: "compare",
+  label: "Comparison table",
+  fields: {
+    title: field.text({ label: "Title", default: "" }),
+    plans: field.repeater({
+      label: "Plans",
+      help: "The columns, left to right.",
+      fields: {
+        name: field.text({ label: "Name", default: "" }),
+        price: field.text({ label: "Price", default: "" }),
+        note: field.text({ label: "Note", default: "" }),
+        link: field.link({ label: "Button" }),
+        featured: field.boolean({ label: "Highlight this one", default: false }),
+      },
+    }),
+    rows: field.repeater({
+      label: "Features",
+      help: "The rows. Each value lines up with a plan, in the same order.",
+      fields: {
+        label: field.text({ label: "Feature", default: "" }),
+        values: field.repeater({
+          label: "Value per plan",
+          help: 'Write "yes" or "no" for a tick or a dash, or any other text to show as it is.',
+          fields: {
+            value: field.text({ label: "Value", default: "" }),
+          },
+        }),
+      },
+    }),
+  },
+  render: ({ title, plans, rows }) => {
+    if (plans.length === 0) return null;
+
+    const cell = (raw: string) => {
+      const key = raw.trim().toLowerCase();
+      if (key === "") return null;
+      if (CELL_YES.has(key)) {
+        return (
+          <span className="mn-compare-yes">
+            <span aria-hidden="true">✓</span>
+            <span className="mn-visually-hidden">Included</span>
+          </span>
+        );
+      }
+      if (CELL_NO.has(key)) {
+        return (
+          <span className="mn-compare-no">
+            <span aria-hidden="true">–</span>
+            <span className="mn-visually-hidden">Not included</span>
+          </span>
+        );
+      }
+      return raw;
+    };
+
+    return (
+      <div className="mn-compare">
+        {title ? <h2 className="mn-compare-title">{title}</h2> : null}
+
+        {/* A comparison of five plans does not fit a phone, and a page that scrolls sideways
+            as a whole is worse than a table that scrolls inside its own box. */}
+        <div className="mn-compare-scroll">
+          <table>
+            <caption className="mn-visually-hidden">{title || "Comparison of plans"}</caption>
+            <thead>
+              <tr>
+                <td className="mn-compare-corner" />
+                {plans.map((plan, index) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <th scope="col" key={index} data-featured={plan.featured ? "" : undefined}>
+                    <span className="mn-compare-name">{plan.name}</span>
+                    {plan.price ? <span className="mn-compare-price">{plan.price}</span> : null}
+                    {plan.note ? <span className="mn-compare-note">{plan.note}</span> : null}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                // eslint-disable-next-line react/no-array-index-key
+                <tr key={rowIndex}>
+                  <th scope="row">{row.label}</th>
+                  {plans.map((plan, columnIndex) => (
+                    <td
+                      // eslint-disable-next-line react/no-array-index-key
+                      key={columnIndex}
+                      data-featured={plan.featured ? "" : undefined}
+                    >
+                      {cell(row.values[columnIndex]?.value ?? "")}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+
+            {plans.some((plan) => plan.link.label) ? (
+              <tfoot>
+                <tr>
+                  <td className="mn-compare-corner" />
+                  {plans.map((plan, index) => (
+                    // eslint-disable-next-line react/no-array-index-key
+                    <td key={index} data-featured={plan.featured ? "" : undefined}>
+                      {plan.link.label ? (
+                        <a
+                          className="mn-button"
+                          data-style={plan.featured ? "primary" : "outline"}
+                          href={plan.link.href || "/"}
+                          target={plan.link.newTab ? "_blank" : undefined}
+                          rel={plan.link.newTab ? "noreferrer" : undefined}
+                        >
+                          {plan.link.label}
+                        </a>
+                      ) : null}
+                    </td>
+                  ))}
+                </tr>
+              </tfoot>
+            ) : null}
+          </table>
+        </div>
+      </div>
+    );
+  },
+});
+
+/** How each network's name is spelled when nobody has overridden it. */
+const SOCIAL_NAMES: Record<string, string> = {
+  website: "Website",
+  email: "Email",
+  phone: "Phone",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  linkedin: "LinkedIn",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  x: "X",
+  bluesky: "Bluesky",
+  github: "GitHub",
+  whatsapp: "WhatsApp",
+};
+
+/**
+ * Turns what an Author typed into an address a browser should follow, or refuses.
+ *
+ * Email and phone become mailto: and tel:. Everything else has to be http or https — the
+ * field is a free-text box on a Page, so `javascript:` is a thing somebody can type into it,
+ * and an href is all it takes for that to be a live one.
+ */
+function socialHref(network: string, raw: string): string | null {
+  const value = raw.trim();
+  if (value === "") return null;
+
+  if (network === "email") {
+    if (value.startsWith("mailto:")) return value;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? `mailto:${value}` : null;
+  }
+
+  if (network === "phone") {
+    if (value.startsWith("tel:")) return value;
+    // Digits, spaces and the punctuation a phone number is written with. Nothing else.
+    return /^[+()\d][\s()+\-.\d]*$/.test(value) ? `tel:${value.replace(/[\s().-]/g, "")}` : null;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Where else to find this Site.
+ *
+ * No brand logos ship with this Block, and that is a decision. Bundling them would put
+ * trademarked marks into a package every Site installs, each with its own usage terms about
+ * colour, spacing and clear space that nobody would then be tracking — and a wrong-coloured
+ * logo is a worse look than a word. Each link carries `data-network`, so a Theme that wants
+ * glyphs supplies its own and styles them, and the default is a legible row of names.
+ *
+ * Every link is named for what it is rather than where it goes: "Instagram" reads better in a
+ * list of links than "https://instagram.com/…", and a row of identical icons with no
+ * accessible name is a row a screen reader announces as "link, link, link".
+ */
+export const socialBlock = defineBlock({
+  name: "social",
+  label: "Social links",
+  fields: {
+    title: field.text({ label: "Title", default: "" }),
+    items: field.repeater({
+      label: "Links",
+      fields: {
+        network: field.select({
+          label: "Where",
+          options: [
+            "website",
+            "email",
+            "phone",
+            "instagram",
+            "facebook",
+            "linkedin",
+            "youtube",
+            "tiktok",
+            "x",
+            "bluesky",
+            "github",
+            "whatsapp",
+          ],
+          default: "instagram",
+        }),
+        href: field.text({
+          label: "Address",
+          help: "A full web address, or an email address, or a phone number.",
+          default: "",
+        }),
+        label: field.text({
+          label: "Name it differently",
+          help: "Optional. Defaults to the name of the network.",
+          default: "",
+        }),
+      },
+    }),
+    align: field.select({
+      label: "Alignment",
+      options: ["left", "center", "right"],
+      default: "left",
+    }),
+  },
+  render: ({ title, items, align }) => {
+    const links = items
+      .map((item) => ({ ...item, href: socialHref(item.network, item.href) }))
+      .filter((item) => item.href !== null);
+
+    if (links.length === 0) return null;
+
+    return (
+      <div className="mn-social" data-align={align}>
+        {title ? <h2 className="mn-social-title">{title}</h2> : null}
+        <ul className="mn-social-row">
+          {links.map((item, index) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <li key={index}>
+              <a
+                className="mn-social-link"
+                data-network={item.network}
+                href={item.href!}
+                {...(item.href!.startsWith("http")
+                  ? { target: "_blank", rel: "me noreferrer" }
+                  : {})}
+              >
+                {item.label || SOCIAL_NAMES[item.network] || item.network}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  },
+});
+
 export const designBlocks = [
   eyebrowBlock,
   buttonBlock,
@@ -805,4 +1089,6 @@ export const designBlocks = [
   carouselBlock,
   mapBlock,
   embedBlock,
+  compareBlock,
+  socialBlock,
 ];

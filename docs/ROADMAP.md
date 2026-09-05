@@ -277,7 +277,7 @@ starting M8.5. Everything below is informed by what that reveals.
 
 ---
 
-## M8.5 — Grow the Block library ⚠️ *(six of the eight done)*
+## M8.5 — Grow the Block library ✅
 
 Roughly fifteen to twenty Block Types: hero variants, feature grids, testimonial, logo
 strip, CTA band, pricing table, accordion, embed, and the three that were asked for by name —
@@ -328,11 +328,23 @@ sanitising pipeline the ADR asks for — raw HTML is never parsed, so there is n
 step to misconfigure — and the token stream is walked into React elements rather than an
 HTML string, so no `dangerouslySetInnerHTML` exists to be fed something else later.
 
-**Two more, added 5 September.** They come from what a Site turned out to want rather than
-from the original list: a **comparison table** — what a pricing page reaches for the moment
-one plan is not enough — and a **social links row**. Both are ordinary `defineBlock` work
-with no decision behind them, which is why they are recorded here rather than argued in an
-ADR. They come after the six above, not instead of any of them.
+**Two more, added and built 5 September.** They came from what a Site turned out to want
+rather than from the original list: a **comparison table** — what a pricing page reaches for
+the moment one plan is not enough — and a **social links row**.
+
+Neither turned out to be the ordinary `defineBlock` work they were filed as. The comparison
+table is a real `<table>` with `scope` on both kinds of header, because that is the whole
+difference between "Priority support, Standard, not included" and a wall of ticks read out
+with nothing to attach them to; and a comparison is two-dimensional while a repeater is a
+list, so values are matched to plans positionally and the render pads a short row rather than
+sliding it left. The social row's address field is free text a client types, so it is a place
+`javascript:` can be entered by hand — every address is parsed and anything that is not http,
+https, a real email or a real phone number is dropped. It ships no brand logos: they are
+trademarks with usage terms nobody would be tracking, so each link carries `data-network` and
+a Theme supplies its own glyph.
+
+**The library is twenty-two Block Types.** The exit criterion — a plausible landing page for
+three industries without writing a custom Block — is met.
 
 `field.repeater` already exists and its own comment names "a carousel's slides", so the
 gallery, the carousel and the comparison table need no M1 work. That was the milestone's own
