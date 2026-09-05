@@ -342,7 +342,7 @@ export const accordionBlock = defineBlock({
     // server — so the name is derived from the questions themselves. Two accordions would
     // have to hold the same questions in the same order to collide, and the cost if they
     // did is that they share a group rather than anything breaking.
-    const group = `mn-acc-${stableName(items.map((item) => item.question).join(" "))}`;
+    const group = `mn-acc-${stableName(items.map((item) => item.question).join("\n"))}`;
 
     return (
       <div className="mn-accordion">
