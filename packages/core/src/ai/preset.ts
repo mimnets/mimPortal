@@ -100,6 +100,9 @@ function buildPrompt(options: {
     "and blurred. Pick the one the business would pick. It is the single strongest signal of",
     "era and character in the whole theme.",
     "",
+    'The `texture` value is "none" or "grain" — a faint noise over every band, which is what',
+    "stops a flat colour looking cheap. Warm and hand-made brands want it; a bank does not.",
+    "",
     // A literal skeleton rather than a description of one. Small models follow an example
     // they can copy; they drop keys from prose every time, and the ones they dropped were
     // fonts and spacing on every attempt during testing.
@@ -122,6 +125,7 @@ function buildPrompt(options: {
     '    "fonts": { "body": "Georgia, serif", "heading": "Georgia, serif" },',
     '    "radius": { "base": "4px" },',
     '    "surface": "bordered",',
+    '    "texture": "none",',
     '    "spacing": { "section": "5rem", "gutter": "2.5rem" },',
     '    "measure": "68rem"',
     "  },",

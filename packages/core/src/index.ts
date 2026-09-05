@@ -54,8 +54,9 @@ export {
   completeTheme,
   readableOn,
   SURFACE_STYLES,
+  TEXTURES,
 } from "./theme/index";
-export type { SurfaceStyle, Theme, ThemeInput } from "./theme/index";
+export type { SurfaceStyle, Texture, Theme, ThemeInput } from "./theme/index";
 
 export { emptyContext, menuItemSchema, menuItemsSchema } from "./render/context";
 export type { MenuItem, RenderContext } from "./render/context";

@@ -196,6 +196,71 @@ describe("what reaches the stylesheet", () => {
   });
 });
 
+describe("the CSS-only looks", () => {
+  it("builds the mesh from the Site's own two brand colours and nothing else", () => {
+    const css = themeToCss(defineTheme({ colors: SITE }));
+    const mesh = /--mn-mesh: ([^;]*);/.exec(css)?.[1] ?? "";
+
+    expect(mesh).toContain("#0b6b62");
+    expect(mesh).toContain("#e05a26");
+    // Four blobs. A mesh of two is a gradient; a mesh of eight is mud.
+    expect(mesh.match(/radial-gradient/g)).toHaveLength(4);
+  });
+
+  /**
+   * The cap is the whole reason the mesh needs no foreground rule of its own.
+   *
+   * Every blob is a tint of the band it sits on, so body text keeps `--mn-color-text` and
+   * the contrast it was already checked at. Let a blob run to 60% and the band becomes a
+   * colour of its own, at which point the text on it is being read against something nobody
+   * has looked at — which is exactly what `[data-tone="primary"]` has a whole block of
+   * override rules for.
+   */
+  it("keeps every blob a tint rather than a colour", () => {
+    const mesh = /--mn-mesh: ([^;]*);/.exec(themeToCss(defineTheme()))?.[1] ?? "";
+
+    for (const [, percent] of mesh.matchAll(/ (\d+)%, transparent/g)) {
+      expect(Number(percent)).toBeLessThanOrEqual(32);
+    }
+  });
+
+  /**
+   * Gradient text is still text. A run between the two *raw* brand colours is a heading that
+   * fails contrast for however much of its width the lighter end occupies — and the
+   * Starter's own accent is 3.7:1 on white, so that is not hypothetical.
+   */
+  it("runs gradient text between the readable colours, not the brand ones", () => {
+    const theme = defineTheme({ colors: SITE });
+    const css = themeToCss(theme);
+    const gradient = /--mn-gradient-text: ([^;]*);/.exec(css)?.[1] ?? "";
+
+    expect(gradient).toContain(theme.colors.primaryText);
+    expect(gradient).toContain(theme.colors.accentText);
+    // #e05a26 is the accent as picked for a button, and it is not readable as type.
+    expect(gradient).not.toContain("#e05a26");
+  });
+
+  it("emits no texture at all unless a Site asks for one", () => {
+    // `background-image: none` on the overlay, so a Site without grain pays for nothing —
+    // not a transparent PNG, not an opacity rule, not a second selector.
+    expect(themeToCss(defineTheme())).toContain("--mn-texture: none;");
+  });
+
+  it("inlines the grain rather than fetching it", () => {
+    const css = themeToCss(defineTheme({ texture: "grain" }));
+
+    expect(css).toContain("--mn-texture: url(\"data:image/svg+xml,");
+    expect(css).toContain("feTurbulence");
+    // Under a kilobyte is the claim the roadmap makes for it.
+    expect((/--mn-texture: ([^;]*);/.exec(css)?.[1] ?? "").length).toBeLessThan(1024);
+  });
+
+  it("refuses a texture that is not one of the two", () => {
+    expect(() => themeSchema.parse({ colors: PALETTE, texture: "grain" })).not.toThrow();
+    expect(() => themeSchema.parse({ colors: PALETTE, texture: "url(evil)" })).toThrow();
+  });
+});
+
 describe("a generated Theme completed", () => {
   it("keeps the surface the model chose", () => {
     expect(completeTheme({ colors: PALETTE, surface: "glass" }).surface).toBe("glass");

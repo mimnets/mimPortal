@@ -54,8 +54,21 @@ a {
 
 /* ---- Layout ---- */
 
+/* Grain, if the Theme wears any, as a background layer of the band itself.
+ *
+ * Deliberately not an absolutely-positioned overlay, which is what this was first. An
+ * overlay has to be painted above the band and below its content, and the only ways to
+ * arrange that put a stacking context on the Section or on `.mn-columns` — which traps the
+ * gallery lightbox (`z-index: 50`) and the mobile nav drawer (`z-index: 30`) inside the
+ * Section they happen to live in. An open drawer painted underneath the Page below it is a
+ * mobile navigation bug, in exchange for a texture nobody can consciously see.
+ *
+ * A background layer needs none of that: layers paint above `background-color` and below
+ * content by definition. When the Theme's texture is "none" this is `background-image: none`
+ * and paints nothing — no opacity to juggle, no second rule to keep in step. */
 .mn-section {
   padding: var(--mn-section-spacing) 1.5rem;
+  background-image: var(--mn-texture);
 }
 
 .mn-slot[data-slot="header"] .mn-section,
@@ -418,6 +431,17 @@ h3.mn-heading {
   color: var(--mn-color-background);
 }
 
+/* Four soft radial blobs of the Site's own two brand colours over its surface colour,
+   composed by themeToCss. It sets no foreground: every blob is a tint of the band it sits
+   on, capped so the band stays a version of `surface` rather than becoming a colour of its
+   own — which is what lets body text keep the colour it already had, and the contrast it
+   was already checked at. */
+.mn-section[data-tone="mesh"] {
+  background-color: var(--mn-color-surface);
+  /* Grain first, because the first layer of a background is the top one. */
+  background-image: var(--mn-texture), var(--mn-mesh);
+}
+
 .mn-section[data-tone="primary"] .mn-heading,
 .mn-section[data-tone="dark"] .mn-heading,
 .mn-section[data-tone="primary"] .mn-eyebrow,
@@ -445,6 +469,10 @@ h3.mn-heading {
 
 /* A photograph behind text. The overlay is applied in the renderer, because how
    much a given picture needs is a property of that picture. */
+/* A band with a photograph behind it sets `background-image` inline, so it has no grain —
+   and wants none. `background-size: cover` applies to every layer, so a 140px tile of noise
+   would be stretched across the whole band and stop being noise; and a photograph is already
+   made of grain. */
 .mn-section[data-has-image] {
   background-size: cover;
   background-position: center;
@@ -844,18 +872,52 @@ h3.mn-heading {
    painting the colour on itself, which is not low contrast but none at all.
    Within a band, the text colour that band already established is the only
    correct answer, so these tones stop overriding it. */
-.mn-section[data-tone="primary"] .mn-block[data-tone],
-.mn-section[data-tone="dark"] .mn-block[data-tone] {
+.mn-section[data-tone="primary"] .mn-block[data-tone]:not([data-tone="gradient"]),
+.mn-section[data-tone="dark"] .mn-block[data-tone]:not([data-tone="gradient"]) {
   color: inherit;
 }
 
 /* Headings inherit rather than keeping their own colour, or setting the tone on
    a Block containing one would appear to do nothing. */
-.mn-block[data-tone] .mn-heading,
-.mn-block[data-tone] .mn-eyebrow,
-.mn-block[data-tone] .mn-muted,
-.mn-block[data-tone] .mn-text p {
+/* Excluding the gradient tone, whose whole mechanism is a transparent colour over a clipped
+   background — `color: inherit` here would paint the glyphs solid and hide the gradient. */
+.mn-block[data-tone]:not([data-tone="gradient"]) .mn-heading,
+.mn-block[data-tone]:not([data-tone="gradient"]) .mn-eyebrow,
+.mn-block[data-tone]:not([data-tone="gradient"]) .mn-muted,
+.mn-block[data-tone]:not([data-tone="gradient"]) .mn-text p {
   color: inherit;
+}
+
+/* ---- Gradient type ---------------------------------------------------------
+   A run between the two readable brand colours, clipped to the glyphs. The gradient itself
+   is composed by themeToCss from `primaryText` and `accentText` rather than the raw brand
+   colours, because gradient text is still text and half of a run between two brand colours
+   is usually below 4.5:1.
+
+   Headings only, and that is a width decision rather than a taste one. A gradient needs
+   room to be a gradient: run between two colours across a box two characters wide and every
+   glyph lands near the midpoint, so a row of statistics came out as three identical muddy
+   olives — worse than either brand colour, and not recognisable as a gradient at all. Body
+   copy is excluded for a different reason: a paragraph set this way is still a paragraph
+   somebody has to read. */
+.mn-block[data-tone="gradient"] .mn-heading {
+  background-image: var(--mn-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Without this the clip box is the line box and a descender is cut off mid-gradient. */
+  -webkit-text-fill-color: transparent;
+}
+
+/* Clipped text has no colour of its own, so a forced-colours mode has nothing to override
+   and the heading disappears entirely. Hand it back its colour and drop the gradient — the
+   whole point of that mode is that the user's palette wins. */
+@media (forced-colors: active) {
+  .mn-block[data-tone="gradient"] .mn-heading {
+    background-image: none;
+    color: CanvasText;
+    -webkit-text-fill-color: currentColor;
+  }
 }
 
 .mn-block[data-font="heading"],

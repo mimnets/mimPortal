@@ -13,6 +13,16 @@ export const SURFACE_STYLES = ["flat", "bordered", "raised", "glass"] as const;
 export type SurfaceStyle = (typeof SURFACE_STYLES)[number];
 
 /**
+ * A finish laid over every band, or none.
+ *
+ * Site-wide rather than per-Section because it is a finish, like a paper stock: a Page with
+ * grain on two bands out of five looks like a mistake, not a choice.
+ */
+export const TEXTURES = ["none", "grain"] as const;
+
+export type Texture = (typeof TEXTURES)[number];
+
+/**
  * A Site's visual identity, as tokens.
  *
  * This is what makes one Block library look like five different brands. Blocks are styled
@@ -114,6 +124,15 @@ export interface Theme {
    * picker (ADR-0013): a Site that can put anything behind anything will.
    */
   surface: SurfaceStyle;
+  /**
+   * Grain, or nothing.
+   *
+   * A flat colour at full width is the thing that reads as cheap, and a kilobyte of
+   * `feTurbulence` inlined as a data URI is what fixes it — no request, no asset, no
+   * dependency. Off by default: it is a decision, and a Site that has not made it should not
+   * be wearing it.
+   */
+  texture: Texture;
   spacing: {
     /** Vertical rhythm between Sections. */
     section: string;
@@ -156,6 +175,7 @@ export const defaultTheme: Theme = {
    * trusts. A Site says `surface: "raised"` and means it.
    */
   surface: "flat",
+  texture: "none",
   spacing: { section: "4rem", gutter: "2rem" },
   measure: "72rem",
 };
@@ -214,6 +234,58 @@ function elevationScale(primary: string): Theme["elevation"] {
     low: `0 1px 2px ${tint(10)}, 0 4px 12px ${tint(12)}`,
     high: `0 2px 6px ${tint(10)}, 0 16px 40px ${tint(18)}`,
   };
+}
+
+/**
+ * Grain, as an inline SVG.
+ *
+ * `feTurbulence` is a noise generator the browser already has, so this is under a kilobyte,
+ * costs no request and needs no asset in the media library. Desaturated, because coloured
+ * noise is not grain, and laid on at 5.5% — high enough to break a flat colour, low enough
+ * that nobody looking at the Page can say what changed.
+ *
+ * It is a constant rather than a token: there is one grain, and a Site either wears it or
+ * does not. A Site wanting a different one writes a rule in its own stylesheet, which is what
+ * `blocks.css` says it is for.
+ */
+const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E")`;
+
+/**
+ * A mesh gradient, which is what most "modern SaaS background" actually is: four soft
+ * radial blobs of the Site's own two brand colours, over its own surface colour.
+ *
+ * Derived and never stated, per [ADR-0019]: it is a composition of the palette rather than a
+ * value a Site has an opinion about, and a Site that states its own would be stating four
+ * colours nobody validated.
+ *
+ * The strongest blob is capped at 32%. Above that the band stops being a tint of the surface
+ * and becomes a colour of its own, at which point body text set in `--mn-color-text` is
+ * being read against something nobody checked the contrast of.
+ */
+function meshGradient(colors: Theme["colors"]): string {
+  const blob = (colour: string, percent: number, x: string, y: string, reach: string) =>
+    `radial-gradient(circle at ${x} ${y}, ` +
+    `color-mix(in oklab, ${colour} ${percent}%, transparent), transparent ${reach})`;
+
+  return [
+    blob(colors.primary, 32, "18%", "20%", "55%"),
+    blob(colors.accent, 26, "82%", "16%", "50%"),
+    blob(colors.primary, 20, "70%", "86%", "55%"),
+    blob(colors.accent, 16, "10%", "80%", "48%"),
+  ].join(", ");
+}
+
+/**
+ * The gradient a heading is painted with, between the two *readable* brand colours.
+ *
+ * `primaryText` and `accentText` rather than `primary` and `accent`, and that is the whole
+ * point of the token existing: gradient text is still text. A gradient run between the two
+ * raw brand colours is a heading that fails contrast for however much of its width the
+ * lighter end occupies — and the Starter's own accent is 3.7:1 on white, so that is not a
+ * hypothetical. These two are already moved as far as they must be to be read.
+ */
+function textGradient(colors: Theme["colors"]): string {
+  return `linear-gradient(100deg, ${colors.primaryText}, ${colors.accentText})`;
 }
 
 /**
@@ -317,6 +389,7 @@ export function defineTheme(overrides: DeepPartial<Theme> = {}): Theme {
      */
     elevation: { ...elevationScale(colors.primary), ...overrides.elevation },
     surface: overrides.surface ?? defaultTheme.surface,
+    texture: overrides.texture ?? defaultTheme.texture,
     spacing: { ...defaultTheme.spacing, ...overrides.spacing },
     measure: overrides.measure ?? defaultTheme.measure,
   };
@@ -354,6 +427,11 @@ export function themeToCss(theme: Theme): string {
     ...Object.entries(surfaceVariables(theme)).map(
       ([key, value]) => `--mn-surface-${key}: ${value};`,
     ),
+    // Compositions of the palette rather than values a Site states — derived here for the
+    // same reason elevation is, and absent from `themeSchema` for the same reason too.
+    `--mn-mesh: ${meshGradient(theme.colors)};`,
+    `--mn-gradient-text: ${textGradient(theme.colors)};`,
+    `--mn-texture: ${theme.texture === "grain" ? GRAIN : "none"};`,
     `--mn-section-spacing: ${theme.spacing.section};`,
     `--mn-gutter: ${theme.spacing.gutter};`,
     `--mn-measure: ${theme.measure};`,
@@ -462,6 +540,8 @@ export const themeSchema = z.object({
    * that by definition does not match the Site's own primary.
    */
   surface: z.enum(SURFACE_STYLES).optional(),
+  /** One of two words. The grain itself is a constant, so there is no value to check. */
+  texture: z.enum(TEXTURES).optional(),
   spacing: z
     .object({
       section: z.string().regex(/^\d{1,2}(\.\d)?rem$/).optional(),
@@ -574,6 +654,7 @@ export function completeTheme(input: ThemeInput, base: Theme = defaultTheme): Th
     radius: { ...input.radius, base: input.radius?.base ?? base.radius.base },
     border: { ...input.border, base: input.border?.base ?? base.border.base },
     surface: input.surface ?? base.surface,
+    texture: input.texture ?? base.texture,
     spacing: {
       section: input.spacing?.section ?? base.spacing.section,
       gutter: input.spacing?.gutter ?? base.spacing.gutter,

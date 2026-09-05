@@ -30,38 +30,58 @@ expresses ten:
 - **`surface: "flat" | "bordered" | "raised" | "glass"`** — one word that redraws the quote,
   the plan, the accordion item and the carousel slide at once, through four `--mn-surface-*`
   properties.
+- **`texture: "none" | "grain"`** — an inline `feTurbulence` under a kilobyte, laid over
+  every band as a background layer.
+
+And the looks built on top of them, which are the rest of what the milestone calls "modern is
+mostly CSS now":
+
+- **A `mesh` Section tone** — four soft radial blobs of the Site's own two brand colours over
+  its surface colour, composed by `themeToCss` and never stated, so there is nothing here a
+  client can take off-brand.
+- **A `gradient` Block tone** — headings painted with a run between `primaryText` and
+  `accentText`. Headings only, and the reasoning is in the roadmap.
 
 `starter/theme.ts` states `surface: "raised"`, which is the demonstration and a one-word
 revert if you disagree with it. `sites/ledger` is deliberately untouched: it installs the
 published `@mimnets/core`, which has none of this until the publish above happens.
 
-**Tests: 530 passing, 7 skipped**, up from 508. The new ones are in
-`packages/core/src/theme/tokens.test.ts`, and ten of the twenty-two were checked by reverting
-the four decisions they cover and watching them go red.
+**Tests: 545 passing, 7 skipped**, up from 508. The new ones are in
+`packages/core/src/theme/tokens.test.ts` and `packages/core/src/layout/tones.test.ts`, and
+they were checked by reverting the decisions they cover and watching them go red.
 
-**Verified rendered**, as this file asked. The Site at <http://localhost:3000> is running a
-generated Theme and its cards pick up the new properties correctly; all four surfaces were
-checked against the real `blocks.css` in a browser, including on a `surface`-toned band and a
-coloured one.
+**Verified rendered**, as this file asked, and it earned its keep. All four surfaces, the
+mesh band, gradient type and the grain were checked in a browser against the real
+`blocks.css`. Two defects were found that way and only that way: gradient statistics that all
+landed on the same muddy olive, and a stacking context that trapped the gallery lightbox and
+the mobile nav drawer inside their own Section. The Site was reset to `theme.ts`, so
+<http://localhost:3000> is wearing "Ink & Ember" with `surface: "raised"` and
+`texture: "grain"` rather than the generated Theme it had been.
 
 ### What is still M11, and not started
 
-- **The CSS-only looks** — mesh gradients built from the Theme's own colours, grain as an
-  inline SVG data URI, gradient text, CSS 3D. `glass` exists as a surface but is only worth
-  its blur over an image or a gradient, which is the next thing to build.
 - **The variants themselves**, which is what the milestone is actually for: a Block Type
   declaring `variants: ["card", "quote", "minimal"]` the way it declares its fields, emitted
   as a data attribute and styled in the Theme layer. A button's `style` field and prose's
   `width` become the first two.
 - **Section dividers** (`clip-path`) and **`field.token`**.
+- **CSS 3D**, which is held back rather than missed: a tilt on hover is a hover affordance,
+  and a quote is not something a visitor clicks. It belongs on whatever the variants make
+  genuinely interactive. The roadmap carries the argument.
 
 ### Three things to know before continuing
 
-- **`elevation` is deliberately absent from `themeSchema`** and always derived. A `box-shadow`
-  has no shape a regex can check, and it is compiled into a `<style>` tag on every Page — see
-  [ADR-0019](./docs/adr/0019-a-theme-derives-what-it-can-check.md), which is the rule the
-  gradients and the grain should be built against too: ask for what a schema can prove, derive
-  what the Theme already knows.
+- **`elevation`, the mesh and the text gradient are absent from `themeSchema`** and always
+  derived. A `box-shadow` has no shape a regex can check and it is compiled into a `<style>`
+  tag on every Page; the other two are compositions of the palette rather than values a Site
+  has an opinion about. See
+  [ADR-0019](./docs/adr/0019-a-theme-derives-what-it-can-check.md): ask for what a schema can
+  prove, derive what the Theme already knows. `surface` and `texture` *are* accepted, because
+  a closed set of words is a design choice rather than a string.
+- **Growing a tone enum is the change that can break every stored Page**, which is what
+  `tones.test.ts` is for. Both are `.default(...)`, so a Section written before any of this
+  still parses; a Block whose tone this Site does not know is dropped rather than blanking
+  the Page (I-04), and there is a test for each.
 - **A scale is derived from `base`, never merged onto the default's.** Merging hands a Site
   that states `base: "0"` the default's 3px `sm`. There is a test named for that failure.
 - **There is no `field.color` and there should not be.** A free hex picker is

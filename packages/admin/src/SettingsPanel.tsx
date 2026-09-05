@@ -89,6 +89,7 @@ export function SettingsPanel({
               <option value="muted">Muted</option>
               <option value="primary">Primary colour</option>
               <option value="accent">Accent colour</option>
+              <option value="gradient">Gradient (headings)</option>
             </select>
             <small>
               From the Site's Theme, not a colour picker — so changing the Theme still
@@ -188,6 +189,7 @@ export function SettingsPanel({
             <option value="surface">Tinted</option>
             <option value="primary">Primary colour</option>
             <option value="dark">Dark</option>
+            <option value="mesh">Mesh gradient</option>
           </select>
           <small>
             A Section is a full-width band, so this paints the whole width. Alternating bands

@@ -528,8 +528,7 @@ the code:
   leave existing Sites looking as they did rather than to be the best of the four. A token that
   changes every Site the day it lands is a token nobody trusts.
 
-Still to build below: the CSS-only looks, the variants themselves, Section dividers and
-`field.token`.
+Still to build below: the variants themselves, Section dividers and `field.token`.
 
 **The tinted shadow is the single highest-value line here.** A grey `box-shadow` reads as a
 2015 card; the same shadow mixed with the Site's own primary reads as considered. It is one
@@ -549,6 +548,35 @@ holds and a Site still cannot produce something off-brand:
 - **Gradient text** on headings, via `background-clip: text`.
 - **CSS 3D** — `transform: perspective()` on hover for card tilt and layered depth. No client
   component, so the package keeps the property that makes it good.
+
+**Built, 5 September, except the last one.** Glass shipped with the surface token above.
+Mesh is a fifth Section tone: four soft radial blobs of the Site's own two brand colours over
+its surface colour, composed by `themeToCss` and never stated, so a Site cannot take it
+off-brand. Grain is `theme.texture` — one word, an inline `feTurbulence` under a kilobyte,
+laid over every band. Gradient text is a fifth Block tone.
+
+Three things that came out of building them:
+
+- **The mesh caps every blob at 32%.** Above that the band stops being a tint of `surface`
+  and becomes a colour of its own, at which point body text is being read against something
+  nobody checked. Capped, it needs none of the foreground override rules `[data-tone="primary"]`
+  carries — the text keeps the colour and the contrast it already had.
+- **Gradient text runs between `primaryText` and `accentText`, not the brand colours,** and
+  applies to headings only. Gradient text is still text, and the Starter's own accent is
+  3.7:1 on white. The width limit is separate and was found by looking: across a box two
+  characters wide every glyph lands on the gradient's midpoint, so a row of statistics came
+  out as three identical muddy olives — worse than either colour and not a gradient at all.
+- **Grain is a background layer, not an overlay.** The overlay version needed a stacking
+  context on the Section or on `.mn-columns`, either of which traps the gallery lightbox
+  (`z-index: 50`) and the mobile nav drawer (`z-index: 30`) inside the Section they live in.
+  An open drawer painted under the Page below it is a navigation bug on every phone, in
+  exchange for a texture nobody can consciously see.
+
+**CSS 3D is not built**, and it is the one item here held back rather than finished. A tilt
+on hover is a hover affordance, and the four things it would apply to — a quote, a plan, an
+accordion item, a slide — are not things a visitor clicks. The tinted elevation above already
+carries the depth this was for. It is worth doing on whatever M11's variants make genuinely
+interactive, and worth doing there rather than here.
 
 ### What is deliberately not here
 

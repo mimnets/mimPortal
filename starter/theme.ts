@@ -64,6 +64,15 @@ export const theme = defineTheme({
    * under its cards rather than to this one.
    */
   surface: "raised",
+  /**
+   * Grain, at five and a half percent.
+   *
+   * "Ink & Ember" is a warm argument made in cool colours, and a flat wash of either at full
+   * width is the thing that reads as a template. It is an inline `feTurbulence` under a
+   * kilobyte — no request, no asset, no dependency — and if you cannot see it, that is the
+   * intended result: you can see the flat version, once you have looked at this one.
+   */
+  texture: "grain",
   // 6rem left adjacent bands looking disconnected rather than generous; two stacked
   // Sections are 9rem apart at this value, which is enough air without a gap.
   spacing: { section: "4.5rem", gutter: "3rem" },
