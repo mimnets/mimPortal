@@ -292,3 +292,106 @@ describe("following the selection through a change", () => {
     expect(next.selection).toBeNull();
   });
 });
+
+
+describe("changing a Section's Column layout", () => {
+  /**
+   * The selected path after Columns are merged.
+   *
+   * `setSectionLayout` keeps Blocks when Columns are removed — they move into the last
+   * surviving Column — so every id survives and every *path* changes. It was the one
+   * structural action returning `state.selection` untouched while every other one called
+   * `followSelection`.
+   *
+   * The mild failure is a selection pointing at a Column that no longer exists: the panel
+   * says "That Block is no longer here" while the Block is plainly on screen. The bad one is
+   * the case below, where the stale path stays valid and quietly addresses a different Block
+   * — which is precisely the I-17 failure the August audit closed as a class.
+   */
+  function threeColumns(): EditorState {
+    const layout: PageLayout = emptyLayout();
+    const section = newSection("1-1-1");
+    section.columns[0]!.blocks.push(newBlock(heading));
+    section.columns[1]!.blocks.push(newBlock(text));
+    section.columns[2]!.blocks.push(newBlock(heading));
+    layout.slots.main.push(section);
+    return initialState(layout);
+  }
+
+  function withBlockSelected(state: EditorState, column: number): EditorState {
+    return editorReducer(state, {
+      type: "select",
+      selection: { kind: "block", path: { slot: "main", section: 0, column, block: 0 } },
+    });
+  }
+
+  it("keeps the selection on the same Block when Columns merge", () => {
+    const state = withBlockSelected(threeColumns(), 2);
+    const selected = state.layout.slots.main[0]!.columns[2]!.blocks[0]!;
+
+    const next = editorReducer(state, {
+      type: "setSectionLayout",
+      path: { slot: "main", section: 0 },
+      layout: "1",
+    });
+
+    const path = next.selection?.kind === "block" ? next.selection.path : null;
+    expect(path).not.toBeNull();
+    expect(next.layout.slots.main[0]!.columns[path!.column]!.blocks[path!.block]!.id).toBe(
+      selected.id,
+    );
+  });
+
+  it("merges Blocks onto the end, so a surviving Column keeps its own", () => {
+    // Worth pinning down because the audit claimed the opposite. Merging *appends*, so a
+    // stale path into a Column that still exists addresses the Block it always did — the
+    // silent "you are now editing something else" failure is not reachable here. What is
+    // reachable is the milder one above: a path into a Column that has gone.
+    const state = threeColumns();
+    const [a, b, c] = state.layout.slots.main[0]!.columns.map((column) => column.blocks[0]!.id);
+
+    const next = editorReducer(state, {
+      type: "setSectionLayout",
+      path: { slot: "main", section: 0 },
+      layout: "1-1",
+    });
+
+    const columns = next.layout.slots.main[0]!.columns;
+    expect(columns).toHaveLength(2);
+    expect(columns[0]!.blocks.map((block) => block.id)).toEqual([a]);
+    expect(columns[1]!.blocks.map((block) => block.id)).toEqual([b, c]);
+  });
+
+  it("keeps every Block when Columns are removed", () => {
+    const state = threeColumns();
+    const before = state.layout.slots.main[0]!.columns.flatMap((c) => c.blocks.map((b) => b.id));
+
+    const next = editorReducer(state, {
+      type: "setSectionLayout",
+      path: { slot: "main", section: 0 },
+      layout: "1",
+    });
+
+    const after = next.layout.slots.main[0]!.columns.flatMap((c) => c.blocks.map((b) => b.id));
+    expect(after.sort()).toEqual(before.sort());
+  });
+
+  it("leaves a Section selection alone", () => {
+    const state = editorReducer(threeColumns(), {
+      type: "select",
+      selection: { kind: "section", path: { slot: "main", section: 0 } },
+    });
+
+    const next = editorReducer(state, {
+      type: "setSectionLayout",
+      path: { slot: "main", section: 0 },
+      layout: "1-1",
+    });
+
+    // The Section did not move, so the Author stays where they were.
+    expect(next.selection).toEqual({
+      kind: "section",
+      path: { slot: "main", section: 0 },
+    });
+  });
+});

@@ -99,6 +99,7 @@ different line numbers on `feat/editor-m10`, where those files were rewritten.
 | A-15 | Medium | The Block library's CSS did not ship with the Block library | *(this commit)* |
 | A-20 | Low | The second Site's bespoke Block was unstyled | `7affd37` |
 | A-08 | Medium | Clicking a Section selected then instantly deselected it | *(this commit)* |
+| A-09 | Medium | `setSectionLayout` left the selection pointing at a Column that had gone | *(this commit)* |
 
 ### A-01 — Markdown images were announced as decorative
 
@@ -262,9 +263,15 @@ calls `followSelection` (`:228`, `:253`, `:283`, `:296`).
 
 Going 3 columns → 1 with a Block selected in column 2 leaves the path pointing at
 `{column: 2}` when the Block now lives at `{column: 0}`; `blockAt` returns undefined and the
-panel says "That Block is no longer here" while the Block is on screen. **Going 3 → 2 with the
-selection in column 1 is worse: the path stays valid and addresses a different Block** — which
-is the I-17 failure the August fix was meant to close as a class.
+panel says "That Block is no longer here" while the Block is on screen.
+
+**Correction, on my own reporting.** This finding originally claimed a worse second case —
+3 → 2 with the selection in column 1, where the stale path stays valid and addresses a
+*different* Block. That is not reachable, and it was written down without being run. Merging
+*appends* the removed Columns' Blocks onto the survivor, so a surviving Column keeps its own
+Blocks at their original indices: 3 → 2 leaves `[a]` and `[b, c]`, and `{column: 1, block: 0}`
+is still `b`. Only a path into a Column that has *gone* breaks, and it breaks loudly. The
+invariant is now asserted so the claim cannot be made again without a test disagreeing.
 
 `state.test.ts` tests this action's Block counts and never its selection.
 
