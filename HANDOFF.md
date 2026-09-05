@@ -1,40 +1,35 @@
-# Handoff — 3 September 2026
+# Handoff — 5 September 2026
 
 Where Mimnets stands, what is not finished, and where to pick up. Read this first; it is
 written to be the only thing you need before starting.
 
-The previous handoff was dated 19 August and went eleven commits stale. If you are reading a
-copy of that one, discard it: it presents M7 as "next up" and M7 shipped the same afternoon.
+The previous handoff was dated 3 September. If you are reading a copy of that one, discard
+it: it says component tests are blocked on a pnpm store mismatch, and that diagnosis was
+wrong — see the toolchain note below.
 
 ## Where to start
 
-Three things are queued. None is blocked on code, and two need you.
+**Read [specs/project-audit-2/research.md](./specs/project-audit-2/research.md) first.** It is
+dated today, it has 21 findings each with a file and a line number, and six of them are already
+fixed. Nothing below is more urgent than the fifteen still open.
 
-**1. Publish, if you want it public.** `npm login` first — it is interactive, so it cannot be
-done for you. Then `pnpm release`. Worth knowing before you do: no package exists under
-`@mimnets` today, so the first publish claims the scope, and npm publishes are effectively
-permanent. Everything about the packaging is already proven against the local registry, so
-this changes the hostname and nothing else.
+There are two branches and neither is pushed:
 
-**2. Component tests are blocked on a pnpm store mismatch.** Installing jsdom and
-`@testing-library/react` fails with `ERR_PNPM_UNEXPECTED_STORE`: this repo's `node_modules`
-are linked from `~/.pnpm/store/v11` while pnpm now wants `~/AppData/Local/pnpm/store/v11`.
-Either keep the old store, or accept the new one and reinstall:
+- **`feat/block-library`** — M8.5's eight Block Types, the toolchain repair, the first
+  component tests, and the audit. 447 passing, 7 skipped. This is the branch to merge.
+- **`feat/editor-m10`** — undo and redo, ADR-0018, and M10 written up. Work from a parallel
+  session that was stopped before it could commit, preserved as found and not reviewed. It
+  branches from `feat/block-library`, so merge that one first. **Three audit findings (A-08,
+  A-09, A-10) live in the files this branch rewrote and belong on it, not on the other.**
 
-```bash
-pnpm config set store-dir "C:/Users/Monir/.pnpm/store" --global    # keep the old store
-pnpm install                                                        # or accept the new one
-```
+One thing still needs you and cannot be done for you:
 
-The second reinstalls the whole monorepo, which is why it was left rather than started at the
-end of a session. It is worth doing. **There are still no component tests**, the vitest
-environment is `node` with no DOM, and that is precisely why the Block error boundary shipped
-broken to review earlier today: it was wrapped around a function call rather than a child
-component, so it caught nothing, and only a browser showed it.
-
-**3. A fresh audit.** The last one is dated 20 August and the codebase has moved a long way
-since — twenty findings fixed, a build step, published packages, a second Site. A new pass
-would find what those changes introduced, which is where problems hide after a big change.
+**Publish, if you want it public.** `npm login` is interactive. Then `pnpm release` — there is
+a changeset now, and `pnpm changeset status` reports all three packages bumping minor. Worth
+knowing first: no package exists under `@mimnets`, so the first publish claims the scope and
+npm publishes are effectively permanent. Two audit findings bear on this — **A-17**, the
+publish guard checks the package manager but never that `dist` exists, and **A-18**, every
+published source map is dangling. Read both before running it.
 
 ## What exists today
 
@@ -50,18 +45,31 @@ would find what those changes introduced, which is where problems hide after a b
 | ✅ | **M6.5** Forms and email | Contact Block, enquiries in the Dashboard, pluggable spam checks, EmailAdapter |
 | ✅ | **M7** AI writing assistant | Rewrite, shorten, alt text, search descriptions, over a chain of providers (ADR-0014) |
 | ✅ | **M8** Packaging, Site two | Packages build and publish; `sites/ledger` installs them and upgraded from 0.1.0 to 0.1.1 |
-| ⚠️ | **M8.5** Block library | 14 Block Types, Section tones, a Theme built around them — six Block Types still missing |
+| ✅ | **M8.5** Block library | 22 Block Types, Section tones, a Theme built around them |
 | ✅ | **M9** Presets | Generate a Theme and Pages together, validated against the registry before they land |
 
-**v1 is finished.** M8.5 is the only partial, and it sits after the v1 boundary in the
-roadmap by design.
+**v1 is finished, and M8.5 closed on 5 September.** Every milestone from M0 to M9 is done.
 
 There are two Sites now. `starter` is the one the monorepo develops against; `sites/ledger`
 is a chartered accountant with its own Theme and one Block Type of its own, deliberately
 outside the pnpm workspace so that it installs the published packages rather than linking to
 their source. A workspace link would have tested the monorepo rather than the packaging.
 
-## The audit is closed
+## The audits
+
+**There are two now.** The second, [specs/project-audit-2/research.md](./specs/project-audit-2/research.md),
+is dated 5 September and covers everything the first could not know about: the packaging
+pipeline, the second Site, the twenty fixes, and the eight Block Types written that morning.
+21 findings, six already fixed, fifteen open. Its own summary is worth the minute: what it
+found was not a new class of hole but a recurring shape — decisions made correctly, written
+down correctly, and enforced nowhere.
+
+It also records what was checked and found sound, so the next audit does not pay for it
+again: `sites/ledger` was forked after every security fix and is byte-identical across all 98
+tracked files, no secrets are committed, and 25 crafted Markdown inputs found no XSS in the
+new Block library.
+
+### The first audit
 
 On 20 August the project was audited end to end, producing
 [specs/project-audit/research.md](./specs/project-audit/research.md) — **85 findings**, each
@@ -94,7 +102,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **249 passing, 7 skipped, about nine seconds.** It was 2 failing, 152 passing
+`pnpm test` — **447 passing, 7 skipped, about twenty seconds.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -107,9 +115,28 @@ They are opt-in because free models are rate limited and retired without notice,
 fail for reasons unrelated to the code — which is the failure I-08 was about, reintroduced
 once a run. Run them before shipping anything that touches the AI stack.
 
-**There are still no component tests.** The vitest environment is `node`, with no jsdom, so
-`BlockBoundary`, the focus trap and the keyboard sensor are verified in a browser rather than
-in CI. One of them shipped broken to review because of it.
+**Component tests start here.** The suite's default environment is still `node` — the 249
+existing tests have no use for a DOM and should not pay for one. A component test opts in
+per file with a `// @vitest-environment jsdom` docblock, which is why there is no new
+configuration to keep in step.
+
+Two files, eleven assertions:
+
+- `BlockBoundary.test.tsx` renders through `Preview`, not the boundary on its own. That is
+  deliberate: the defect that reached review was never in `BlockBoundary`, it was in how the
+  boundary was *called*, and a test that mounts the boundary directly passes either way.
+  Reintroducing the inline `blockType.render(...)` call turns all five red.
+- `media.test.tsx` covers the picker's focus trap against the three-part contract its own
+  comment states. Disabling the Tab handler turns three of the six red.
+
+Each file was checked by breaking the code it covers and watching it fail. A component test
+that has never been seen to fail is the thing that let the boundary ship broken.
+
+**Not covered, and deliberately.** The keyboard sensor is dnd-kit's `KeyboardSensor` with
+`sortableKeyboardCoordinates`, configured in three lines at `Editor.tsx:155`; testing it
+means mounting the Editor with a drag context to re-verify somebody else's library. And the
+focus trap filters on `offsetParent`, which jsdom never sets because it performs no layout —
+the test stubs it, so the *visibility* half of that filter still needs a browser.
 
 ## Not finished
 
@@ -119,17 +146,15 @@ Honest list. None of it is hidden behind a green tick.
   in `docker-compose.yml`, so the `@mimnets` scope is unclaimed and no version is public. The
   build, the exports, the publish guard, the install and the upgrade are all real; only the
   hostname is local.
-- **No component tests.** See the top — blocked on a pnpm store mismatch, not on effort.
-- **Six Block Types from M8.5 are missing**: accordion, embed, image gallery, carousel,
-  location map, and Markdown prose with its sanitising renderer (ADR-0011). A carousel and a
-  gallery are the first two a real client asks for.
+- **The keyboard sensor and the focus trap's visibility filter are still browser-only.**
+  Everything else about the boundary and the trap is now in CI. See the Tests section.
+
 - **The nav is one level deep**, deliberately (see `render/context.ts`). A client wanting a
   dropdown means reopening that decision, and the comment there is right that hover intent,
   keyboard traps and mobile behaviour make it harder than it looks.
 - **There is no lint.** ESLint cannot run here at all: TypeScript 7.0 is the native Go port
   and ships a CLI with no compiler API, which typescript-eslint needs. Revisit at 7.1 rather
   than adding a linter that cannot see types (I-64).
-- **No component tests.** See the note above.
 - **Nobody has sent through Resend.** SMTP is proven against a real mail server; Resend is
   not, because that needs an account and a verified domain.
 - **Provisioning mode of the installer is still untested.** This machine already had a
@@ -144,12 +169,25 @@ Honest list. None of it is hidden behind a green tick.
 
 ## What is next
 
-In the order agreed, and none of it started:
+In the order agreed. **Item 1 is done**; nothing below it is started, so the next session
+starts at stock images.
 
-1. **Finish M8.5** — carousel, accordion, image gallery, comparison table, social links row.
-   This is what turns "a plausible landing page" into "we could rebuild that client's Site",
-   and it is the prerequisite for a Preset being worth generating, exactly as M8.5's own text
-   has said since it was written.
+~~1. **Finish M8.5.**~~ **Done 5 September.** Eight Block Types landed — accordion, image
+   gallery, carousel, location map, video, Markdown prose, comparison table and social links
+   — taking the library from fourteen to twenty-two. This was the prerequisite for a Preset
+   being worth generating, exactly as M8.5's own text had said since it was written, so
+   everything below it is now unblocked.
+
+   Worth reading before extending the library. Five of the eight are built on the browser
+   rather than on JavaScript — `<details>`, `:target`, scroll-snap, sandboxed iframes, a real
+   `<table>` — so `packages/blocks` still has one dependency and still contains no client
+   component, and all of it works before a Site has hydrated. Three are security boundaries
+   with tests to match: the video Block allowlists its iframe hosts, the social row parses
+   every address and drops anything that is not http, https, a real email or a real phone
+   number, and prose parses with `html: false`, so raw HTML is never admitted rather than
+   admitted and scrubbed. `core` gained one dependency for that last one, markdown-it, and
+   there is no `dangerouslySetInnerHTML` anywhere in the repo.
+
 2. **Stock images.** Generated Presets ship with grey rectangles where photographs belong.
    Behind a `StockAdapter`, in the same shape as StorageAdapter and EmailAdapter. Photos are
    **downloaded into the Site's own media store at apply time**, never hotlinked — layouts
@@ -170,6 +208,37 @@ In the order agreed, and none of it started:
    listing Block. Collections generalise it later.
 7. **A Vercel deploy button** plus a Neon integration. Note that ADR-0012 rules out the local
    disk on Vercel, so that template must require R2 or S3 rather than offer it.
+
+## The toolchain, and a diagnosis that was wrong
+
+The 3 September handoff said component tests were blocked on a pnpm store mismatch. They were
+not, and the misdiagnosis cost more than the bug would have.
+
+`pnpm install` was always content with the store it had. What failed was `pnpm run`, which
+performs a pre-flight dependency check by spawning a nested synchronous `pnpm install`, and
+that nested process crashed — first on the no-TTY purge prompt, then on `0xC0000409` after
+`--force`. Every script inherited the fault, so a broken dependency tree was the obvious
+explanation and the wrong one. Run directly, `vitest` was green the whole time.
+
+The check is off in **`pnpm-workspace.yaml`** — `verifyDepsBeforeRun: false`, with the
+reasoning beside it. Note *where*: pnpm 11 no longer reads pnpm settings from `.npmrc`, which
+the `allowBuilds` key already sitting in the yaml had been showing all along. With it off,
+jsdom and `@testing-library/react` installed in thirteen seconds and
+`ERR_PNPM_UNEXPECTED_STORE` never appeared at all.
+
+Two other things that were quietly untrue and are now fixed:
+
+- **`vitest.config.ts` carried dead configuration.** It set `esbuild: { jsx: "automatic" }`
+  with a comment explaining why it was required. Vitest 4 uses oxc, printed that it was
+  ignoring the option, and infers JSX from the file extension on its own. No `.tsx` test file
+  existed to expose it.
+- **A NUL byte sat in `packages/core/src/ai/assist.ts`.** `ASSIST_ERROR` is a NUL on purpose —
+  it separates streamed content from a message for the Author — but it had been written as a
+  raw byte rather than ` `, so git and grep both classified the file as binary. It had
+  had no readable diff since it was introduced.
+
+Component tests opt into a DOM per file with a `// @vitest-environment jsdom` docblock, so the
+node tests stay fast and there is no new configuration to keep in step.
 
 ## Things to know before you touch the code
 

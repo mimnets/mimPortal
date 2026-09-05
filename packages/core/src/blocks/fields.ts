@@ -1,3 +1,4 @@
+import { isSafeStorageKey, UNSAFE_KEY_MESSAGE } from "../layout/storage-key";
 import { z } from "zod";
 
 /**
@@ -67,7 +68,12 @@ function makeField<TSchema extends z.ZodType>(
  * possible — a new upload is a new key.
  */
 const imageSchema = z.object({
-  key: z.string().default(""),
+  // A key, never a URL (ADR-0012) — and now enforced rather than assumed. It is interpolated
+  // into an img src by every Block that shows a picture. See storage-key.ts.
+  key: z
+    .string()
+    .default("")
+    .refine((key) => key === "" || isSafeStorageKey(key), UNSAFE_KEY_MESSAGE),
   alt: z.string().default(""),
   /**
    * Whether this image carries no meaning a reader would miss.

@@ -77,8 +77,30 @@ export const defaultTheme: Theme = {
 
 /** Merges a Site's overrides onto the defaults, so a theme.ts only states what differs. */
 export function defineTheme(overrides: DeepPartial<Theme> = {}): Theme {
+  const colors = { ...defaultTheme.colors, ...overrides.colors };
+  const supplied = overrides.colors ?? {};
+
   return {
-    colors: { ...defaultTheme.colors, ...overrides.colors },
+    /**
+     * The readable colours are derived from the merged palette rather than inherited.
+     *
+     * Each is a function of the brand colours beside it, so carrying one over from the
+     * defaults paints one Site's text in another Site's palette. That was not hypothetical:
+     * `themeSchema` does not carry `primaryText` or `accentText` at all — they are derived,
+     * never asked for — so a stored Theme re-parsed on its way out of the database arrived
+     * here without them every time, and every Site rendered `[data-tone="primary"]` in the
+     * default blue while its own primary sat beside it in the settings panel.
+     *
+     * A Site that states one keeps it, which is how `defaultTheme` holds its own
+     * hand-picked values.
+     */
+    colors: {
+      ...colors,
+      onPrimary: supplied.onPrimary ?? readableOn(colors.primary),
+      onAccent: supplied.onAccent ?? readableOn(colors.accent),
+      primaryText: supplied.primaryText ?? readableText(colors.primary, colors.background),
+      accentText: supplied.accentText ?? readableText(colors.accent, colors.background),
+    },
     fonts: { ...defaultTheme.fonts, ...overrides.fonts },
     radius: { ...defaultTheme.radius, ...overrides.radius },
     spacing: { ...defaultTheme.spacing, ...overrides.spacing },

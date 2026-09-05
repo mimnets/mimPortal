@@ -1,4 +1,11 @@
-import { defineBlock, field, FORM_FIELDS, FORM_RESULT_PARAM } from "@mimnets/core";
+import {
+  defineBlock,
+  field,
+  FORM_FIELDS,
+  FORM_RESULT_PARAM,
+  renderMarkdown,
+  safeHref,
+} from "@mimnets/core";
 
 import { designBlocks } from "./design";
 
@@ -53,6 +60,45 @@ export const textBlock = defineBlock({
         ))}
     </div>
   ),
+});
+
+/**
+ * Prose, written in Markdown.
+ *
+ * The Text Block above splits a string on blank lines and calls the result paragraphs, which
+ * is all most content needs. This is for the rest: a page of terms, an About with subheadings,
+ * a post. An Author gets headings, lists, links and emphasis without anyone building a
+ * rich-text editor, which ADR-0011 argues is the most expensive component in any CMS.
+ *
+ * Raw HTML is not sanitised here because it is never parsed — see `renderMarkdown` in core.
+ * A `<script>` an Author pastes appears on the Site as the words `<script>`.
+ */
+export const proseBlock = defineBlock({
+  name: "prose",
+  label: "Prose",
+  fields: {
+    body: field.textarea({
+      label: "Body",
+      help: "Markdown. # for a heading, - for a list, [text](address) for a link.",
+      default: "",
+    }),
+    width: field.select({
+      label: "Line length",
+      help: "Readable keeps lines short enough to read comfortably.",
+      options: ["readable", "full"],
+      default: "readable",
+    }),
+  },
+  render: ({ body, width }) => {
+    const content = renderMarkdown(body);
+    if (content.length === 0) return null;
+
+    return (
+      <div className="mn-prose" data-width={width}>
+        {content}
+      </div>
+    );
+  },
 });
 
 export const imageBlock = defineBlock({
@@ -147,7 +193,7 @@ export const menuBlock = defineBlock({
           {items.map((item) => (
             <li key={item.id}>
               <a
-                href={item.href}
+                href={safeHref(item.href) || "/"}
                 target={item.newTab ? "_blank" : undefined}
                 rel={item.newTab ? "noreferrer" : undefined}
                 aria-current={item.href === context.currentPath ? "page" : undefined}
@@ -266,6 +312,7 @@ export const standardBlocks = [
   // and an Author reaches for a heading far more often than for a pricing plan.
   headingBlock,
   textBlock,
+  proseBlock,
   imageBlock,
   ...designBlocks,
   logoBlock,

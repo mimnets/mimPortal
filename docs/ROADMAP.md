@@ -277,7 +277,7 @@ starting M8.5. Everything below is informed by what that reveals.
 
 ---
 
-## M8.5 — Grow the Block library ⚠️
+## M8.5 — Grow the Block library ✅
 
 Roughly fifteen to twenty Block Types: hero variants, feature grids, testimonial, logo
 strip, CTA band, pricing table, accordion, embed, and the three that were asked for by name —
@@ -310,9 +310,45 @@ not AI. A generated Preset can only arrange the Blocks that exist, so six Block 
 produce six variations of the same plain page — which this milestone's own text has said
 since it was written. Presets get built on top of this, not instead of it.
 
-**Still missing** from the list above: accordion, embed, image gallery, carousel, location
-map, and Markdown prose with its sanitising renderer
-([ADR-0011](./adr/0011-markdown-for-prose-json-for-layout.md)).
+**The six landed on 5 September**, taking the library from fourteen Block Types to twenty:
+accordion, image gallery, carousel, location map, video, and Markdown prose with its
+renderer ([ADR-0011](./adr/0011-markdown-for-prose-json-for-layout.md)).
+
+Four of them turned out to be the same decision asked four times — how much of the browser
+can be used instead of shipping JavaScript. The accordion is `<details>`; the gallery's
+lightbox is `:target`; the carousel is scroll-snap; the video and the map are sandboxed
+iframes. `packages/blocks` still has exactly one dependency and still contains no client
+component, so every one of these works before a Site has hydrated.
+
+Two of them are security boundaries rather than layout, and are tested as such. The video
+Block is an allowlist: an iframe's `src` decides which origin runs code on the Site, and the
+string comes from an Author, so YouTube and Vimeo are recognised and everything else becomes
+a plain link. Prose renders with markdown-it at `html: false`, which is stronger than the
+sanitising pipeline the ADR asks for — raw HTML is never parsed, so there is no scrubbing
+step to misconfigure — and the token stream is walked into React elements rather than an
+HTML string, so no `dangerouslySetInnerHTML` exists to be fed something else later.
+
+**Two more, added and built 5 September.** They came from what a Site turned out to want
+rather than from the original list: a **comparison table** — what a pricing page reaches for
+the moment one plan is not enough — and a **social links row**.
+
+Neither turned out to be the ordinary `defineBlock` work they were filed as. The comparison
+table is a real `<table>` with `scope` on both kinds of header, because that is the whole
+difference between "Priority support, Standard, not included" and a wall of ticks read out
+with nothing to attach them to; and a comparison is two-dimensional while a repeater is a
+list, so values are matched to plans positionally and the render pads a short row rather than
+sliding it left. The social row's address field is free text a client types, so it is a place
+`javascript:` can be entered by hand — every address is parsed and anything that is not http,
+https, a real email or a real phone number is dropped. It ships no brand logos: they are
+trademarks with usage terms nobody would be tracking, so each link carries `data-network` and
+a Theme supplies its own glyph.
+
+**The library is twenty-two Block Types.** The exit criterion — a plausible landing page for
+three industries without writing a custom Block — is met.
+
+`field.repeater` already exists and its own comment names "a carousel's slides", so the
+gallery, the carousel and the comparison table need no M1 work. That was the milestone's own
+test of whether the M1 interface was right, and it passes.
 
 ---
 
