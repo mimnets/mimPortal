@@ -5,10 +5,11 @@
   "license": "UNLICENSED",
   "type": "module",
   "exports": {
-    ".": "./src/index.tsx"
+    ".": "./src/index.tsx",
+    "./blocks.css": "./src/blocks.css"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('src/blocks.css','dist/blocks.css')\"",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "node ../../scripts/check-publish.mjs"
   },
@@ -18,7 +19,8 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
-      }
+      },
+      "./blocks.css": "./dist/blocks.css"
     }
   },
   "peerDependencies": {

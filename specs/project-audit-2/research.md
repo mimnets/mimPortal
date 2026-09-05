@@ -95,6 +95,9 @@ different line numbers on `feat/editor-m10`, where those files were rewritten.
 | A-18 | Medium | Every published source map was dangling | *(this commit)* |
 | A-19 | Medium | Unfinished config committed as a value | *(this commit)* |
 | A-28 | **High** | `pnpm build:packages` built nothing, and `pnpm release` runs it | *(this commit)* |
+| A-07 | **High** | `sites/ledger` could not generate a migration, and no Site outside the repo could | `7affd37` |
+| A-15 | Medium | The Block library's CSS did not ship with the Block library | *(this commit)* |
+| A-20 | Low | The second Site's bespoke Block was unstyled | `7affd37` |
 
 ### A-01 — Markdown images were announced as decorative
 
