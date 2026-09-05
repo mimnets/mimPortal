@@ -29,9 +29,17 @@ export const deadlinesBlock = defineBlock({
       },
     }),
   },
-  render: ({ heading, dates }) => (
-    <section className="ledger-deadlines">
-      <h2 className="mn-heading">{heading}</h2>
+  render: ({ heading, dates }) => {
+    // An empty repeater is a half-finished thought, not a table of nothing — the standard
+    // Blocks all draw nothing rather than publishing an empty shell.
+    if (dates.length === 0) return null;
+
+    return (
+      <section className="ledger-deadlines">
+        <h2 className="mn-heading">{heading}</h2>
+        {/* Three columns of dates do not fit a phone, and a page that scrolls sideways as a
+            whole is worse than a table that scrolls inside its own box. */}
+        <div className="ledger-deadlines-scroll">
       <table>
         <caption className="mn-muted">Statutory dates for the current year</caption>
         <thead>
@@ -51,6 +59,8 @@ export const deadlinesBlock = defineBlock({
           ))}
         </tbody>
       </table>
-    </section>
-  ),
+        </div>
+      </section>
+    );
+  },
 });
