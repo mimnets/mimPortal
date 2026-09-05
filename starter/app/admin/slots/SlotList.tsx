@@ -133,7 +133,11 @@ export function SlotList({
 
   return (
     <>
-      {error ? <p className="mn-media-error">{error}</p> : null}
+      {error ? (
+        <p className="mn-media-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
 
       <p className="mn-media-meta">
         A Page picks its Header and Footer in its own settings. Change one here and every Page

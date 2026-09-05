@@ -57,7 +57,11 @@ export function InstallForm({ mode }: { mode: "provisioning" | "onboarding" }) {
             checked and the schema applied before anything is written.
           </p>
 
-          {error ? <p className="mn-ed-error">{error}</p> : null}
+          {error ? (
+        <p className="mn-ed-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
 
           <label className="mn-field" htmlFor="connectionString">
             <span>Connection string</span>
@@ -99,7 +103,11 @@ export function InstallForm({ mode }: { mode: "provisioning" | "onboarding" }) {
           database.
         </p>
 
-        {error ? <p className="mn-ed-error">{error}</p> : null}
+        {error ? (
+        <p className="mn-ed-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
 
         <label className="mn-field" htmlFor="token">
           <span>Install token</span>

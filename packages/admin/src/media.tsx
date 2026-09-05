@@ -192,7 +192,11 @@ export function MediaBrowser({
           </button>
         </header>
 
-        {error ? <p className="mn-media-error">{error}</p> : null}
+        {error ? (
+        <p className="mn-media-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
 
         {items === null ? (
           <p className="mn-media-empty">Loading…</p>

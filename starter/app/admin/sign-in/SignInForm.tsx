@@ -39,7 +39,11 @@ export function SignInForm() {
       <form className="mn-auth-card" onSubmit={submit}>
         <h1>Sign in</h1>
 
-        {error ? <p className="mn-ed-error">{error}</p> : null}
+        {error ? (
+        <p className="mn-ed-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
 
         <label className="mn-field" htmlFor="email">
           <span>Email</span>

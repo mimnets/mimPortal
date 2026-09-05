@@ -88,6 +88,9 @@ different line numbers on `feat/editor-m10`, where those files were rewritten.
 | A-04 | High | A storage key reached a CSS `url()` in an inline style | `693c19c` |
 | A-05 | High | Every Site painted its Block tones in the default theme's colours | `47341a8` |
 | A-06 | Medium | No changeset for eight Block Types and a new `core` dependency | `4f82702` |
+| A-11 | Medium | Four writers replaced a draft without moving `revision` | `a0dd088` |
+| A-12 | Medium | `listVersions` had no authorisation check | `a0dd088` |
+| A-13 | Medium | Thirteen Dashboard error banners were unannounced | *(this commit)* |
 
 ### A-01 — Markdown images were announced as decorative
 
@@ -258,7 +261,7 @@ nor `requireOwner()`. It queries straight into `pageVersions`.
 Impact is genuinely limited: version ids and publish timestamps, and it needs a Page UUID.
 The gap is the point — every sibling in the file checks.
 
-### A-13 — I-15 half done: six Dashboard error banners are still unannounced
+### A-13 — I-15 half done: thirteen Dashboard error banners are still unannounced *(fixed — the count was wrong)*
 
 Editor status became a live region; these are unchanged plain `<p>` with no `role` and no
 `aria-live`:
@@ -271,6 +274,17 @@ Editor status became a live region; these are unchanged plain `<p>` with no `rol
 - `packages/admin/src/History.tsx:43`
 
 A screen-reader user who fails a save on any of those screens is told nothing.
+
+**The reviewer's list of six was not exhaustive.** Fixing it turned up seven more of exactly
+the same shape: `design/ReadyMade.tsx`, `design/ThemeEditor.tsx`, `sign-in/SignInForm.tsx`,
+`slots/SlotList.tsx`, `install/InstallForm.tsx` (twice) and `packages/admin/src/media.tsx`.
+Thirteen in total, all now `role="alert"` with `aria-atomic` — announced on insertion, which
+is what somebody who has just pressed a button and is waiting needs.
+
+Deliberately *not* changed: the unconditional notices at `design/DesignStudio.tsx:61` and
+`enquiries/EnquiryList.tsx:68` and `:96`. Those are configuration messages that are part of
+the page rather than failures of an action, and `role="alert"` on them would interrupt on
+page load. They are read in document order, which is correct.
 
 ### A-14 — Ledger's lockfile pins a hash only the throwaway registry can satisfy
 

@@ -78,7 +78,14 @@ export function MediaLibrary({
         </label>
       </div>
 
-      {error ? <p className="mn-media-error">{error}</p> : null}
+      {/* role="alert" rather than a live region: this element only exists when something
+          failed, so it is announced on insertion, and somebody who has just pressed a
+          button and is waiting should be interrupted. */}
+      {error ? (
+        <p className="mn-media-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
 
       {items.length === 0 ? (
         <p className="mn-media-empty">

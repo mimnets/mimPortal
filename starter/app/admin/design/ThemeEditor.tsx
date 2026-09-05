@@ -83,7 +83,11 @@ export function ThemeEditor({
     <section className="mn-field-group">
       <legend>Customise the colours and type</legend>
 
-      {error ? <p className="mn-media-error">{error}</p> : null}
+      {error ? (
+        <p className="mn-media-error" role="alert" aria-atomic="true">
+          {error}
+        </p>
+      ) : null}
       {status ? <p className="mn-preset-status">{status}</p> : null}
 
       <div className="mn-colour-grid">
