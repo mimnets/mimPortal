@@ -881,3 +881,79 @@ h3.mn-heading {
 .mn-skip:focus {
   left: 0;
 }
+
+/* ---- Accordion ---- */
+
+.mn-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mn-accordion-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--mn-font-heading);
+}
+
+.mn-accordion-item {
+  background: var(--mn-color-surface);
+  border-radius: var(--mn-radius);
+  padding: 0 1.25rem;
+}
+
+/* The same reasoning as a quote: a pale card inside a coloured band punches a hole in it. */
+.mn-section[data-tone="primary"] .mn-accordion-item,
+.mn-section[data-tone="dark"] .mn-accordion-item,
+.mn-section[data-has-image] .mn-accordion-item {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.mn-accordion-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  cursor: pointer;
+  font-weight: 600;
+  /* The default triangle sits outside the padding and cannot be positioned; this replaces it
+     with the marker below, which can. */
+  list-style: none;
+}
+
+.mn-accordion-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.mn-accordion-item summary::after {
+  content: "";
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-0.125rem, -0.125rem);
+  transition: transform 150ms ease;
+}
+
+.mn-accordion-item[open] summary::after {
+  transform: rotate(-135deg) translate(-0.125rem, -0.125rem);
+}
+
+/* Keyboard users get the same affordance as everyone else. */
+.mn-accordion-item summary:focus-visible {
+  outline: 2px solid var(--mn-color-primary);
+  outline-offset: 2px;
+}
+
+.mn-accordion-answer {
+  padding: 0 0 1.25rem;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mn-accordion-item summary::after {
+    transition: none;
+  }
+}

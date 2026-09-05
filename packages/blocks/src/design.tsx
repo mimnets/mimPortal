@@ -290,6 +290,80 @@ export const pricingBlock = defineBlock({
   ),
 });
 
+/** A short, stable, non-cryptographic name for a string. Used only to group `<details>`. */
+function stableName(input: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+/**
+ * A stack of questions that open one at a time.
+ *
+ * Built on `<details>` and `<summary>` rather than buttons and `aria-expanded`, which is a
+ * deliberate choice and not a lazy one. The native element is keyboard operable, announced
+ * correctly, expandable before hydration and findable by the browser's own in-page search —
+ * a JavaScript accordion is none of those until its script arrives, and Blocks render on the
+ * server. The `name` attribute is what makes it exclusive; browsers without it simply let
+ * more than one stand open, which is a degradation nobody notices.
+ */
+export const accordionBlock = defineBlock({
+  name: "accordion",
+  label: "Accordion",
+  fields: {
+    title: field.text({ label: "Title", default: "" }),
+    items: field.repeater({
+      label: "Questions",
+      fields: {
+        question: field.text({ label: "Question", default: "" }),
+        answer: field.textarea({ label: "Answer", default: "" }),
+      },
+    }),
+    exclusive: field.boolean({
+      label: "Open one at a time",
+      help: "Opening a question closes the one before it.",
+      default: true,
+    }),
+    openFirst: field.boolean({
+      label: "Start with the first one open",
+      help: "Shows a visitor what the answers look like before they click anything.",
+      default: false,
+    }),
+  },
+  render: ({ title, items, exclusive, openFirst }) => {
+    if (items.length === 0) return null;
+
+    // Two accordions on one Page must not close each other's questions, so the group name
+    // cannot be a constant. There is no Block id to reach for — `RenderContext` is resolved
+    // once per request by design, and a hook is not available because Blocks render on the
+    // server — so the name is derived from the questions themselves. Two accordions would
+    // have to hold the same questions in the same order to collide, and the cost if they
+    // did is that they share a group rather than anything breaking.
+    const group = `mn-acc-${stableName(items.map((item) => item.question).join(" "))}`;
+
+    return (
+      <div className="mn-accordion">
+        {title ? <h2 className="mn-accordion-title">{title}</h2> : null}
+        {items.map((item, index) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <details
+            className="mn-accordion-item"
+            key={index}
+            name={exclusive ? group : undefined}
+            open={openFirst && index === 0}
+          >
+            <summary>{item.question}</summary>
+            <div className="mn-accordion-answer">{item.answer}</div>
+          </details>
+        ))}
+      </div>
+    );
+  },
+});
+
 export const designBlocks = [
   eyebrowBlock,
   buttonBlock,
@@ -299,4 +373,5 @@ export const designBlocks = [
   logosBlock,
   ctaBlock,
   pricingBlock,
+  accordionBlock,
 ];
