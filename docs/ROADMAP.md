@@ -445,6 +445,40 @@ width to see it stack, all without leaving the Editor.
 
 ---
 
+---
+
+## M10.5 — Three things a client asks for in the first week
+
+Raised on 5 September, none of them in any milestone, and all three small enough that leaving
+them unplanned was the only reason they were not built. They share a shape: each is a property
+the layout engine could already carry, sitting one field away from existing.
+
+**A Header that stays.** A Site's Header scrolls away and there is no option not to. `position:
+fixed` appears exactly once in the whole stylesheet and it is the gallery's lightbox. The
+setting belongs on the Shared Slot rather than on a Page — a Header is shared
+([ADR-0015](./adr/0015-headers-and-footers-are-shared.md)) and one that stuck on some Pages and
+not others would read as a bug. Three values: scrolls, sticky, fixed. The work that is not
+obvious is the rest of the page: a fixed Header needs the content below it offset by its own
+height, which is a `scroll-padding-top` and a measurement, not a magic number.
+
+**Per-Section width.** A Section has a tone, a padding and a background, and no width, so every
+band is the Theme's one global `measure`. That is the wrong default for exactly the Blocks
+added in M8.5: a gallery, a carousel and a map all want the full width of the window, and today
+they cannot have it. The field is `width: "measure" | "wide" | "full"`, resolving to Theme
+tokens like every other Section property ([ADR-0013](./adr/0013-the-band-is-the-sections-job.md)) —
+and *not* a free number, for the same reason there is no colour picker.
+
+**Popovers.** Clicking a word or a button to open a panel with more detail and a picture: a
+team member's biography, what a service includes, the story behind a photograph. There is a
+proven pattern already in the repository — the gallery's lightbox is `:target` and no
+JavaScript — and it should be reused rather than reinvented, because it works before hydration
+and is keyboard operable without anybody implementing that. The open question is whether this
+is a Block or a *field*: a repeater of popovers is a Block, but "this button opens a panel" is
+a property of the button, and the second is more useful and harder.
+
+**Done when:** a Header can be made to stay, a gallery can run edge to edge, and a team page's
+photographs open a biography — none of it needing a line of custom code in a Site.
+
 ## M11 — Variants, and the end of counting Blocks
 
 The library grows by *look* rather than by count. A Block Type declares its variants the way
@@ -481,3 +515,50 @@ offers a choice still cannot offer an unreadable one.
 
 **Done when:** the same testimonial Block looks like three different Sites without a line of
 new render code, and changing six values in `theme.ts` still rebrands all three.
+
+---
+
+## M12 — What the AI does, and what it must not
+
+This product already uses a model three times: to write copy (M7), to generate a Preset (M9),
+and to read a palette out of an image. This milestone is about the next three, and about
+writing down the boundary — because the interesting question stopped being *can it* some time
+ago and is now *where is it worth trusting*.
+
+The evidence for that boundary is in this repository. On 5 September a model wrote eight Block
+Types, three thousand lines and two hundred and fifty tests in a day; on the same day it
+shipped an accessibility defect that made every Markdown image announce itself as decorative,
+wrote an audit finding that was flatly wrong, and needed an independent reviewer to catch both.
+What made the difference was never a better prompt. It was three habits: revert the fix and
+watch the test fail, have something that did not write the code review it, and open a browser.
+
+So the rule this milestone is built on: **a model writes; something else checks.** Every item
+below produces a draft a person accepts, and none of them writes to a published Page.
+
+**Import an existing site.** Give it the URL of the client's current website and get Pages,
+copy and a Theme — as a draft, never published. This is the highest-value AI feature available
+to an agency product and it is the one nobody has planned. It also has the clearest failure
+mode: a bad import is visibly bad, which is the kind of wrongness to prefer.
+
+**Regenerate one Section.** M9 generates whole Pages, which is the rarest thing an Author
+wants. "Make this band a testimonial" is smaller, cheaper, used a hundred times more often, and
+lands in the draft with a version snapshot taken first, exactly as a Preset does
+([ADR-0007](./adr/0007-ai-generated-presets.md)).
+
+**Say what a Page is missing.** The registry is already described to a model in about a
+thousand tokens, so "this services page has no call to action and no way to contact you" is
+mostly prompt work over machinery that exists. It suggests; it does not edit.
+
+**And the catalogue pages generate themselves.** The effects gallery M10 asks for — the page
+that shows an Author what "Rise" actually looks like — is exactly the tedious, mechanical work
+worth handing over, because every example is derived from a registry that already exists.
+
+**What stays hand-written**, and this is the load-bearing half: schemas, security boundaries,
+and anything whose failure is silent. The September audit found five High-severity findings in
+code that looked entirely fine — an `alt` that was always empty, six `href`s with no protocol
+check, a sentinel that was never emitted. A model would have reviewed all of it and said it was
+good, because it looked good. None of those had a visible symptom.
+
+**Done when:** an Owner can point Mimnets at a client's old site and get a draft worth editing,
+an Author can regenerate one band without touching the rest of the Page, and the effects
+gallery is generated rather than maintained.

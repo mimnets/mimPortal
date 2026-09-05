@@ -117,17 +117,18 @@ rather than a failed Preset. Optional, and off until a key is set — see
 A preview panel in the Design tab · AI provider and model settings · a Vercel deploy button
 with Neon · Blueprints and the responsive preview (the rest of M10).
 
-### Asked for, not yet planned
+### Planned on 5 September
 
-Raised on 5 September and not in any milestone. None of these exists in any form:
+Raised the same day, and written into the roadmap rather than left as wishes. None exists yet:
 
-- **A sticky, fixed or scrolling Header.** A Site's Header scrolls away and there is no option.
-  `position: fixed` appears once in the whole stylesheet and it is the gallery's lightbox.
-- **Per-Section width.** A Section has a tone, a padding and a background, and no width. Every
-  Section is the Theme's one global `measure`, so a full-bleed band — which is what a gallery,
-  a carousel or a map usually wants — cannot be expressed.
-- **Popovers.** Clicking a word or a button to open a panel carrying more detail and a picture.
-  The gallery's `:target` lightbox is a proven no-JavaScript pattern to build it on.
+- **M10.5** — a Header that stays (scrolls, sticky or fixed), per-Section width so a gallery or
+  a map can run edge to edge, and popovers for a biography or a service's detail. Each is a
+  property the layout engine could already carry, sitting one field away from existing.
+- **M12** — what the AI does next, and what it must not: importing a client's existing site as
+  a draft, regenerating one Section rather than a whole Page, telling an Author what a Page is
+  missing, and generating the catalogue pages. It also writes down the boundary — schemas,
+  security boundaries and anything whose failure is silent stay hand-written, on the evidence
+  of the September audit, which found five High findings in code that looked entirely fine.
 
 ### Known gaps, deliberate
 
