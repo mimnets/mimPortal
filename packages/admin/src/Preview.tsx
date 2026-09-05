@@ -19,7 +19,15 @@ import type {
 } from "@mimnets/core";
 import { columnTemplate, emptyContext, SLOT_NAMES, SlotView } from "@mimnets/core";
 
-import { BlockIcon, GripIcon, ICONS_BY_BLOCK, LockIcon, SlotIcon, TrashIcon } from "./icons";
+import {
+  BlockIcon,
+  DuplicateIcon,
+  GripIcon,
+  ICONS_BY_BLOCK,
+  LockIcon,
+  SlotIcon,
+  TrashIcon,
+} from "./icons";
 import { BlockPicker, LayoutPicker } from "./pickers";
 import type { BlockPath, EditorAction, Selection } from "./state";
 
@@ -120,6 +128,18 @@ function BlockCard({
           <Glyph />
           {blockType?.label ?? block.type}
         </span>
+        <button
+          type="button"
+          className="mn-icon-button"
+          aria-label={`Duplicate ${blockType?.label ?? block.type} block`}
+          title="Duplicate Block"
+          onClick={(event) => {
+            event.stopPropagation();
+            dispatch({ type: "duplicateBlock", path });
+          }}
+        >
+          <DuplicateIcon />
+        </button>
         <button
           type="button"
           className="mn-icon-button mn-icon-button-danger"
@@ -253,6 +273,18 @@ function Section({
           }
         />
 
+        <button
+          type="button"
+          className="mn-icon-button"
+          aria-label="Duplicate section"
+          title="Duplicate Section"
+          onClick={(event) => {
+            event.stopPropagation();
+            dispatch({ type: "duplicateSection", path: { slot, section: index } });
+          }}
+        >
+          <DuplicateIcon />
+        </button>
         <button
           type="button"
           className="mn-icon-button mn-icon-button-danger"

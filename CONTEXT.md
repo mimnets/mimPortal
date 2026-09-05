@@ -124,3 +124,18 @@ _Avoid_: admin, developer, superuser
 **Author**:
 A person given Dashboard access to change content, but not code or structure.
 _Avoid_: client, user, editor
+
+### Prior art
+
+**Editor library**:
+A published package that provides a drag-and-drop editing interface and nothing else — no
+storage, no accounts, no publishing. Puck, GrapesJS and ui-builder are Editor libraries.
+Mimnets is not one; `packages/admin` is the only part of it that could have been built on
+one ([ADR-0018](./docs/adr/0018-the-editor-is-ours-because-the-block-type-is.md)).
+_Avoid_: page builder, canvas, framework, headless CMS
+
+**Content platform**:
+A product that supplies the database, accounts, media and publish workflow a Site needs,
+without supplying the Editor. Payload, Directus, TinaCMS and Builder.io are Content
+platforms, and they are the comparison that costs something to answer.
+_Avoid_: CMS, backend, headless CMS

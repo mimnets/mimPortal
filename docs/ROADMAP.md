@@ -400,3 +400,84 @@ In the order they are most likely to earn their place:
 
 Deliberately not on this list: an analytics dashboard, a public-site chatbot, and a raw
 database admin UI. See [ADR-0006](./adr/0006-v1-scope-boundary.md).
+
+---
+
+## M10 — The Editor an Author lives in
+
+M9 finished the generative half: a Site can be given a look it did not have. This milestone
+is about the hours after that, when an Author is arranging a real Page and the Editor is the
+only thing between them and the work.
+
+Nothing here is a new capability. Every item is something the Editor already almost does,
+and whose absence is felt on the second afternoon rather than the first.
+
+**Undo and redo.** `EditorAction` has no undo, and History is a publish-time snapshot —
+disaster recovery, not editing. An Author who deletes a Section by accident currently has no
+way back that does not involve publishing. The reducer is pure and its actions are
+serialisable, so this is a wrapper over the existing one rather than a change to any case.
+
+**Duplicate a Block, duplicate a Section.** Building a three-item feature row is add,
+configure, add, configure, add, configure. With duplicate it is configure once. The whole
+feature is a deep copy with fresh ids, and the ids are the part to get right: two nodes
+sharing one would give dnd-kit the same draggable twice.
+
+**Blueprints.** A Section saved by name and inserted as a copy. Distinct from a Shared Slot
+([ADR-0015](./adr/0015-headers-and-footers-are-shared.md)), which is one Section used in
+many places and edited once; a Blueprint is a starting point that stops being related to its
+source the moment it is inserted. This is how twenty-two Block Types reach the variety of a
+library ten times the size ([ADR-0018](./adr/0018-the-editor-is-ours-because-the-block-type-is.md)),
+and a Blueprint is Block JSON validated by the same schemas the Editor writes through, so it
+inherits the Preset guarantee without new machinery.
+
+**A responsive preview.** Columns stack on narrow screens without anybody authoring it,
+which means an Author never sees the stacked result until they publish. The obstacle is real
+and worth naming: CSS breakpoints answer to the viewport, so narrowing a preview pane does
+not trigger them. Either the preview becomes an iframe — a true viewport, at the cost of a
+boundary selection and dragging must now cross — or the Blocks move to container queries.
+The second is the smaller change and the one to try first, because `packages/blocks` styles
+against Theme tokens throughout and the migration is mechanical.
+
+**Done when:** an Author deletes a Section, presses Ctrl+Z and has it back; builds a
+three-column feature row by configuring one Column and duplicating it twice; saves that
+Section as a Blueprint and drops it into another Page; and switches the preview to a phone
+width to see it stack, all without leaving the Editor.
+
+---
+
+## M11 — Variants, and the end of counting Blocks
+
+The library grows by *look* rather than by count. A Block Type declares its variants the way
+it declares its fields, and the Editor generates the control the way it already generates
+every settings form:
+
+```ts
+defineBlock({
+  name: "testimonial",
+  variants: ["card", "quote", "minimal"],
+  fields: { ... },
+});
+```
+
+The variant is emitted as a data attribute and styled in the Theme layer, next to the tones
+a Section already carries ([ADR-0013](./adr/0013-the-band-is-the-sections-job.md)). Nothing
+about a Block's render changes, which is the test of whether the M1 interface was right for
+a second time.
+
+Two Blocks already do this by hand — a button has a `style` field, prose has a `width` — and
+those become the first variants rather than staying local conventions. Twenty-two Block
+Types with three variants each is a library that reads as far larger than it is, which is
+the only version of that race worth entering.
+
+**Section dividers** land here for the same reason: an angled or curved edge between two
+bands is `clip-path` and a Section property, and it does more for how composed a Page looks
+than three more Block Types would.
+
+**And a token picker, not a colour picker.** There is no `field.color`, and there should not
+be — a free hex picker is [ADR-0003](./adr/0003-sections-and-columns-not-free-canvas.md)'s
+mistake wearing a different hat, and a client who can put anything behind anything will.
+What is missing is `field.token`: choose one of the Theme's own colours, so a Block that
+offers a choice still cannot offer an unreadable one.
+
+**Done when:** the same testimonial Block looks like three different Sites without a line of
+new render code, and changing six values in `theme.ts` still rebrands all three.

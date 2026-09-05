@@ -100,6 +100,7 @@ different line numbers on `feat/editor-m10`, where those files were rewritten.
 | A-20 | Low | The second Site's bespoke Block was unstyled | `7affd37` |
 | A-08 | Medium | Clicking a Section selected then instantly deselected it | *(this commit)* |
 | A-09 | Medium | `setSectionLayout` left the selection pointing at a Column that had gone | *(this commit)* |
+| A-10 | Medium | Save cleared the unsaved flag for edits made during the save | *(on `feat/editor-m10`)* |
 
 ### A-01 — Markdown images were announced as decorative
 
@@ -275,7 +276,7 @@ invariant is now asserted so the claim cannot be made again without a test disag
 
 `state.test.ts` tests this action's Block counts and never its selection.
 
-### A-10 — Save clears `dirty` for edits made during the save
+### A-10 — Save clears `dirty` for edits made during the save *(fixed on `feat/editor-m10`)*
 
 `packages/admin/src/Editor.tsx` — `run()` dispatches `{type:"saved"}` unconditionally on
 success, while `onSave` captured the layout at click time.
