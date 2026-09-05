@@ -1270,3 +1270,73 @@ h3.mn-heading {
 .mn-embed-fallback a {
   color: var(--mn-color-primary);
 }
+
+/* ---- Prose ---- */
+
+.mn-prose {
+  /* Around 65 characters, which is where running text stops being tiring to read. */
+  max-width: var(--mn-prose-width, 38rem);
+  display: flow-root;
+}
+
+.mn-prose[data-width="readable"] { --mn-prose-width: 38rem; }
+.mn-prose[data-width="full"] { --mn-prose-width: none; }
+
+.mn-prose > :first-child { margin-top: 0; }
+.mn-prose > :last-child { margin-bottom: 0; }
+
+.mn-prose h1,
+.mn-prose h2,
+.mn-prose h3,
+.mn-prose h4 {
+  font-family: var(--mn-font-heading);
+  margin: 2rem 0 0.75rem;
+  line-height: 1.25;
+}
+
+.mn-prose p,
+.mn-prose ul,
+.mn-prose ol,
+.mn-prose blockquote,
+.mn-prose pre {
+  margin: 0 0 1rem;
+}
+
+.mn-prose li {
+  margin-bottom: 0.375rem;
+}
+
+.mn-prose a {
+  color: var(--mn-color-primary);
+}
+
+.mn-prose blockquote {
+  padding-left: 1.25rem;
+  border-left: 3px solid var(--mn-color-primary);
+  opacity: 0.9;
+}
+
+.mn-prose code {
+  font-size: 0.9375em;
+  padding: 0.125em 0.3em;
+  border-radius: calc(var(--mn-radius) / 2);
+  background: var(--mn-color-surface);
+}
+
+.mn-prose pre {
+  padding: 1rem 1.25rem;
+  border-radius: var(--mn-radius);
+  background: var(--mn-color-surface);
+  overflow-x: auto;
+}
+
+.mn-prose pre code {
+  padding: 0;
+  background: none;
+}
+
+.mn-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--mn-radius);
+}

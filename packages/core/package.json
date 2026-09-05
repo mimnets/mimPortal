@@ -55,6 +55,7 @@
     "@anthropic-ai/sdk": "^0.117.1",
     "better-auth": "^1.6.29",
     "drizzle-orm": "^0.45.2",
+    "markdown-it": "^15.0.1",
     "nodemailer": "^9.0.5",
     "postgres": "^3.4.9",
     "zod": "^4.4.3"

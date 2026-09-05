@@ -53,6 +53,7 @@ export { emptyContext, menuItemSchema, menuItemsSchema } from "./render/context"
 export type { MenuItem, RenderContext } from "./render/context";
 
 export { SlotView } from "./render/render";
+export { markdownToText, renderMarkdown } from "./render/markdown";
 
 export { FORM_FIELDS, FORM_RESULT_PARAM } from "./forms/shared";
 export type { FormResult } from "./forms/shared";

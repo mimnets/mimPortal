@@ -277,7 +277,7 @@ starting M8.5. Everything below is informed by what that reveals.
 
 ---
 
-## M8.5 — Grow the Block library ⚠️
+## M8.5 — Grow the Block library ⚠️ *(six of the eight done)*
 
 Roughly fifteen to twenty Block Types: hero variants, feature grids, testimonial, logo
 strip, CTA band, pricing table, accordion, embed, and the three that were asked for by name —
@@ -310,9 +310,23 @@ not AI. A generated Preset can only arrange the Blocks that exist, so six Block 
 produce six variations of the same plain page — which this milestone's own text has said
 since it was written. Presets get built on top of this, not instead of it.
 
-**Still missing** from the list above: accordion, embed, image gallery, carousel, location
-map, and Markdown prose with its sanitising renderer
-([ADR-0011](./adr/0011-markdown-for-prose-json-for-layout.md)).
+**The six landed on 5 September**, taking the library from fourteen Block Types to twenty:
+accordion, image gallery, carousel, location map, video, and Markdown prose with its
+renderer ([ADR-0011](./adr/0011-markdown-for-prose-json-for-layout.md)).
+
+Four of them turned out to be the same decision asked four times — how much of the browser
+can be used instead of shipping JavaScript. The accordion is `<details>`; the gallery's
+lightbox is `:target`; the carousel is scroll-snap; the video and the map are sandboxed
+iframes. `packages/blocks` still has exactly one dependency and still contains no client
+component, so every one of these works before a Site has hydrated.
+
+Two of them are security boundaries rather than layout, and are tested as such. The video
+Block is an allowlist: an iframe's `src` decides which origin runs code on the Site, and the
+string comes from an Author, so YouTube and Vimeo are recognised and everything else becomes
+a plain link. Prose renders with markdown-it at `html: false`, which is stronger than the
+sanitising pipeline the ADR asks for — raw HTML is never parsed, so there is no scrubbing
+step to misconfigure — and the token stream is walked into React elements rather than an
+HTML string, so no `dangerouslySetInnerHTML` exists to be fed something else later.
 
 **Two more, added 5 September.** They come from what a Site turned out to want rather than
 from the original list: a **comparison table** — what a pricing page reaches for the moment
