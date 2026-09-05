@@ -84,8 +84,8 @@ rather than a failed Preset. Optional, and off until a key is set — see
 - **`@mimnets/blocks/blocks.css`** ships the Block styling, so a Site that upgrades receives
   something to draw the new Blocks with. The Starter's own stylesheet is 33 lines.
 - **A publish guard** that checks the artefact as well as the package manager.
-- **18 architecture decision records** in `docs/adr/`.
-- **508 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
+- **19 architecture decision records** in `docs/adr/`.
+- **558 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
 
 ---
 
@@ -130,22 +130,15 @@ with Neon · Blueprints and the responsive preview (the rest of M10).
 
 ### Planned on 5 September
 
-Raised the same day, and written into the roadmap rather than left as wishes. One of the
-three has since been started — M11's prerequisite — and the other two are untouched:
+Raised the same day, and written into the roadmap rather than left as wishes. M11 has since
+met its exit criterion and has two small things left; M10.5 and M12 are untouched:
 
 - **M10.5** — a Header that stays (scrolls, sticky or fixed), per-Section width so a gallery or
   a map can run edge to edge, and popovers for a biography or a service's detail. Each is a
   property the layout engine could already carry, sitting one field away from existing.
-- **M11**'s prerequisite is built; the milestone itself is not. The Theme could express
-  colour, two typefaces, one corner radius and two spacing values — six token families, one
-  radius token used 26 times, no shadow token, no gradients — which is why every Site read as
-  the same flat rectangles in a different palette. It now carries four families more:
-  **`elevation`** (three steps, mixed from the Site's own primary with `color-mix()`, never
-  grey and never asked for), **`radius`** as a five-step scale derived from the one value a
-  Site states, **`border`** as three weights, and **`surface`** — one word, `flat`,
-  `bordered`, `raised` or `glass`, that redraws every card in the library at once — plus
-  `texture`, the mesh band and gradient headings built on top of them, and the variants the
-  whole milestone is named for. Still to come in M11: Section dividers and `field.token`.
+- **M11** is no longer planned — it is on `feat/m11-theme-tokens` and has met its exit
+  criterion. It is described under *Partly built* above; Section dividers and `field.token`
+  are what remain of it.
 - **M12** — what the AI does next, and what it must not: importing a client's existing site as
   a draft, regenerating one Section rather than a whole Page, telling an Author what a Page is
   missing, and generating the catalogue pages. It also writes down the boundary — schemas,
