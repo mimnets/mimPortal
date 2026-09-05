@@ -1,8 +1,10 @@
-import { createRegistry, emptyLayout, type PageLayout } from "@mimnets/core";
+import { createRegistry, emptyLayout, type PageLayout, type SectionNode } from "@mimnets/core";
 import { standardBlocks } from "@mimnets/blocks";
 import { describe, expect, it } from "vitest";
 
 import {
+  canRedo,
+  canUndo,
   editorReducer,
   findBlockPath,
   findColumnTarget,
@@ -290,5 +292,240 @@ describe("following the selection through a change", () => {
     const next = editorReducer(state, { type: "deleteSection", path: { slot: "main", section: 0 } });
 
     expect(next.selection).toBeNull();
+  });
+});
+
+describe("duplicating", () => {
+  it("puts the copy of a Block directly below the original and selects it", () => {
+    const state = fixture();
+    const original = state.layout.slots.main[0]!.columns[0]!.blocks[0]!;
+
+    const next = editorReducer(state, {
+      type: "duplicateBlock",
+      path: { slot: "main", section: 0, column: 0, block: 0 },
+    });
+
+    const blocks = next.layout.slots.main[0]!.columns[0]!.blocks;
+    expect(blocks.map((b) => b.type)).toEqual(["heading", "heading", "text"]);
+    expect(blocks[1]!.props).toEqual(original.props);
+    expect(next.selection).toEqual({
+      kind: "block",
+      path: { slot: "main", section: 0, column: 0, block: 1 },
+    });
+  });
+
+  it("gives the copied Block an id of its own", () => {
+    const state = fixture();
+    const original = state.layout.slots.main[0]!.columns[0]!.blocks[0]!;
+
+    const next = editorReducer(state, {
+      type: "duplicateBlock",
+      path: { slot: "main", section: 0, column: 0, block: 0 },
+    });
+
+    const blocks = next.layout.slots.main[0]!.columns[0]!.blocks;
+    expect(blocks[1]!.id).not.toBe(original.id);
+    // The original still resolves to its own position rather than to the copy.
+    expect(findBlockPath(next.layout, original.id)).toEqual({
+      slot: "main",
+      section: 0,
+      column: 0,
+      block: 0,
+    });
+  });
+
+  it("changing the copy leaves the original alone", () => {
+    const state = fixture();
+
+    const copied = editorReducer(state, {
+      type: "duplicateBlock",
+      path: { slot: "main", section: 0, column: 0, block: 0 },
+    });
+    const edited = editorReducer(copied, {
+      type: "setProp",
+      path: { slot: "main", section: 0, column: 0, block: 1 },
+      key: "text",
+      value: "Only the copy",
+    });
+
+    const blocks = edited.layout.slots.main[0]!.columns[0]!.blocks;
+    expect(blocks[1]!.props.text).toBe("Only the copy");
+    expect(blocks[0]!.props.text).not.toBe("Only the copy");
+  });
+
+  it("gives a duplicated Section fresh ids all the way down", () => {
+    const state = fixture();
+    const original = state.layout.slots.main[0]!;
+
+    const next = editorReducer(state, {
+      type: "duplicateSection",
+      path: { slot: "main", section: 0 },
+    });
+
+    const sections = next.layout.slots.main;
+    expect(sections).toHaveLength(2);
+
+    const copy = sections[1]!;
+    expect(copy.id).not.toBe(original.id);
+    expect(copy.layout).toBe(original.layout);
+
+    // Every id in the tree must be new: a shared one would give dnd-kit two draggables with
+    // the same identity, and the second Section would drag the first.
+    const idsOf = (section: SectionNode) => [
+      section.id,
+      ...section.columns.flatMap((column) => [column.id, ...column.blocks.map((b) => b.id)]),
+    ];
+    const before = idsOf(original);
+    const after = idsOf(copy);
+    expect(after).toHaveLength(before.length);
+    expect(after.filter((id) => before.includes(id))).toEqual([]);
+    expect(new Set(after).size).toBe(after.length);
+  });
+
+  it("leaves a Section alone when the path does not resolve", () => {
+    const state = fixture();
+    const next = editorReducer(state, {
+      type: "duplicateSection",
+      path: { slot: "main", section: 4 },
+    });
+    expect(next).toBe(state);
+  });
+});
+
+describe("undo and redo", () => {
+  it("has nothing to undo on a freshly opened Page", () => {
+    const state = fixture();
+    expect(canUndo(state)).toBe(false);
+    expect(canRedo(state)).toBe(false);
+    expect(editorReducer(state, { type: "undo" })).toBe(state);
+  });
+
+  it("brings back a deleted Section", () => {
+    const state = fixture();
+    const deleted = editorReducer(state, {
+      type: "deleteSection",
+      path: { slot: "main", section: 0 },
+    });
+    expect(deleted.layout.slots.main).toHaveLength(0);
+
+    const undone = editorReducer(deleted, { type: "undo" });
+    expect(undone.layout.slots.main).toHaveLength(1);
+    expect(undone.layout).toEqual(state.layout);
+    expect(canRedo(undone)).toBe(true);
+  });
+
+  it("redoes what it just undid", () => {
+    const state = fixture();
+    const deleted = editorReducer(state, {
+      type: "deleteSection",
+      path: { slot: "main", section: 0 },
+    });
+    const redone = editorReducer(editorReducer(deleted, { type: "undo" }), { type: "redo" });
+
+    expect(redone.layout.slots.main).toHaveLength(0);
+    expect(canRedo(redone)).toBe(false);
+    expect(canUndo(redone)).toBe(true);
+  });
+
+  it("abandons the redo branch once something new happens", () => {
+    const state = fixture();
+    const deleted = editorReducer(state, {
+      type: "deleteSection",
+      path: { slot: "main", section: 0 },
+    });
+    const undone = editorReducer(deleted, { type: "undo" });
+    expect(canRedo(undone)).toBe(true);
+
+    const diverged = editorReducer(undone, { type: "addSection", slot: "main", layout: "1" });
+    expect(canRedo(diverged)).toBe(false);
+  });
+
+  it("collapses a run of typing into one entry", () => {
+    const path = { slot: "main", section: 0, column: 0, block: 0 } as const;
+    let state = fixture();
+    const before = state.layout.slots.main[0]!.columns[0]!.blocks[0]!.props.text;
+
+    for (const value of ["A", "Ab", "Abo", "Abou", "About"]) {
+      state = editorReducer(state, { type: "setProp", path, key: "text", value });
+    }
+
+    expect(state.past).toHaveLength(1);
+    const undone = editorReducer(state, { type: "undo" });
+    expect(undone.layout.slots.main[0]!.columns[0]!.blocks[0]!.props.text).toBe(before);
+  });
+
+  it("starts a new entry when the Author moves to another field", () => {
+    const path = { slot: "main", section: 0, column: 0, block: 0 } as const;
+    let state = fixture();
+
+    state = editorReducer(state, { type: "setProp", path, key: "text", value: "About" });
+    state = editorReducer(state, { type: "setProp", path, key: "level", value: "h1" });
+    state = editorReducer(state, { type: "setProp", path, key: "text", value: "About us" });
+
+    expect(state.past).toHaveLength(3);
+  });
+
+  it("ends the typing run when the selection changes", () => {
+    const path = { slot: "main", section: 0, column: 0, block: 0 } as const;
+    let state = fixture();
+
+    state = editorReducer(state, { type: "setProp", path, key: "text", value: "A" });
+    state = editorReducer(state, { type: "select", selection: null });
+    state = editorReducer(state, { type: "setProp", path, key: "text", value: "About" });
+
+    expect(state.past).toHaveLength(2);
+  });
+
+  it("records nothing for a selection or a save", () => {
+    const state = editorReducer(fixture(), { type: "select", selection: null });
+    expect(state.past).toEqual([]);
+    expect(editorReducer(state, { type: "saved" }).past).toEqual([]);
+  });
+
+  it("follows the selection back through an undo", () => {
+    const state = editorReducer(fixture(), {
+      type: "select",
+      selection: { kind: "block", path: { slot: "main", section: 0, column: 0, block: 1 } },
+    });
+
+    // Deleting the Block above shifts the selected one up to index 0.
+    const deleted = editorReducer(state, {
+      type: "deleteBlock",
+      path: { slot: "main", section: 0, column: 0, block: 0 },
+    });
+    expect(deleted.selection).toEqual({
+      kind: "block",
+      path: { slot: "main", section: 0, column: 0, block: 0 },
+    });
+
+    // Undoing puts it back, and the selection has to come back with it.
+    const undone = editorReducer(deleted, { type: "undo" });
+    expect(undone.selection).toEqual({
+      kind: "block",
+      path: { slot: "main", section: 0, column: 0, block: 1 },
+    });
+  });
+
+  it("stays dirty after undoing back to the opening state", () => {
+    const state = fixture();
+    const undone = editorReducer(
+      editorReducer(state, { type: "addSection", slot: "main", layout: "1" }),
+      { type: "undo" },
+    );
+    expect(undone.layout).toEqual(state.layout);
+    expect(undone.dirty).toBe(true);
+  });
+
+  it("forgets the oldest change once the limit is passed", () => {
+    let state = fixture();
+    for (let i = 0; i < 60; i += 1) {
+      state = editorReducer(state, { type: "addSection", slot: "main", layout: "1" });
+    }
+    expect(state.past).toHaveLength(50);
+
+    // Fifty undos are available and the fifty-first does nothing, rather than throwing.
+    for (let i = 0; i < 50; i += 1) state = editorReducer(state, { type: "undo" });
+    expect(canUndo(state)).toBe(false);
+    expect(editorReducer(state, { type: "undo" })).toBe(state);
   });
 });
