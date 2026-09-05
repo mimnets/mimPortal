@@ -684,6 +684,113 @@ export const mapBlock = defineBlock({
   },
 });
 
+/**
+ * Turns a video URL an Author pasted into a frame, or refuses to.
+ *
+ * The refusal is the feature. `src` on an iframe is not a display setting — it decides which
+ * origin gets to run code in a frame on this Site, and an Author is a client, which is the
+ * same reason ADR-0011 keeps raw HTML out of Markdown. So this is an allowlist: two providers
+ * are recognised and everything else falls through to a plain link, which can be wrong
+ * without being dangerous.
+ *
+ * YouTube goes to youtube-nocookie.com, which is the same player without the tracking cookie
+ * on arrival.
+ */
+function embedFrom(raw: string): { kind: "frame"; src: string } | { kind: "link" } | null {
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    // Half a URL, mid-keystroke. Not an error — just nothing to show yet.
+    return null;
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+
+  const host = url.hostname.replace(/^www\./, "");
+
+  if (host === "youtube.com" || host === "m.youtube.com") {
+    const id = url.searchParams.get("v") ?? url.pathname.replace(/^\/embed\//, "");
+    if (/^[\w-]{6,}$/.test(id)) {
+      return { kind: "frame", src: `https://www.youtube-nocookie.com/embed/${id}` };
+    }
+  }
+
+  if (host === "youtu.be") {
+    const id = url.pathname.slice(1);
+    if (/^[\w-]{6,}$/.test(id)) {
+      return { kind: "frame", src: `https://www.youtube-nocookie.com/embed/${id}` };
+    }
+  }
+
+  if (host === "vimeo.com" || host === "player.vimeo.com") {
+    const id = url.pathname.split("/").filter(Boolean).pop() ?? "";
+    if (/^\d+$/.test(id)) {
+      return { kind: "frame", src: `https://player.vimeo.com/video/${id}` };
+    }
+  }
+
+  return { kind: "link" };
+}
+
+/**
+ * A video from YouTube or Vimeo.
+ *
+ * Anything else becomes a link rather than a frame — see `embedFrom`. A link is a worse
+ * result than a working player and a far better one than letting a Page decide which origin
+ * runs code inside it.
+ */
+export const embedBlock = defineBlock({
+  name: "embed",
+  label: "Video",
+  fields: {
+    url: field.text({
+      label: "Video address",
+      help: "A YouTube or Vimeo link. Anything else is shown as a link rather than a player.",
+      default: "",
+    }),
+    title: field.text({
+      label: "What the video is",
+      help: "Read out in place of the video by a screen reader, so describe it rather than naming the file.",
+      default: "",
+    }),
+    ratio: field.select({
+      label: "Shape",
+      options: ["16:9", "4:3", "1:1"],
+      default: "16:9",
+    }),
+  },
+  render: ({ url, title, ratio }) => {
+    const embed = embedFrom(url);
+    if (!embed) return null;
+
+    if (embed.kind === "link") {
+      return (
+        <p className="mn-embed-fallback">
+          <a href={url} target="_blank" rel="noreferrer">
+            {title || url}
+          </a>
+        </p>
+      );
+    }
+
+    return (
+      <div className="mn-embed" data-ratio={ratio}>
+        <iframe
+          className="mn-embed-frame"
+          title={title || "Video"}
+          src={embed.src}
+          loading="lazy"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          // Same reasoning as the map: the frame needs nothing from this Site.
+          sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-presentation"
+        />
+      </div>
+    );
+  },
+});
+
 export const designBlocks = [
   eyebrowBlock,
   buttonBlock,
@@ -697,4 +804,5 @@ export const designBlocks = [
   galleryBlock,
   carouselBlock,
   mapBlock,
+  embedBlock,
 ];

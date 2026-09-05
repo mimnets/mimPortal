@@ -1238,3 +1238,35 @@ h3.mn-heading {
 .mn-map-caption a {
   color: var(--mn-color-primary);
 }
+
+/* ---- Video ---- */
+
+.mn-embed {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--mn-embed-ratio, 16 / 9);
+  border-radius: var(--mn-radius);
+  overflow: hidden;
+  background: #000;
+}
+
+.mn-embed[data-ratio="16:9"] { --mn-embed-ratio: 16 / 9; }
+.mn-embed[data-ratio="4:3"]  { --mn-embed-ratio: 4 / 3; }
+.mn-embed[data-ratio="1:1"]  { --mn-embed-ratio: 1 / 1; }
+
+.mn-embed-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.mn-embed-fallback {
+  margin: 0;
+}
+
+.mn-embed-fallback a {
+  color: var(--mn-color-primary);
+}
