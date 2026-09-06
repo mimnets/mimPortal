@@ -156,10 +156,165 @@ export const LogoIcon = (props: IconProps) => (
   </Icon>
 );
 
+
+/* ---- The rest of the library ------------------------------------------------
+   Seventeen Block Types shared one generic square, which made the picker a list of
+   identical rows an Author had to read rather than scan. Each of these is the *shape* of the
+   Block's output rather than a picture of its subject: a carousel is a wide panel with arrows,
+   a pricing plan is a card with a rule under its heading. Somebody choosing between them is
+   looking for a layout, not a noun. Same 16x16 stroked grid as the five above. */
+
+export const ProseIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M3 3.5h10M3 6.5h10M3 9.5h7M3 12.5h9" />
+  </Icon>
+);
+
+export const EyebrowIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M3 4.5h5" />
+    <path d="M3 8.5h10M3 11.5h8" />
+  </Icon>
+);
+
+export const ButtonIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="2.5" y="5" width="11" height="6" rx="2" />
+    <path d="M6 8h4" />
+  </Icon>
+);
+
+export const FeaturesIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
+    <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" />
+    <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" />
+    <rect x="9" y="9" width="4.5" height="4.5" rx="1" />
+  </Icon>
+);
+
+export const StatsIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M3 13V8M8 13V4M13 13v-3" />
+  </Icon>
+);
+
+export const TestimonialIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M5.5 4.5C4 5.5 3.5 7 3.5 9h2.5V5.5zM12 4.5c-1.5 1-2 2.5-2 4.5h2.5V5.5z" />
+    <path d="M3.5 12.5h9" />
+  </Icon>
+);
+
+export const LogosIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="4" cy="8" r="1.75" />
+    <circle cx="8" cy="8" r="1.75" />
+    <circle cx="12" cy="8" r="1.75" />
+  </Icon>
+);
+
+export const CtaIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="2" y="3" width="12" height="10" rx="2" />
+    <path d="M5.5 6.5h5" />
+    <rect x="5.5" y="9" width="5" height="2" rx="1" />
+  </Icon>
+);
+
+export const PricingIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="3" y="2.5" width="10" height="11" rx="2" />
+    <path d="M5.5 6h5M5.5 9h3M5.5 11h3" />
+  </Icon>
+);
+
+export const AccordionIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="2.5" y="3" width="11" height="3" rx="1" />
+    <rect x="2.5" y="8" width="11" height="5" rx="1" />
+    <path d="M11 4.5l-1 1-1-1" />
+  </Icon>
+);
+
+export const GalleryIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="2.5" y="3" width="11" height="10" rx="1.5" />
+    <circle cx="6" cy="6.5" r="1" />
+    <path d="M3 11l3-2.5 3 2 2-1.5 2 2" />
+  </Icon>
+);
+
+export const CarouselIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="4" y="4" width="8" height="8" rx="1.5" />
+    <path d="M2 6.5v3M14 6.5v3" />
+  </Icon>
+);
+
+export const MapIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M8 14s4.5-4.2 4.5-7.4A4.5 4.5 0 0 0 3.5 6.6C3.5 9.8 8 14 8 14z" />
+    <circle cx="8" cy="6.5" r="1.5" />
+  </Icon>
+);
+
+export const EmbedIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="2" y="3" width="12" height="10" rx="2" />
+    <path d="M7 6.5l3 1.5-3 1.5z" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+export const CompareIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="2.5" y="3" width="11" height="10" rx="1.5" />
+    <path d="M2.5 6.5h11M8 6.5V13" />
+  </Icon>
+);
+
+export const SocialIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="4.5" cy="8" r="1.75" />
+    <circle cx="11.5" cy="4.5" r="1.75" />
+    <circle cx="11.5" cy="11.5" r="1.75" />
+    <path d="M6 7.1l4-2.2M6 8.9l4 2.2" />
+  </Icon>
+);
+
+export const ContactIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="2" y="3.5" width="12" height="9" rx="2" />
+    <path d="M2.5 5.5l5.5 4 5.5-4" />
+  </Icon>
+);
+
+/**
+ * Every Block Type the standard library ships, so the picker reads as a set of shapes rather
+ * than a column of identical squares. A Site's own Block Type still falls back to the generic
+ * one, which is correct -- this package cannot know what somebody else's Block looks like.
+ */
 export const ICONS_BY_BLOCK: Record<string, (props: IconProps) => React.JSX.Element> = {
   heading: HeadingIcon,
   text: TextIcon,
+  prose: ProseIcon,
   image: ImageIcon,
+  eyebrow: EyebrowIcon,
+  button: ButtonIcon,
+  features: FeaturesIcon,
+  stats: StatsIcon,
+  testimonial: TestimonialIcon,
+  logos: LogosIcon,
+  cta: CtaIcon,
+  pricing: PricingIcon,
+  accordion: AccordionIcon,
+  gallery: GalleryIcon,
+  carousel: CarouselIcon,
+  map: MapIcon,
+  embed: EmbedIcon,
+  compare: CompareIcon,
+  social: SocialIcon,
+  contact: ContactIcon,
   menu: MenuIcon,
   logo: LogoIcon,
 };

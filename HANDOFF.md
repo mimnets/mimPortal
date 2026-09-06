@@ -402,7 +402,10 @@ Honest list. None of it is hidden behind a green tick.
   in ADR-0012, but there is no "where is this used?" view.
 - **AVIF and SVG upload without dimensions.** They render; just without width and height.
 - **No caching anywhere.** Every request reads the database. Deliberate.
-- **The Medium and Low audit bands are untouched** — 56 findings. `research.md` has them all
+- **The Medium and Low audit bands are mostly untouched.** Six of the second audit's were
+  closed on 6 September, four of them by earlier sessions that never went back to say so --
+  which is the thing to know about that file: verify a finding before acting on it, because
+  the code moves and the audit does not. `research.md` has them all
   with a file and a line number, so picking one up costs no investigation.
 
 ## What is next
@@ -412,7 +415,7 @@ images as next after they had shipped. It defers now, which is the only way two 
 in agreement:
 
 - **[docs/FEATURES.md](./docs/FEATURES.md)** — the inventory. What is built, what is partly
-  built, what is planned, and the sixty-three open audit findings.
+  built, what is planned, and the open audit findings.
 - **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for. M10.5, M11
   and M12 were all written on 5 September. M11 has met its exit criterion and has two small
   things left; M10.5 and M12 are untouched.
