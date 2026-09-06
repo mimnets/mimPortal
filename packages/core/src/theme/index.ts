@@ -446,7 +446,16 @@ export function themeToCss(theme: Theme): string {
     `--mn-measure: ${theme.measure};`,
   ];
 
-  return `:root {\n  ${declarations.join("\n  ")}\n}`;
+  // Nothing this function emits may contain `</`, whatever reached it and however it got
+  // here. `\/` is a valid CSS escape for `/` and is inert in every value below, so a
+  // legitimate stylesheet is unchanged -- the grain SVG percent-encodes its own brackets and
+  // no font stack, colour, length or gradient contains the sequence.
+  //
+  // This is the half that survives the next token family. The schema above decides what a
+  // Site may *state*; this decides what the page may *contain*, and a new family added to
+  // `declarations` without a matching schema rule is covered by it on the day it lands.
+  const styles = `:root {\n  ${declarations.join("\n  ")}\n}`;
+  return styles.replace(/<\//g, "<\\/");
 }
 
 function kebab(value: string): string {
@@ -472,8 +481,36 @@ const length = z
   // derived, which is a round trip nobody would have run until a client did.
   .regex(/^(0|\d{1,3}(\.\d{1,2})?(px|rem))$/, "A length like 8px, 0.5rem or 0");
 
-/** A font stack. Punctuation that could close a CSS declaration is refused. */
-const stack = z.string().min(1).max(200).regex(/^[^;{}()@]+$/, "A font stack, not a declaration");
+/**
+ * A font stack: the characters font names are made of, and nothing else.
+ *
+ * This was a denylist of `;{}()@` with the comment "punctuation that could close a CSS
+ * declaration". That was true and it was the wrong alphabet. `themeToCss` output is injected
+ * with `dangerouslySetInnerHTML`, and the HTML parser ends a `<style>` at the first `</style`
+ * whatever the CSS around it says -- so escaping the *declaration* was never the boundary that
+ * mattered, and `<`, `>` and `/` were all admitted.
+ *
+ * An allowlist rather than a longer denylist, because the failure mode of a denylist is a
+ * character nobody thought of and the failure mode of an allowlist is a font that needs one.
+ * The full stop is admitted deliberately: font names contain them, and the old denylist
+ * admitted them, so a Theme already stored could carry one. Tightening past what is stored is
+ * how a Site silently loses its Theme -- `activeTheme` re-validates on read and falls back to
+ * `theme.ts` behind a single log line, which is the failure the derived radius scale had.
+ * A full stop can close neither a declaration nor an element, so it costs nothing here.
+ *
+ * It covers every stack in the Dashboard's list and in `defaultTheme`. It deliberately does
+ * not cover the `var(--mn-font-display)` forms in `starter/theme.ts`: those enter through
+ * `defineTheme` from code, never through this schema, which is the distinction ADR-0019 draws
+ * between what is asked for and what is derived.
+ *
+ * `themeToCss` guards the same ground from the other side, for values that never came through
+ * here at all. Neither guard is sufficient alone.
+ */
+const stack = z
+  .string()
+  .min(1)
+  .max(200)
+  .regex(/^[A-Za-z0-9 ,'"._-]+$/, "A font stack: names, commas, quotes and hyphens");
 
 /**
  * The schema a generated Theme is checked against.
