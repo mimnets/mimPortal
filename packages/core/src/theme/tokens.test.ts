@@ -179,12 +179,63 @@ describe("what reaches the stylesheet", () => {
    * round trip nobody runs until a client does.
    */
   it("accepts everything the scales derive, because the Dashboard posts them back", () => {
-    for (const base of ["0", "10px", "0.5rem", "6px"]) {
+    // Every one of these is a base `themeSchema` accepts. The four this started with -- "0",
+    // "10px", "0.5rem", "6px" -- all happen to halve into two decimals, so the test passed
+    // while the derivation could still produce values the same schema refused. The rem bases
+    // below are the ones that caught it: 0.25rem halves to 0.125rem, a third decimal, and
+    // 500px doubles to 1000px, a fourth digit.
+    for (const base of [
+      "0",
+      "10px",
+      "0.5rem",
+      "6px",
+      "0.25rem",
+      "0.75rem",
+      "1.25rem",
+      "3px",
+      "500px",
+      "999px",
+    ]) {
       const theme = defineTheme({ radius: { base }, border: { base: base === "0" ? "1px" : base } });
 
       expect(() =>
         themeSchema.parse({ colors: PALETTE, radius: theme.radius, border: theme.border }),
       ).not.toThrow();
+    }
+  });
+
+  it("derives a scale inside the grammar the schema accepts, for every base it accepts", () => {
+    // The sampled test above is a tripwire; this is the rule. Bases are enumerated rather
+    // than chosen, so the next person to widen `length` or change `scaleLength` cannot pick
+    // fixtures that happen to survive. This is the same round trip bare "0" was admitted
+    // for, one step out, and it is the third instance of that shape on this branch.
+    const bases: string[] = ["0"];
+    for (const unit of ["px", "rem"]) {
+      for (const whole of [0, 1, 3, 7, 12, 99, 250, 499, 500, 999]) {
+        for (const decimal of ["", ".5", ".25", ".75", ".01", ".99"]) {
+          bases.push(`${whole}${decimal}${unit}`);
+        }
+      }
+    }
+
+    const accepted = bases.filter(
+      (base) => themeSchema.safeParse({ colors: PALETTE, radius: { base } }).success,
+    );
+    expect(accepted.length).toBeGreaterThan(50);
+
+    for (const base of accepted) {
+      const theme = defineTheme({ radius: { base }, border: { base } });
+      const parsed = themeSchema.safeParse({
+        colors: PALETTE,
+        radius: theme.radius,
+        border: theme.border,
+      });
+
+      expect(
+        parsed.success,
+        `a Site stating radius.base "${base}" derives a scale its own schema refuses: ` +
+          JSON.stringify(theme.radius),
+      ).toBe(true);
     }
   });
 

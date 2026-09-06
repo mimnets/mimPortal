@@ -194,7 +194,16 @@ function scaleLength(value: string, factor: number): string {
   if (!parsed) return `calc(${value} * ${factor})`;
 
   const scaled = Number(parsed[1]) * factor;
-  return scaled === 0 ? "0" : `${Number(scaled.toFixed(4))}${parsed[2]}`;
+  if (scaled === 0) return "0";
+
+  // Rounded and bounded to what `length` accepts, because this scale is not private: the
+  // Dashboard posts the whole derived scale back and `activeTheme` re-validates it on read.
+  // Four decimals meant halving a two-decimal rem produced a third (0.25rem -> 0.125rem) and
+  // doubling a large base a fourth digit (500px -> 1000px), so a Site could not save a Theme
+  // this had itself derived. That is the same round trip bare "0" was admitted for, one step
+  // out; deriving inside the grammar is what stops there being a third instance.
+  const bounded = Math.min(scaled, 999);
+  return `${Number(bounded.toFixed(2))}${parsed[2]}`;
 }
 
 /** The corner scale a Site gets from stating one value. */
