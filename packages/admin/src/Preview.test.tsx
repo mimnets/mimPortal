@@ -104,3 +104,50 @@ describe("clicking a Section", () => {
     });
   });
 });
+
+describe("the band behind a Section", () => {
+  /**
+   * The preview's whole claim is that it is honest, and for a Section's band it was not:
+   * setting one to Dark or Mesh changed nothing here and only appeared after publishing.
+   * The band is now drawn with the same class and the same attributes `SlotView` emits, so
+   * `blocks.css` paints it and the two cannot drift.
+   */
+  function band(overrides: Partial<{ tone: string; padding: string; divider: string }> = {}) {
+    const layout = pageWithOneSection();
+    Object.assign(layout.slots.main[0]!, overrides);
+
+    const { container } = render(
+      <Preview
+        layout={layout}
+        registry={registry}
+        selection={null}
+        dispatch={vi.fn()}
+        context={emptyContext()}
+      />,
+    );
+
+    const el = container.querySelector(".mn-ed-band");
+    if (!el) throw new Error("the preview drew no band");
+    return el;
+  }
+
+  it("uses the Site's own Section class, not a copy of it", () => {
+    // The reason this works at all: `blocks.css` is already loaded in the Dashboard, so the
+    // band is painted by the Page's stylesheet rather than by a second one that would drift.
+    expect(band().classList.contains("mn-section")).toBe(true);
+  });
+
+  it("carries the tone, so a coloured band looks coloured", () => {
+    expect(band({ tone: "dark" }).getAttribute("data-tone")).toBe("dark");
+    expect(band({ tone: "mesh" }).getAttribute("data-tone")).toBe("mesh");
+  });
+
+  it("carries the height and the bottom edge too", () => {
+    expect(band({ padding: "large" }).getAttribute("data-padding")).toBe("large");
+    expect(band({ divider: "curve" }).getAttribute("data-divider")).toBe("curve");
+  });
+
+  it("leaves the edge off when it is straight, as the renderer does", () => {
+    expect(band({ divider: "none" }).hasAttribute("data-divider")).toBe(false);
+  });
+});

@@ -31,3 +31,32 @@
 .mn-skip:focus {
   left: 0;
 }
+
+/* Where a picture is used, on its row in the media library. Quiet by default: this is
+   reference information an Author reads only when they are about to delete something. */
+.mn-media-usage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.625rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b6b78;
+}
+
+.mn-media-usage.is-unused {
+  font-style: italic;
+}
+
+.mn-media-use a {
+  color: inherit;
+}
+
+.mn-media-use em {
+  font-style: normal;
+  opacity: 0.75;
+}
+
+/* A Shared Slot is on every Page at once, which is the one case worth a second glance. */
+.mn-media-use[data-state="shared"] {
+  font-weight: 600;
+}
