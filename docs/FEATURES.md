@@ -85,7 +85,7 @@ rather than a failed Preset. Optional, and off until a key is set — see
   something to draw the new Blocks with. The Starter's own stylesheet is 33 lines.
 - **A publish guard** that checks the artefact as well as the package manager.
 - **19 architecture decision records** in `docs/adr/`.
-- **609 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
+- **643 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
 
 ---
 
@@ -143,7 +143,7 @@ with Neon · Blueprints and the responsive preview (the rest of M10).
 ### Planned on 5 September
 
 Raised the same day, and written into the roadmap rather than left as wishes. M11 has since
-met its exit criterion and has two small things left; M10.5 and M12 are untouched:
+met its exit criterion and is finished; M10.5 and M12 are untouched:
 
 - **M10.5** — a Header that stays (scrolls, sticky or fixed), per-Section width so a gallery or
   a map can run edge to edge, popovers for a biography or a service's detail, and a button row

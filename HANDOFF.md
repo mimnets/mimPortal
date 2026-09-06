@@ -21,12 +21,13 @@ it can install a real package rather than one from a disposable local registry.
 Read what `pnpm release` prints rather than trusting it. A-28 was `pnpm build:packages`
 matching no packages at all and being willing to publish whatever happened to be in `dist`.
 
-Then **A-26 and A-27**, which have now been deferred three times and want a person with an
-opinion rather than another session.
+Nothing else needs a person. A-26 and A-27 — the button-text contrast decision this file had
+deferred three times — were settled the same day; `readableOn` measures both options and takes
+the more readable, which is not the same as lowering the threshold and the tests say why.
 
-`main` is at the merge of `fix/h1-theme-css-injection`. `pnpm typecheck` is 7/7, `pnpm test`
-is 609 passing with the Docker suites up, and `turbo build --force` is warning-free on an
-uncached build.
+`main` carries every milestone from M0 to M11, the second audit's H-1, and the punch-list items
+that did not need a decision. `pnpm typecheck` is 7/7, `pnpm test` is 643 passing with the
+Docker suites up, and `turbo build --force` is warning-free on an uncached build.
 
 The commits below are M11 and everything that followed it. The first four are the milestone;
 the nine after them are its review.
@@ -257,17 +258,21 @@ registry rather than by editing anything now. Its upgrade step is in the changes
 dependency, add `import "@mimnets/blocks/blocks.css";` above `import "./globals.css";`, then
 delete the Block sections from its own `globals.css`.
 
-**3. Two colour decisions are still deliberately left to you**, with their numbers pinned in
-`packages/core/src/theme/derive.test.ts`. `readableOn` picks white on the default accent at
-3.27:1 where black would be 5.77:1, and changing it flips button text on every Site whose accent
-sits in that range — a design decision rather than a bug fix, which is why it was recorded and
-not taken. See A-26 and A-27.
+**3. The two colour decisions were taken on 6 September**, after counting rather than
+arguing: five of the ten button colours the product ships were below 4.5:1, all of them
+accents, and every one passes in black. `readableOn` measures both options and takes the more
+readable.
 
-The previous version of this file said these were worth settling as part of M11. M11 has now
-largely landed and they were not settled, so that is a judgement this file has already deferred
-once: nothing in the token work depended on it, and `readableOn` still governs text on every
-coloured band on every Site. It is a five-minute change and an hour of looking at Sites, and it
-wants a person with an opinion rather than a session.
+Deliberately *not* a smaller threshold. The textbook crossover of 0.1791 would have flipped the
+default primary from 4.50 to 4.19 — so `derive.test.ts` now rejects both wrong answers, which
+is what stops the plausible one being mistaken for the correct one later. See A-26 and A-27,
+both marked closed in the audit.
+
+It had been deferred three times — once as part of M11, and twice by versions of this file
+saying it wanted a person rather than a session. What settled it was not an opinion in the end
+but a count: every button colour the product ships, both options measured, side by side. Five
+of ten were failing and all five were fixable, which turned a design argument into an
+arithmetic one. Worth remembering the next time something is recorded rather than taken.
 
 ## What exists today
 
@@ -340,7 +345,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **609 passing, 7 skipped, about a minute.** It was 2 failing, 152 passing
+`pnpm test` — **643 passing, 7 skipped, about a minute.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
