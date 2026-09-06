@@ -1,110 +1,199 @@
-# Handoff — 5 September 2026
+# Handoff — 6 September 2026
 
 Where Mimnets stands, what is not finished, and where to pick up. Read this first; it is
 written to be the only thing you need before starting.
 
-The previous handoff was dated 3 September. If you are reading a copy of that one, discard
-it: it says component tests are blocked on a pnpm store mismatch, and that diagnosis was
-wrong — see the toolchain note below.
+**This replaces the second 5 September version at `2232ced`.** That one said the next
+session's job was to review and merge `feat/m11-theme-tokens`. The review has happened, it
+found five things worth stopping for, all five are fixed, and the branch is pushed — so its
+whole "Where to start" is spent. Anything older than this file is safe to discard; if you are
+reading a copy dated 3 September, see the toolchain note below for why its central claim was
+wrong.
 
 ## Where to start
 
-**M11's Theme tokens are built, on `feat/m11-theme-tokens`. The branch is not merged and not
-pushed.** The next session's job is either to review and merge it, or to carry on with the
-rest of M11 on top of it. Everything else below is context.
+**Merge `feat/m11-theme-tokens`.** Thirteen commits, pushed, reviewed, nothing outstanding.
+`pnpm typecheck` is 7/7, `pnpm test` is 588 passing with the Docker suites up, and
+`turbo build --force` is warning-free on an uncached build. Then the job below it is
+**A-26 and A-27**, which have now been deferred twice and want a person rather than a session.
+
+The first four commits are the milestone. The nine after them are the review.
+
+| | Commit | What it is |
+| --- | --- | --- |
+| 1 | `5fbea22` | The prerequisite: four token families a Theme could not say before |
+| 2 | `15ba162` | The CSS-only looks: mesh, grain and gradient type, all from the palette |
+| 3 | `285dcf0` | The variants: a Block Type declares its looks the way it declares its fields |
+| 4 | `2232ced` | The previous handoff |
+| 5 | `900f667` | The Dashboard was deleting `theme.texture` on every colour edit |
+| 6 | `5a72cbd` | The derived radius scale could fail the schema that validates it |
+| 7 | `b6ff6f1` | An unknown Section tone blanked the Page instead of repainting the band |
+| 8 | `46273ce` | AI page generation had silently lost the button-colour choice |
+| 9 | `a5ccb49` | Tests for the mechanism the milestone is named for, which had none |
+| 10 | `3e2f67d` | A flat card on a mesh band was the colour of the band |
+| 11 | `44f9f8f` | `padding` gets the fallback `tone` got; `layout` documented as keeping none |
+| 12 | `ecec5a3` | Presets and seed stopped minting documents in the legacy shape |
+| 13 | `fd31e9d` | The M11 changeset, which had only ever described M8.5 |
+
+**M11's exit criterion is met.** The same testimonial Block looks like three different Sites —
+card, quote, minimal — with byte-identical markup and no change to its `render`. Changing six
+values in `theme.ts` still rebrands all three, because every rule in all three is written
+against tokens.
+
+### What the review found, and the one shape it kept finding
+
+Worth reading before writing the next token family, because it was the same mistake five
+times: **a guard that already existed, with one new case not added to it.**
+
+| The guard, already written | The case nobody added |
+| --- | --- |
+| Three Theme families "carried, not edited" so a save cannot drop them | `texture` — the one the Starter actually sets |
+| The `[data-tone="surface"]` card-collision override | `mesh`, which paints itself in the same colour |
+| `length` widened to admit bare `0`, for "a round trip nobody runs until a client does" | decimals: halving a 2-dp rem gives a third |
+| I-04: a bad Block is dropped, not blanking the Page | a bad **Section** tone, which still blanked it |
+| The AI *theme* prompt, updated for `surface` and `texture` | the AI *page* prompt, never updated for variants |
+
+None of them was architectural and none took more than a few lines. The review method that
+found them is the one worth repeating: for each existing guard, ask whether the five new
+families were added to it.
+
+**The tests were the other half.** Disabling the legacy-variant lift used to fail **one test
+out of 565** — four of its six tests asserted the enum default, which is what you get with no
+migration at all. Deleting `data-variant` from the renderer entirely failed **nothing**, which
+meant the milestone's headline mechanism rested on a line no test read. Both are covered now;
+disabling the lift fails seven tests across three files. Every fix on commits 5 to 13 was
+either written test-first or verified by reverting it and watching its test go red.
 
 ### What landed
 
-The prerequisite in [docs/ROADMAP.md § M11](./docs/ROADMAP.md) — the section headed *"First,
-the Theme has to be able to say anything"*. A Theme could express six token families; it now
-expresses ten:
+A Theme could express colour, two typefaces, one corner radius and two spacing values: six
+families, one radius token used twenty-six times, no shadow token at all. It now expresses
+eleven, and the Block library is wired through all of them.
+[docs/ROADMAP.md § M11](./docs/ROADMAP.md) carries each decision and what it was weighed
+against; [docs/FEATURES.md](./docs/FEATURES.md) carries the inventory. The short version:
 
-- **`elevation: { none, low, high }`**, mixed from the Site's own primary with `color-mix()`
-  rather than grey. The two hard-coded `box-shadow` rules in `packages/blocks/src/blocks.css`
-  are gone.
-- **`radius: { none, sm, base, lg, full }`** — a scale derived from the one value a Site still
-  states. The twenty-six uses are spread across it by what each thing is: a button is `sm`, a
-  lightbox image is `lg`, an avatar is `full`. `--mn-radius` is still emitted as the base,
-  because Ledger's own stylesheet is written against it.
-- **`border: { hairline, base, bold }`**.
-- **`surface: "flat" | "bordered" | "raised" | "glass"`** — one word that redraws the quote,
-  the plan, the accordion item and the carousel slide at once, through four `--mn-surface-*`
-  properties.
-- **`texture: "none" | "grain"`** — an inline `feTurbulence` under a kilobyte, laid over
-  every band as a background layer.
+- **`elevation`**, **`radius`** as a five-step scale, **`border`** as three weights,
+  **`surface`** as one of four keywords, **`texture`** as grain or nothing.
+- A **`mesh`** Section tone and a **`gradient`** Block tone, built on top of them.
+- **Variants**: `defineBlock` takes `variants`, the registry builds the enum per Block Type,
+  the renderer emits `data-variant`, and the Editor generates the control the same way it
+  generates every settings form.
 
-And the looks built on top of them, which are the rest of what the milestone calls "modern is
-mostly CSS now":
+Three of those are the ones to have opinions about. The tinted shadow is the milestone's own
+"highest-value line" and it is one `color-mix()`: every card, quote and plan on a Site now
+carries a shadow mixed from that Site's own primary rather than grey. `surface` is one word
+that redraws four Block Types at once. And the first declared variant is always what the
+Block already looked like, which is the rule that let all of this ship without migrating
+anything.
 
-- **A `mesh` Section tone** — four soft radial blobs of the Site's own two brand colours over
-  its surface colour, composed by `themeToCss` and never stated, so there is nothing here a
-  client can take off-brand.
-- **A `gradient` Block tone** — headings painted with a run between `primaryText` and
-  `accentText`. Headings only, and the reasoning is in the roadmap.
+`starter/theme.ts` states `surface: "raised"` and `texture: "grain"`. Both are the
+demonstration and both are one-word reverts if you disagree. The Site was reset to `theme.ts`
+during the session, so <http://localhost:3000> is wearing "Ink & Ember" rather than the
+generated Theme it had been.
 
-`starter/theme.ts` states `surface: "raised"`, which is the demonstration and a one-word
-revert if you disagree with it. `sites/ledger` is deliberately untouched: it installs the
-published `@mimnets/core`, which has none of this until the publish above happens.
+`sites/ledger` is deliberately untouched. It installs the published `@mimnets/core`, which
+has none of this until the publish described further down happens.
 
-**Tests: 558 passing, 7 skipped**, up from 508. The new ones are in
-`packages/core/src/theme/tokens.test.ts`, `packages/core/src/layout/tones.test.ts` and
-`packages/core/src/blocks/variants.test.ts`, and they were checked by reverting the decisions
-they cover and watching them go red.
+### The one thing that could have gone wrong quietly
 
-**Verified rendered**, as this file asked, and it earned its keep. All four surfaces, the
-mesh band, gradient type and the grain were checked in a browser against the real
-`blocks.css`. Two defects were found that way and only that way: gradient statistics that all
-landed on the same muddy olive, and a stacking context that trapped the gallery lightbox and
-the mobile nav drawer inside their own Section. The Site was reset to `theme.ts`, so
-<http://localhost:3000> is wearing "Ink & Ember" with `surface: "raised"` and
-`texture: "grain"` rather than the generated Theme it had been.
+A button's look lived in `props.style` and prose's in `props.width`, on every Page ever
+written — and those two Block Types no longer declare those fields. An unknown key is
+stripped in silence, so every accent button on every Site would have come back primary: no
+error, no dropped Block, nothing in a log.
 
-**And the variants**, which is what the milestone is named for and what its exit criterion
-tests. `defineBlock` takes `variants`, the registry builds the enum per Block Type, the
-renderer emits `data-variant`, and the Editor generates the control from that list the same
-way it generates every settings form. The testimonial has card, quote and minimal — the
-markup is byte-identical in all three and `render` was not touched.
+`variantWasField` names the old field and `registry.ts` lifts the value across as a Page is
+read. An explicitly chosen variant always wins, so a Page saved once never consults the old
+field again, and a Page rewrites itself into the new shape the next time an Author saves it.
+There is no database migration and no script, and the hook is deletable once every Site has
+re-saved — worth deleting then. `packages/core/src/blocks/variants.test.ts` is mostly about
+this, including the shape almost every stored Block is actually in: a `style` object that
+predates variants and has no `variant` key.
 
-**The migration is the part to know about.** A button's look lived in `props.style` and
-prose's in `props.width`, on every Page ever written, and `props` has stopped carrying them —
-an unknown key is stripped in silence, so without this every accent button on every Site
-would have come back primary with no error and nothing dropped. `variantWasField` names the
-old field and `registry.ts` lifts the value across as a Page is read; a Page rewrites itself
-into the new shape the next time an Author saves it. There is no database migration and no
-script, and the hook is deletable once every Site has re-saved. `variants.test.ts` is mostly
-about this.
+### What is left of M11
 
-### What is still M11, and not started
+- **Section dividers** — an angled or curved edge between two bands, which is `clip-path` and
+  a Section property. ADR-0013 is why it belongs on the Section rather than on a Block.
+- **`field.token`** — choose one of the Theme's own colours, so a Block that offers a choice
+  still cannot offer an unreadable one.
+- **CSS 3D**, which is held back rather than missed. A tilt on hover is a hover affordance and
+  a quote is not something a visitor clicks; the tinted elevation already carries the depth it
+  was for. It belongs on whatever a variant makes genuinely interactive. The roadmap has the
+  argument.
 
-- **Section dividers** (`clip-path` on a Section, which is where ADR-0013 says a band's
-  business belongs) and **`field.token`** — choose one of the Theme's own colours, so a Block
-  that offers a choice still cannot offer an unreadable one. There is no `field.color` and
-  there should not be.
-- **CSS 3D**, which is held back rather than missed: a tilt on hover is a hover affordance,
-  and a quote is not something a visitor clicks. It belongs on whatever the variants make
-  genuinely interactive. The roadmap carries the argument.
+Nineteen Block Types have no variants yet. Adding them is now `defineBlock` work and CSS,
+which was the point.
 
-### Three things to know before continuing
+**The shim is now deletable on schedule, and was not before.** `variantWasField` is documented
+as removable once every Site has re-saved its Pages — but the three built-in designs and
+`pnpm seed` were still writing `props.style` on every button, so every apply and every seed
+minted a fresh legacy document for it to rescue. They state `style.variant` now. The shim
+itself stays until real Sites have re-saved, and it is tested against the real `buttonBlock`
+and `proseBlock` rather than only against stand-ins.
 
-- **`elevation`, the mesh and the text gradient are absent from `themeSchema`** and always
-  derived. A `box-shadow` has no shape a regex can check and it is compiled into a `<style>`
-  tag on every Page; the other two are compositions of the palette rather than values a Site
-  has an opinion about. See
-  [ADR-0019](./docs/adr/0019-a-theme-derives-what-it-can-check.md): ask for what a schema can
-  prove, derive what the Theme already knows. `surface` and `texture` *are* accepted, because
-  a closed set of words is a design choice rather than a string.
-- **The first declared variant is what the Block already looked like**, and it is the
-  default. That is the rule that let variants ship without migrating anything, and it is the
-  rule to keep when adding variants to the other nineteen Block Types.
-- **Growing a tone enum is the change that can break every stored Page**, which is what
-  `tones.test.ts` is for. Both are `.default(...)`, so a Section written before any of this
-  still parses; a Block whose tone this Site does not know is dropped rather than blanking
-  the Page (I-04), and there is a test for each.
+### What to know before continuing
+
+- **Ask for what a schema can prove; derive what the Theme already knows.**
+  [ADR-0019](./docs/adr/0019-a-theme-derives-what-it-can-check.md) is the rule the last two
+  commits were built against, and the rule the next ones should be. `elevation`, the mesh and
+  the text gradient are absent from `themeSchema` entirely and always derived — a `box-shadow`
+  has no shape a regex can check, and every one of these is compiled into a `<style>` tag on
+  every Page. `surface` and `texture` *are* accepted, because a closed set of words is a
+  design choice rather than a string.
+- **The first declared variant is what the Block already looked like**, and it is the default.
+  Keep that rule when the other nineteen Block Types get variants; it is the whole reason
+  nothing had to be migrated.
 - **A scale is derived from `base`, never merged onto the default's.** Merging hands a Site
-  that states `base: "0"` the default's 3px `sm`. There is a test named for that failure.
+  that states `radius: { base: "0" }` the default's 3px `sm` — Ledger asking for square corners
+  and getting two rounded ones it could not see in its own file. There is a test named for it.
+- **Growing an enum is the change that can break every stored Page.** Both tone enums grew
+  this session. Both are `.default(...)`, so a Section written before any of it still parses,
+  and a Block whose tone this Site does not know is dropped rather than blanking the Page
+  (I-04). `packages/core/src/layout/tones.test.ts` covers each.
 - **There is no `field.color` and there should not be.** A free hex picker is
   [ADR-0003](./docs/adr/0003-sections-and-columns-not-free-canvas.md)'s mistake in a different
-  hat. If a Block needs to offer a choice, it offers Theme tokens.
+  hat. If a Block needs to offer a choice, it offers Theme tokens — which is what
+  `field.token` above is for.
+
+### Look at it in a browser, and mean it
+
+This file asked for that before the session started, and it has now paid for itself three
+times. Three defects were found by looking and could not have been found any other way:
+
+- **Gradient statistics.** A gradient needs width to be a gradient. Across a box two characters
+  wide every glyph lands on the run's midpoint, so 24 / 12 / 0 came out as three identical
+  muddy olives — worse than either brand colour. Gradient type is headings only because of it.
+- **A stacking context.** Grain was an absolutely-positioned overlay first, which needed a
+  `z-index` on `.mn-columns` to keep content above it — and that traps the gallery lightbox
+  (`z-index: 50`) and the mobile nav drawer (`z-index: 30`) inside whatever Section they live
+  in. An open drawer painted under the Page below it, on every phone. Grain is a background
+  layer now and needs no stacking context at all.
+- **The Editor does not paint Section tones in its preview.** Found on 6 September, setting a
+  band to Mesh and watching the split view not change; it only appears on the published Page.
+  Pre-existing and not M11's doing — the Section chrome in the Editor is the Editor's own UI
+  rather than a `.mn-section` — but the Editor's whole claim is that the preview is honest,
+  and for a Section's tone it is not. Only tone was checked; padding and background are the
+  same kind of Section property and worth checking before anyone assumes either way. Worth
+  fixing or worth writing down as a limit; it is currently neither.
+
+None of the three was a failing test. All three were a screenshot.
+
+The mesh band is worth looking at once before you touch it. `/test` currently carries one,
+with a testimonial on it, published on 6 September to see the band with a card on it. Delete
+the Section or restore an earlier version from that Page's History when it stops being
+useful — it is a demonstration, not content.
+
+### Two hazards this session hit, both already in this file's advice
+
+**A CSS escape written through a heredoc came back as a control character.** The escape for an
+opening quotation mark was read as *octal*, so U+0081 was written into `blocks.css` where the
+character belonged. Same family as the NUL byte in `assist.ts`, and just as invisible — it
+renders as nothing and greps as nothing. The file was swept for others and is clean. Write the
+character itself, or build the string from a character code, rather than trusting an escape
+through two layers of quoting.
+
+**A `git checkout <file>` meant to undo a deliberate break threw away that file's whole
+session.** It had been copied aside first, so it cost a minute. Back up before breaking a file
+on purpose, or break it in a way you can reverse exactly.
 
 ### What not to do on this branch
 
@@ -134,8 +223,12 @@ until a key is set; see [docs/STOCK.md](./docs/STOCK.md).
 
 Three things still need a person:
 
-**1. Publish, if you want it public.** `npm login` is interactive. Then `pnpm release`; a
-changeset exists and `pnpm changeset status` reports all three packages bumping minor. The
+**1. Publish, if you want it public.** `npm login` is interactive. Then `pnpm release`;
+`pnpm changeset status` reports all three packages bumping minor. Read the notes before you
+run it: until 6 September the only changeset described M8.5's eight Block Types, so the status
+command reported a ready publish while the release notes said nothing about eleven token
+families, variants, or the two `props` fields that no longer exist — which is where
+`sites/ledger` takes its upgrade steps from. There is an M11 changeset now. The
 first publish claims the `@mimnets` scope permanently. Note **A-28**: `pnpm build:packages` had
 been matching no packages at all and would have published whatever was lying in `dist`. It is
 fixed; it is also the reason to read what `pnpm release` says rather than trusting it.
@@ -146,12 +239,17 @@ registry rather than by editing anything now. Its upgrade step is in the changes
 dependency, add `import "@mimnets/blocks/blocks.css";` above `import "./globals.css";`, then
 delete the Block sections from its own `globals.css`.
 
-**3. Two colour decisions were deliberately left to you**, with their numbers pinned in
+**3. Two colour decisions are still deliberately left to you**, with their numbers pinned in
 `packages/core/src/theme/derive.test.ts`. `readableOn` picks white on the default accent at
 3.27:1 where black would be 5.77:1, and changing it flips button text on every Site whose accent
 sits in that range — a design decision rather than a bug fix, which is why it was recorded and
-not taken. See A-26 and A-27. **Worth settling as part of M11**, since that milestone is about
-what a Theme can express and this is a question about the same tokens.
+not taken. See A-26 and A-27.
+
+The previous version of this file said these were worth settling as part of M11. M11 has now
+largely landed and they were not settled, so that is a judgement this file has already deferred
+once: nothing in the token work depended on it, and `readableOn` still governs text on every
+coloured band on every Site. It is a five-minute change and an hour of looking at Sites, and it
+wants a person with an opinion rather than a session.
 
 ## What exists today
 
@@ -224,7 +322,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **530 passing, 7 skipped, about thirty seconds.** It was 2 failing, 152 passing
+`pnpm test` — **588 passing, 7 skipped, about a minute.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -298,11 +396,11 @@ in agreement:
 - **[docs/FEATURES.md](./docs/FEATURES.md)** — the inventory. What is built, what is partly
   built, what is planned, and the sixty-three open audit findings.
 - **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for. M10.5, M11
-  and M12 were all written on 5 September. M11's prerequisite is built; M10.5 and M12 are
-  untouched.
+  and M12 were all written on 5 September. M11 has met its exit criterion and has two small
+  things left; M10.5 and M12 are untouched.
 
-The immediate job is at the top of this file: **review or continue
-`feat/m11-theme-tokens`**.
+The immediate job is at the top of this file: **merge `feat/m11-theme-tokens`**, then settle
+A-26 and A-27.
 
 
 ## The toolchain, and a diagnosis that was wrong

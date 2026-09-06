@@ -19,7 +19,16 @@ export function describeRegistry(registry: BlockRegistry): string {
   const blocks = registry.blocks
     .map((block) => {
       const fields = describeFields(block.fields as FieldsShape, "    ");
-      return `  ${block.name} — ${block.label}\n${fields}`;
+      // Variants are described here for the same reason fields are: a generator told
+      // nothing about them cannot use them. These were `field.select` entries until they
+      // became variants, so leaving them out of this prompt degraded nothing visibly --
+      // it silently removed a choice the model used to make, and every generated button
+      // came back the first variant.
+      const variants = block.variants
+        ? `\n    (looks: ${block.variants.map((v) => `"${v}"`).join(" | ")} - set as ` +
+          `"style": { "variant": "${block.variants[0]}" })`
+        : "";
+      return `  ${block.name} — ${block.label}\n${fields}${variants}`;
     })
     .join("\n\n");
 
@@ -77,8 +86,11 @@ export function describeLayoutRules(): string {
     '    "layout": one of ' + Object.keys(COLUMN_LAYOUTS).map((l) => `"${l}"`).join(" | ") + ",",
     '    "tone": one of ' + SECTION_TONES.map((t) => `"${t}"`).join(" | ") + ",",
     '    "padding": one of "normal" | "large" | "flush",',
-    '    "columns": [ { "blocks": [ { "type": "...", "props": { ... } } ] } ]',
+    '    "columns": [ { "blocks": [ { "type": "...", "props": { ... }, "style": { ... } } ] } ]',
     "  }",
+    "",
+    'A block\'s "style" is optional and carries its look: { "variant": "..." }, using one',
+    "of the looks listed for that block type above. Omit it to get the first one.",
     "",
     "Rules that are enforced, not suggestions:",
     "- The number of columns must match the layout exactly: \"1\" has one, \"1-1\" has two,",
@@ -95,6 +107,8 @@ export function describeComposition(): string {
     "COMPOSITION",
     "- Vary the tone between sections. A page where every section is \"default\" reads as a",
     "  document; alternating default / surface / primary / dark is what makes it look designed.",
+    "- \"mesh\" is a soft wash of the Site's own two brand colours. It suits a hero or a",
+    "  closing band; using it more than once on a page spends the effect.",
     "- Open with a hero: an eyebrow, a heading, a sentence or two, and a button. Give that",
     "  section padding \"large\".",
     "- Close with a call to action in a \"primary\" or \"dark\" section.",

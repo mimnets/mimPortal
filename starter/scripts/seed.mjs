@@ -122,7 +122,8 @@ async function seedMedia(sql) {
 
 const id = (prefix) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
-const block = (type, props) => ({ id: id("blk"), type, props });
+const block = (type, props, style) =>
+  style ? { id: id("blk"), type, props, style } : { id: id("blk"), type, props };
 
 const emptyImage = () => ({ key: "", alt: "", width: null, height: null });
 const image = (key, alt) => ({ key, alt, width: null, height: null });
@@ -246,7 +247,14 @@ const pages = [
               "Slots hold Sections, Sections hold Columns, Columns hold Blocks. Nothing floats, " +
               "nothing overlaps, and nothing a client drags can break the layout.",
           }),
-          block("button", { label: "See how it works", href: "/about", style: "accent", size: "large" }),
+          // The seed inserts raw JSON without parsing it, so whatever shape is written here is
+          // the shape that lands in the database. Stating the variant keeps `pnpm seed`
+          // from creating a fresh legacy document on every run.
+          block(
+            "button",
+            { label: "See how it works", href: "/about", size: "large" },
+            { variant: "accent" },
+          ),
         ]),
       ],
       { padding: "large", background: { key: "seed/hero.svg", overlay: 0.5 } },

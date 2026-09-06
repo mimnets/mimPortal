@@ -30,7 +30,11 @@ export interface BuiltInPreset {
 
 /* ---- Small helpers, so the designs below read as designs ------------------ */
 
-const block = (type: string, props: Record<string, unknown>) => ({ type, props });
+const block = (
+  type: string,
+  props: Record<string, unknown>,
+  style?: Record<string, unknown>,
+) => (style ? { type, props, style } : { type, props });
 const column = (blocks: unknown[]) => ({ blocks });
 
 const section = (
@@ -49,8 +53,16 @@ const heading = (text: string, level = "h2", align = "left") =>
   block("heading", { text, level, align });
 const text = (body: string) => block("text", { body });
 const eyebrow = (t: string) => block("eyebrow", { text: t });
-const button = (label: string, href: string, style = "primary", size = "medium") =>
-  block("button", { label, href, style, size });
+/**
+ * A button's look is a variant, and these designs state it as one.
+ *
+ * They wrote `props.style` until now, which the registry still lifts across for the
+ * Pages already stored on real Sites. But these are new documents, minted every time
+ * somebody applies a design, and writing them in the shape the migration exists to
+ * rescue is what would have kept `variantWasField` alive forever.
+ */
+const button = (label: string, href: string, variant = "primary", size = "medium") =>
+  block("button", { label, href, size }, { variant });
 
 const cta = (h: string, body: string, label: string, href = "/contact") =>
   block("cta", { heading: h, body, buttonLabel: label, buttonHref: href, align: "center" });

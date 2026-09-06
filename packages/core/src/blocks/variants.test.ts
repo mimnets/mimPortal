@@ -183,6 +183,11 @@ describe("the Pages written before variants existed", () => {
     });
 
     // One place to read it from. A Page rewrites itself into this shape on the next save.
+    //
+    // Asserted together with the lift on purpose: `propsSchema` strips an undeclared key
+    // whether or not the lift ran, so on its own the first line is a test of Zod and passes
+    // happily with the whole migration removed.
+    expect(parsed?.style.variant).toBe("accent");
     expect(parsed?.props).not.toHaveProperty("style");
   });
 
@@ -208,6 +213,21 @@ describe("the Pages written before variants existed", () => {
     });
 
     expect(parsed?.style.variant).toBe("primary");
+  });
+
+  it("ignores an old field that is not even a string", () => {
+    // A row hand-edited, written by an older tool, or corrupted. `typeof legacy !== "string"`
+    // is the guard; without it `variants.includes(3)` is merely false and this happens to
+    // work, which is the kind of accident that stops being true when the guard moves.
+    for (const style of [3, null, true, { variant: "outline" }, ["accent"]]) {
+      const parsed = parseBlock({
+        id: "blk-1",
+        type: "button",
+        props: { label: "Book a table", style },
+      });
+
+      expect(parsed?.style.variant).toBe("primary");
+    }
   });
 
   it("does not lift anything for a Block Type that never had an old field", () => {

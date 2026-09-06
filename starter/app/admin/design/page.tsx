@@ -7,6 +7,7 @@ import { aiProvider, aiProviders, visionConfigured } from "../../../lib/ai";
 import { requireDatabaseUrl } from "../../../lib/env";
 import { currentUser } from "../../../lib/session";
 import { DashboardShell } from "../DashboardShell";
+import { editableTheme } from "./editable-theme";
 import {
   applyBuiltInPreset,
   applyPreset,
@@ -57,18 +58,7 @@ export default async function DesignPage() {
     <DashboardShell current="design" person={person} title="Design">
       <ReadyMade presets={await listBuiltInPresets()} onApply={applyBuiltInPreset} />
 
-      <ThemeEditor
-        theme={{
-          colors: { ...active.colors },
-          fonts: { body: active.fonts.body, heading: active.fonts.heading },
-          radius: { ...active.radius },
-          border: { ...active.border },
-          surface: active.surface,
-          spacing: { section: active.spacing.section, gutter: active.spacing.gutter },
-          measure: active.measure,
-        }}
-        onSave={saveTheme}
-      />
+      <ThemeEditor theme={editableTheme(active)} onSave={saveTheme} />
 
       <DesignStudio
         enabled={provider !== null}

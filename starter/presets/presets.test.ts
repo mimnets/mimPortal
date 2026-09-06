@@ -104,6 +104,68 @@ describe("the built-in designs", () => {
     },
   );
 
+  it.each(BUILT_IN_PRESETS.map((preset) => [preset.name, preset] as const))(
+    "%s keeps the button colours its author wrote",
+    (_name, preset) => {
+      /**
+       * These designs still describe a button's colour the way every stored Page does, as
+       * `props.style`, so all three depend on the lift in `registry.ts` to reach the variant
+       * the renderer reads. Disabling that lift used to leave this whole file green: the
+       * check above only asks whether the Block Type is registered, and an accent button
+       * silently becoming a primary one is still a registered button.
+       *
+       * Until the presets are rewritten to state `style.variant` directly -- which is what
+       * lets `variantWasField` be deleted -- this is the assertion standing between a shipped
+       * design and every call to action in it changing colour.
+       */
+      let checked = 0;
+
+      for (const page of preset.pages) {
+        const layout = registry.parseLayout({
+          version: 1,
+          slots: { header: [], main: withIds(page.sections), sidebar: [], footer: [] },
+        });
+
+        for (const section of layout.slots.main) {
+          for (const column of section.columns) {
+            for (const block of column.blocks) {
+              if (block.type !== "button") continue;
+
+              type Written = {
+                type?: string;
+                props?: Record<string, unknown>;
+                style?: Record<string, unknown>;
+              };
+              const source = page.sections.flatMap((s) =>
+                ((s as { columns?: { blocks?: Written[] }[] }).columns ?? []).flatMap(
+                  (c) => c.blocks ?? [],
+                ),
+              );
+              const written = source.find(
+                (b) => b.type === "button" && b.props?.label === block.props.label,
+              );
+
+              // Read either shape on purpose. These designs state `style.variant` now, but
+              // the assertion that matters is "the colour the author wrote is the colour that
+              // survives parsing", and that has to keep holding for a design still written
+              // the old way -- which is every design any Site has stored.
+              const wanted =
+                (written?.style?.variant as string | undefined) ??
+                (written?.props?.style as string | undefined) ??
+                "primary";
+
+              expect(block.style.variant).toBe(wanted);
+              checked += 1;
+            }
+          }
+        }
+      }
+
+      // A design with no buttons would pass every assertion above by having none to fail.
+      expect(checked).toBeGreaterThan(0);
+    },
+  );
+
   it("gives each design a different palette", () => {
     const primaries = BUILT_IN_PRESETS.map((preset) => preset.theme.colors.primary);
     expect(new Set(primaries).size).toBe(primaries.length);

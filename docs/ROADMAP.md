@@ -578,6 +578,42 @@ accordion item, a slide — are not things a visitor clicks. The tinted elevatio
 carries the depth this was for. It is worth doing on whatever M11's variants make genuinely
 interactive, and worth doing there rather than here.
 
+### What the review changed, and why
+
+Reviewed on 6 September, before merging. Five defects, and the interesting thing is that they
+were one defect: **a guard that already existed, with one new case not added to it.** The
+milestone added five token families, and each of them needed adding to a rule somebody had
+already written and already commented. Nobody re-read those rules.
+
+Three of the fixes carry a decision worth keeping rather than merely a patch:
+
+- **Derivation is clamped to the grammar the schema accepts, rather than the schema widened
+  to fit derivation.** `scaleLength` kept four decimals against a `length` that admits two, so
+  a Site stating `radius: { base: "0.75rem" }` derived `sm: 0.375rem` and could not save a
+  Theme the code had derived itself. Widening the regex would have fixed that instance and
+  re-opened the hole for the next family; rounding and bounding the derivation makes it
+  structurally incapable of leaving the range. This is the same round trip bare `0` was
+  admitted for, one step out — the third time this shape has been found.
+- **A Section tone falls back rather than refusing.** `lenientLayoutSchema` relaxes only the
+  *Block* schema, so a Section carrying a tone this Site does not know failed the salvage
+  parse as well as the strict one and the Page came back empty — I-04's failure exactly, one
+  level up from where I-04 was fixed. Growing `SECTION_TONES` to include `mesh` made it
+  reachable by rolling back a deploy, or by publishing a Shared Slot from a Site on newer
+  packages. `padding` now catches for the same reason. `layout` deliberately does not: it
+  decides how many Columns a Section must have, so rewriting it to `"1"` would produce a
+  document that fails its own structural rule, and refusing is right there.
+- **`variants` is an ordered, storage-affecting contract.** The rule that the first declared
+  variant is the default is what let this ship without migrating a Page — but the consequence
+  was not written down: reordering the array restyles every Block that has not been re-saved
+  since. It is now, here and in the changeset.
+
+Two things about generation and seeding came out of it as well. The AI *page* prompt was never
+updated when `style` stopped being a field, so every generated button came back primary and
+nothing failed — the generated-from-the-registry argument at the top of `registry-prompt.ts`
+holds only for what the registry is actually asked about. And the built-in designs and
+`pnpm seed` were still writing `props.style`, minting fresh legacy documents for the migration
+to rescue, which would have kept `variantWasField` alive forever.
+
 ### What is deliberately not here
 
 **Rendered 3D icons and illustrations are images, not code.** Bundling them into

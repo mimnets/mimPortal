@@ -146,8 +146,16 @@ a {
 }
 
 /* And the opposite failure: a "flat" card is the surface colour, which is exactly the colour
-   a surface-toned band is painted in, so on that one band it steps off the page instead. */
-.mn-section[data-tone="surface"] {
+   a surface-toned band is painted in, so on that one band it steps off the page instead.
+
+   Every band painted in `--mn-color-surface` needs this, not just the one named after it.
+   The mesh is four tints of the brand colours laid over that same surface -- deliberately, so
+   body text keeps the contrast it was checked at -- which means a flat card dissolves into it
+   exactly as it did into a surface band. Quotes, plans, accordion items and carousel slides
+   all draw on this variable. `blocks-css.test.ts` fails when a new tone paints itself in
+   surface and is not added here. */
+.mn-section[data-tone="surface"],
+.mn-section[data-tone="mesh"] {
   --mn-surface-background: var(--mn-color-background);
 }
 

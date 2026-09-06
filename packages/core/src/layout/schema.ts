@@ -160,11 +160,24 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
   const section = z
     .object({
       id: z.string().min(1),
+      // Not caught, deliberately. A layout is not decoration: the refine below requires
+      // the Column count to match it, so falling back to "1" would turn a three-Column
+      // Section into a document that fails its own structural rule. A Section whose
+      // layout this Site cannot name is the case `safeParseLayout` is right to refuse.
       layout: z.enum(COLUMN_LAYOUT_NAMES),
       columns: z.array(column),
-      // Defaulted, so every Page written before Sections could be painted still parses.
-      tone: z.enum(SECTION_TONES).default("default"),
-      padding: z.enum(SECTION_PADDINGS).default("normal"),
+      // Defaulted, so every Page written before Sections could be painted still parses; and
+      // caught, so one written *after* this enum grew still parses too. `lenientLayoutSchema`
+      // relaxes only the Block schema, so without the catch a single Section carrying a tone
+      // this Site does not know fails the salvage parse as well as the strict one and the
+      // whole Page comes back empty — I-04's failure exactly, one level up, and reachable by
+      // rolling back a deploy or by publishing a Shared Slot from a Site on newer packages.
+      // Falling back to "default" also keeps the value that reaches the DOM inside the enum.
+      tone: z.enum(SECTION_TONES).default("default").catch("default"),
+      // Caught for the same reason as `tone` above, and stated separately because the
+      // reason it has not bitten is only that this enum has not grown yet. Leaving the
+      // identical hole open beside a closed one is how the next instance happens.
+      padding: z.enum(SECTION_PADDINGS).default("normal").catch("normal"),
       background: z
         .object({
           // Constrained because this key is interpolated into a CSS url() in an inline
