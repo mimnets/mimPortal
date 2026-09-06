@@ -1543,3 +1543,24 @@
   border: 1px solid #ecd9a0;
   border-radius: 4px;
 }
+
+/* A token field: the swatch is what makes the choice legible. The colour comes from the
+   Site's own Theme, which the Editor already has on the page, so the picker shows what the
+   Page will show rather than an approximation. */
+.mn-token-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mn-token-row select {
+  flex: 1;
+}
+
+.mn-token-swatch {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid rgb(0 0 0 / 0.15);
+  border-radius: 4px;
+}

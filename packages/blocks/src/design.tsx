@@ -12,14 +12,33 @@ import { defineBlock, field, safeHref } from "@mimnets/core";
  * Block is constrained to its Column and would need a CSS breakout hack to reach the edges.
  */
 
-/** A short label above a heading. Small, coloured, and the cheapest hierarchy there is. */
+/**
+ * A short label above a heading. Small, coloured, and the cheapest hierarchy there is.
+ *
+ * The first Block to offer a Theme colour rather than owning one. It was `--mn-color-accent`
+ * and `accent` is still the default, so no eyebrow on any Site changes colour -- the same
+ * rule the first declared variant follows, and for the same reason.
+ */
 export const eyebrowBlock = defineBlock({
   name: "eyebrow",
   label: "Eyebrow",
   fields: {
     text: field.text({ label: "Text", default: "" }),
+    colour: field.token({
+      label: "Colour",
+      help: "One of the Theme's colours, so it changes when the Site is rebranded.",
+      tokens: ["accent", "primary", "accentText", "primaryText"],
+      default: "accent",
+    }),
   },
-  render: ({ text }) => (text ? <p className="mn-eyebrow">{text}</p> : null),
+  // The name, not the colour: `blocks.css` maps it to the token. Nothing here can carry a
+  // colour the Theme does not know, which is the point of the field.
+  render: ({ text, colour }) =>
+    text ? (
+      <p className="mn-eyebrow" data-colour={colour}>
+        {text}
+      </p>
+    ) : null,
 });
 
 /**

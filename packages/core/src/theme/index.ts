@@ -462,6 +462,30 @@ function kebab(value: string): string {
   return value.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 }
 
+/**
+ * The colours a Block may be allowed to choose between.
+ *
+ * There is no `field.color` and there should not be: a free hex picker is ADR-0003's mistake
+ * wearing a different hat, and a client who can put any colour on any text will. What a Block
+ * can offer instead is a name from this list, which the Theme resolves -- so the choice stays
+ * on-brand by construction and every Site rebrands all of them at once.
+ *
+ * `primaryText` and `accentText` are the brand colours moved as far as they must be to be
+ * *read* on the page rather than seen on a button, so they are the right pair for body-sized
+ * text. `primary` and `accent` are the button colours and are here because an eyebrow has
+ * always used one; which is appropriate is the Block Type's call, made once in its
+ * declaration rather than by an Author per Page.
+ */
+export const COLOR_TOKENS = [
+  "text",
+  "muted",
+  "primary",
+  "accent",
+  "primaryText",
+  "accentText",
+] as const;
+export type ColorToken = (typeof COLOR_TOKENS)[number];
+
 /** A CSS colour a model is allowed to produce: a hex value, and nothing else. */
 const colour = z
   .string()

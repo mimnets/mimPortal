@@ -50,6 +50,20 @@ export function columnCount(layout: ColumnLayout): number {
 export const SECTION_TONES = ["default", "surface", "primary", "dark", "mesh"] as const;
 export type SectionTone = (typeof SECTION_TONES)[number];
 
+/**
+ * The shape of a band's bottom edge.
+ *
+ * A Section property rather than a Block one, for ADR-0013's reason: the edge belongs to the
+ * band, and a Block that could shape the band it sits in would be a Block that can change
+ * something it does not own. Two shapes rather than a number, so a Site cannot draw an angle
+ * so steep it eats its own content.
+ *
+ * The divider is painted in the band's own colour, so it shows only where the band has one:
+ * a Section on the page background has nothing to extend downwards, and gets nothing.
+ */
+export const SECTION_DIVIDERS = ["none", "angle", "curve"] as const;
+export type SectionDivider = (typeof SECTION_DIVIDERS)[number];
+
 /** Vertical breathing room. A hero wants "large"; a band between two wants "flush". */
 export const SECTION_PADDINGS = ["normal", "large", "flush"] as const;
 export type SectionPadding = (typeof SECTION_PADDINGS)[number];
@@ -138,6 +152,7 @@ export interface SectionNode {
   columns: ColumnNode[];
   tone: SectionTone;
   padding: SectionPadding;
+  divider: SectionDivider;
   background: SectionBackground;
 }
 
@@ -178,6 +193,9 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
       // reason it has not bitten is only that this enum has not grown yet. Leaving the
       // identical hole open beside a closed one is how the next instance happens.
       padding: z.enum(SECTION_PADDINGS).default("normal").catch("normal"),
+      // Defaulted and caught like the two above, so a Page written before dividers existed
+      // parses, and one written after this enum grows still parses on an older Site.
+      divider: z.enum(SECTION_DIVIDERS).default("none").catch("none"),
       background: z
         .object({
           // Constrained because this key is interpolated into a CSS url() in an inline
@@ -214,8 +232,16 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
  * A factory rather than three literals repeated wherever a Section is built, so adding a
  * fourth property later is one edit instead of a hunt through the Editor and three tests.
  */
-export function sectionDefaults(): Pick<SectionNode, "tone" | "padding" | "background"> {
-  return { tone: "default", padding: "normal", background: { key: "", overlay: 0.45 } };
+export function sectionDefaults(): Pick<
+  SectionNode,
+  "tone" | "padding" | "divider" | "background"
+> {
+  return {
+    tone: "default",
+    padding: "normal",
+    divider: "none",
+    background: { key: "", overlay: 0.45 },
+  };
 }
 
 /** An empty Page, used when creating one and as the fallback for an unparseable draft. */

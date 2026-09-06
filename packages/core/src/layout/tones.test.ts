@@ -101,6 +101,23 @@ describe("a Section's tone", () => {
     expect(registry.safeParseLayout(layout({ layout: "3-2-1" })).error).not.toBeNull();
   });
 
+  it("gives a Section a straight edge unless it asks for one", () => {
+    // Every Page written before dividers existed carries no `divider` at all.
+    expect(registry.safeParseLayout(layout({})).layout?.slots.main[0]?.divider).toBe("none");
+  });
+
+  it("keeps an edge it knows and falls back for one it does not", () => {
+    expect(registry.safeParseLayout(layout({ divider: "curve" })).layout?.slots.main[0]?.divider).toBe(
+      "curve",
+    );
+
+    // Same reasoning as tone and padding: a shape this Site cannot draw is a straight edge,
+    // not a blank Page.
+    const unknown = registry.safeParseLayout(layout({ divider: "zigzag" }));
+    expect(unknown.error).toBeNull();
+    expect(unknown.layout?.slots.main[0]?.divider).toBe("none");
+  });
+
   it("offers exactly the bands the Editor draws", () => {
     // The Editor's control is hand-written options rather than a map over this list, so the
     // two drift silently. This is the reminder to add the option.

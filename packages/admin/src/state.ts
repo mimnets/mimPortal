@@ -100,7 +100,7 @@ function emptyColumn(): ColumnNode {
 }
 
 /** The three properties that decide how a Section is painted, editable together. */
-export type SectionStyle = Pick<SectionNode, "tone" | "padding" | "background">;
+export type SectionStyle = Pick<SectionNode, "tone" | "padding" | "background" | "divider">;
 
 export function newSection(layout: ColumnLayout): SectionNode {
   return {

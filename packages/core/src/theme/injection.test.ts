@@ -141,6 +141,11 @@ describe("what the emitted stylesheet may contain, whatever reached it", () => {
       "--mn-mesh",
       "--mn-gradient-text",
       "--mn-texture",
+      // The two `field.token` offers for reading. `blocks.css` selects on these exact
+      // spellings, and the Editor's swatch builds the same names -- a token the Theme does
+      // not emit is a colour that silently resolves to nothing.
+      "--mn-color-accent-text",
+      "--mn-color-primary-text",
     ]) {
       expect(css).toContain(token);
     }

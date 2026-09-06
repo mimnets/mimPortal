@@ -6,6 +6,7 @@ import type {
   BlockRegistry,
   FieldsShape,
   PageLayout,
+  SectionDivider,
   SectionPadding,
   SectionTone,
 } from "@mimnets/core";
@@ -234,6 +235,29 @@ export function SettingsPanel({
           <small>
             A Section is a full-width band, so this paints the whole width. Alternating bands
             down a Page is what stops it reading as one long document.
+          </small>
+        </label>
+
+        <label className="mn-field" htmlFor="section-divider">
+          <span>Bottom edge</span>
+          <select
+            id="section-divider"
+            value={section.divider}
+            onChange={(event) =>
+              dispatch({
+                type: "setSectionStyle",
+                path: selection.path,
+                style: { divider: event.target.value as SectionDivider },
+              })
+            }
+          >
+            <option value="none">Straight</option>
+            <option value="angle">Angled</option>
+            <option value="curve">Curved</option>
+          </select>
+          <small>
+            Drawn in this band&rsquo;s own colour, so it shows only where the band has one — a
+            Section on the page background has nothing to extend over the next.
           </small>
         </label>
 
