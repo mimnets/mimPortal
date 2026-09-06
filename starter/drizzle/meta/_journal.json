@@ -71,6 +71,13 @@
       "when": 1788601777139,
       "tag": "0009_strange_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788686795137,
+      "tag": "0010_abnormal_rachel_grey",
+      "breakpoints": true
     }
   ]
 }

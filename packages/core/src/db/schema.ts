@@ -178,6 +178,18 @@ export const formSubmissions = pgTable(
     name: text("name").notNull().default(""),
     email: text("email").notNull().default(""),
     message: text("message").notNull().default(""),
+    /**
+     * Answers to questions the Author added, as `{ label, value }` in the order asked.
+     *
+     * The label is copied in at submission rather than looked up on read, so an Enquiry keeps
+     * the question it was actually answering. Renaming or reordering the questions on the
+     * Block changes what future visitors are asked and leaves what past ones said alone,
+     * which is the only version of this that does not quietly rewrite history.
+     *
+     * Not columns, because the questions are per-form and per-Site: a column per question
+     * would be a migration every time a client wanted to ask about parking.
+     */
+    extra: jsonb("extra").$type<{ label: string; value: string }[]>().notNull().default([]),
     senderHash: text("sender_hash").notNull().default(""),
     /** Null while unread; set when an Owner or Author opens it. */
     readAt: timestamp("read_at", { withTimezone: true }),

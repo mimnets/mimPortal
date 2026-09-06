@@ -21,6 +21,8 @@ export interface Enquiry {
   name: string;
   email: string;
   message: string;
+  /** Answers to questions the Author added, with the label each was asked under. */
+  extra: { label: string; value: string }[];
   readAt: string | null;
   deliveryError: string | null;
   createdAt: string;
@@ -45,6 +47,7 @@ export async function listEnquiries(): Promise<Enquiry[]> {
     name: row.name,
     email: row.email,
     message: row.message,
+    extra: row.extra ?? [],
     readAt: row.readAt?.toISOString() ?? null,
     deliveryError: row.deliveryError,
     createdAt: row.createdAt.toISOString(),

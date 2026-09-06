@@ -1,6 +1,7 @@
 import {
   defineBlock,
   field,
+  extraFieldName,
   FORM_FIELDS,
   FORM_RESULT_PARAM,
   renderMarkdown,
@@ -205,6 +206,19 @@ export const menuBlock = defineBlock({
   },
 });
 
+/** What each answer kind becomes in the markup. Anything unlisted is a plain line of text. */
+const INPUT_TYPES: Record<string, string> = {
+  phone: "tel",
+  email: "email",
+  number: "number",
+};
+
+/** So a browser can fill in the ones it knows. Nothing is offered for a question we invented. */
+const AUTOCOMPLETE: Record<string, string | undefined> = {
+  phone: "tel",
+  email: "email",
+};
+
 /**
  * A contact form that works before any JavaScript has loaded.
  *
@@ -238,11 +252,34 @@ export const contactBlock = defineBlock({
       help: "Groups submissions in the Dashboard. Use one per form.",
       default: "contact",
     }),
+    /**
+     * Questions beyond name, email and message.
+     *
+     * Those three stay, and are not in this list. They are what an enquiry *is* -- the
+     * Dashboard shows them as the sender and the message, the notification is addressed from
+     * them, and the reply button needs the address. A form that could remove them would be a
+     * form that produces an enquiry nobody can answer.
+     *
+     * What an Author could not do before was add a phone number.
+     */
+    extras: field.repeater({
+      label: "Extra questions",
+      help: "Asked after the message. Name, email and message are always included.",
+      fields: {
+        label: field.text({ label: "Question", default: "" }),
+        type: field.select({
+          label: "Answer",
+          options: ["one line", "several lines", "phone", "email", "number"],
+          default: "one line",
+        }),
+        required: field.boolean({ label: "Required", default: false }),
+      },
+    }),
   },
   // `recipient` is deliberately absent from this signature. It is a field an Author sets and
   // the form route reads back from the published Block by `slug`; putting it in the markup as
   // a hidden input made it visitor input, and made the Site a relay for anybody's mail.
-  render: ({ heading, intro, buttonLabel, successMessage, slug }, context) => {
+  render: ({ heading, intro, buttonLabel, successMessage, slug, extras }, context) => {
     const result = context.query[FORM_RESULT_PARAM];
 
     // The result belongs to this form, not to whichever form rendered first on the Page.
@@ -294,6 +331,27 @@ export const contactBlock = defineBlock({
           <span>Message</span>
           <textarea name="message" rows={6} required />
         </label>
+
+        {/* Named by position, never by the Author's label: an input's name comes back as
+            visitor input, and the server pairs answers with questions from the published
+            Block. See `extraFieldName`. */}
+        {(extras ?? []).map((extra, index) =>
+          extra.label ? (
+            <label className="mn-form-field" key={extraFieldName(index)}>
+              <span>{extra.label}</span>
+              {extra.type === "several lines" ? (
+                <textarea name={extraFieldName(index)} rows={3} required={extra.required} />
+              ) : (
+                <input
+                  type={INPUT_TYPES[extra.type] ?? "text"}
+                  name={extraFieldName(index)}
+                  required={extra.required}
+                  autoComplete={AUTOCOMPLETE[extra.type]}
+                />
+              )}
+            </label>
+          ) : null,
+        )}
 
         <button type="submit" className="mn-form-submit">
           {buttonLabel || "Send"}

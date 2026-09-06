@@ -72,7 +72,8 @@ export { SlotView } from "./render/render";
 export { markdownToText, renderMarkdown } from "./render/markdown";
 export { safeHref } from "./render/safe-href";
 
-export { FORM_FIELDS, FORM_RESULT_PARAM } from "./forms/shared";
+export { FORM_FIELDS, FORM_RESULT_PARAM, FORM_EXTRA_PREFIX, extraFieldName, extraAnswers } from "./forms/shared";
+export type { ExtraAnswer } from "./forms/shared";
 export type { FormResult } from "./forms/shared";
 
 export { ASSIST_ACTION_LIST, assistActionsFor, isAssistAction } from "./ai/actions";

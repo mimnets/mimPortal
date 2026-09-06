@@ -90,6 +90,19 @@ export function EnquiryList({
                 </span>
               </div>
 
+              {item.extra.length > 0 ? (
+                /* Above the message on purpose: a phone number or a preferred date is what an
+                   Owner scans for, and the message is what they then read. */
+                <dl className="mn-enquiry-extra">
+                  {item.extra.map((answer, index) => (
+                    <div key={`${answer.label}-${index}`}>
+                      <dt>{answer.label}</dt>
+                      <dd>{answer.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+
               <p className="mn-enquiry-message">{item.message}</p>
 
               {item.deliveryError ? (

@@ -5,8 +5,9 @@ import { createDatabase, formSubmissions, siteSettings } from "@mimnets/core/db"
 import { elapsedSince, hashIp, runSpamChecks, safeReturnPath } from "@mimnets/core/forms";
 
 import { authSecret, baseUrl, requireDatabaseUrl } from "../../../lib/env";
+import { extraAnswers } from "@mimnets/core";
 import { email } from "../../../lib/email";
-import { recipientForForm, replyToFor } from "../../../lib/forms";
+import { formSettingsForSlug, replyToFor } from "../../../lib/forms";
 import { RATE_LIMIT_WINDOW_MS, spamSignals } from "../../../lib/spam";
 
 /**
@@ -69,13 +70,18 @@ export async function POST(request: Request) {
   const senderEmail = text("email");
   const message = text("message");
 
+  // Read before the insert, because the answers are stored with it. One database pass gets
+  // both this and the recipient below.
+  const { recipient, labels } = await formSettingsForSlug(slug);
+  const extra = extraAnswers(labels, text);
+
   if (message === "" || senderEmail === "") return back(returnTo, `${slug}:error`);
 
   // The row is written before anything is sent. A mail server that is briefly unreachable
   // must cost a notification, never the enquiry itself.
   const [saved] = await db
     .insert(formSubmissions)
-    .values({ slug, path: returnTo, name, email: senderEmail, message, senderHash })
+    .values({ slug, path: returnTo, name, email: senderEmail, message, extra, senderHash })
     .returning({ id: formSubmissions.id });
 
   const [settings] = await db
@@ -85,10 +91,6 @@ export async function POST(request: Request) {
     .limit(1);
 
   const siteName = settings?.siteName || "your Site";
-
-  // Never from the request. See lib/forms.ts — a visitor who can name the recipient owns the
-  // Site's outbound mail.
-  const recipient = await recipientForForm(slug);
 
   if (recipient) {
     try {
@@ -103,6 +105,9 @@ export async function POST(request: Request) {
           "",
           `From:    ${name || "(no name)"} <${senderEmail}>`,
           `Page:    ${new URL(returnTo, baseUrl()).toString()}`,
+          // Above the message, because a phone number or a preferred date is the thing the
+          // Owner is scanning for and the message is the thing they read.
+          ...extra.map((one) => `${one.label}: ${one.value}`),
           "",
           message,
           "",
