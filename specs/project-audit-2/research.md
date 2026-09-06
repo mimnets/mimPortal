@@ -304,10 +304,12 @@ the restore is destroyed with no `STALE` message in either tab.
 (`slot-actions.ts:241-243`: the layout document is untouched, so `revision` is left alone) —
 these four do not have that excuse.
 
-### A-12 — `listVersions` has no authorisation check
+### A-12 — `listVersions` has no authorisation check *(fixed)*
 
-`starter/app/admin/actions.ts:122` — the only export in the file with neither `requireUser()`
-nor `requireOwner()`. It queries straight into `pageVersions`.
+**Fixed.** `starter/app/admin/actions.ts:126` calls `requireUser()`, with a comment saying why
+it is `requireUser` and not `requireOwner`: History is Dashboard-only, and an Author may read it.
+
+Was: the only export in the file with neither check, querying straight into `pageVersions`.
 
 Impact is genuinely limited: version ids and publish timestamps, and it needs a Page UUID.
 The gap is the point — every sibling in the file checks.
@@ -366,24 +368,33 @@ close it.
 Ledger has zero test files. CI could not have caught A-07 and will not catch the next
 divergence.
 
-### A-17 — `prepublishOnly` asserts the package manager, never the artifact
+### A-17 — `prepublishOnly` asserts the package manager, never the artifact *(fixed)*
 
-`packages/*/package.json`. The guard refuses `npm` in favour of `pnpm`, which is correct and
-well argued. Nothing checks that `dist` exists or is fresh. A direct `pnpm publish` with a
-stale or absent `dist` passes the guard and ships a package containing only `package.json`.
+**Fixed.** `scripts/check-publish.mjs` now resolves every entry point in
+`publishConfig.exports` and refuses when one is missing, printing the count it verified. The
+guard still refuses `npm`, which was always correct.
 
-### A-18 — Every published source map is dangling
+Was: nothing checked that `dist` existed, so a publish with an absent `dist` shipped a package
+containing only `package.json`.
 
-`packages/*/tsconfig.build.json:14-15` sets `declarationMap` and `sourceMap` with
-`files: ["dist"]`. Verified: `sites/ledger/node_modules/@mimnets/core/dist/index.js.map` has
+### A-18 — Every published source map is dangling *(fixed)*
+
+**Fixed** by shipping the sources the maps point at: `files` is now `["dist", "src"]` on all
+three packages, so `../src/index.ts` resolves in a consumer's node_modules and the comment
+about landing in the original source is true.
+
+Was: `declarationMap` and `sourceMap` set with Verified: `sites/ledger/node_modules/@mimnets/core/dist/index.js.map` has
 `"sources":["../src/index.ts"]`, and `…/@mimnets/core/src` does not exist. The comment at
 `tsconfig.build.json:5-7` claiming consumers "land in the original source" is false, and
 roughly half of the 761 KB `dist` is dead map data.
 
-### A-19 — Unfinished config committed as a value
+### A-19 — Unfinished config committed as a value *(fixed)*
 
-`sites/ledger/pnpm-workspace.yaml:12` reads `esbuild: set this to true or false` — literal
-instruction text where the root has `esbuild: true`. `pnpm list` exits 0 and the binaries
+**Fixed.** `sites/ledger/pnpm-workspace.yaml:14` reads `esbuild: true`, with the comment above
+it explaining why the install script has to run.
+
+Was: `esbuild: set this to true or false` — literal instruction text where the root has
+`esbuild: true`. `pnpm list` exits 0 and the binaries
 exist, so it is not currently breaking anything; it is unfinished text in the file defining
 the Site's build policy.
 
@@ -394,13 +405,13 @@ the Site's build policy.
 | # | Finding |
 |---|---|
 | A-20 | `sites/ledger/blocks/deadlines.tsx:33` renders `className="ledger-deadlines"`; nothing in ledger's CSS matches. The Site's one bespoke Block is unstyled — a raw `<table>` with no overflow container. The code itself is clean |
-| A-21 | Only 5 of 22 Block Types have an icon in the Editor picker (`packages/admin/src/icons.tsx:137-143`); the other 17 fall back to the same generic square |
+| A-21 | ~~Only 5 of 22 Block Types have an icon in the Editor picker; the other 17 fall back to the same generic square~~ **Fixed 6 September** — all 22 have one, and `icons.test.tsx` fails when a Block Type is added without one. A Site's own Block Type still falls back, which is correct |
 | A-22 | `Dockerfile` and `docker-compose.yml` build and run only `starter`. No container path for ledger, though its `next.config.ts:16` correctly sets `outputFileTracingRoot` |
 | A-23 | Published tarballs carry `prepublishOnly` and `build` scripts, and `@mimnets/admin`'s declares `devDependencies: {"@mimnets/blocks": "0.1.1"}` from pnpm's `workspace:*` conversion — a dependency on a version that may not exist on the target registry. Harmless: devDependencies are not installed by consumers |
 | A-24 | `sites/ledger/pnpm-workspace.yaml:22` sets `minimumReleaseAge: 0`, disabling pnpm's supply-chain delay. Documented and correct for a local-registry exercise; nothing enforces restoring it on a public registry |
-| A-25 | `packages/*/package.json` has no top-level `main`/`types` fallback and no `sideEffects`. Fine for modern bundlers; breaks older resolvers and costs tree-shaking |
-| A-26 | `readableOn` picks black or white by a luminance threshold of 0.55. On the default accent `#f0568c` that selects white at 3.27:1 where black is 5.77:1 — the less readable of the only two options, on the colours the product ships with. **Deliberately not fixed:** on the default blue the margin is 4.70 against 4.47, so changing it flips button text to black on every Site whose accent sits in that range. That is a design decision about brand buttons, not a bug fix. The numbers are pinned in `packages/core/src/theme/derive.test.ts` |
-| A-27 | Deriving the Theme's readable colours uniformly (A-05) changed `defineTheme()` with no colours from `#2f5ad6` to `#3b6cf6` — 4.51:1 against 5.91:1. Both clear AA; the hand-picked value was more comfortable. Uniform derivation was preferred to a special case for one Theme |
+| A-25 | ~~no `sideEffects`~~ **Half fixed 6 September** — `sideEffects` is `false` on core and `["**/*.css"]` on blocks and admin, because a stylesheet import *is* the side effect and a bundler told otherwise ships an unstyled Site. Still no top-level `main`/`types` fallback, which breaks older resolvers |
+| A-26 | ~~`readableOn` picks black or white by a luminance threshold of 0.55~~ **Fixed 6 September.** It measures both and takes the larger. Five of the ten button colours the product ships were below 4.5:1, all accents, and every one passes in black. Deliberately *not* a smaller threshold: the textbook crossover of 0.1791 would have flipped the default primary from 4.50 to 4.19, and `derive.test.ts` now rejects both wrong answers |
+| A-27 | Deriving the Theme's readable colours uniformly (A-05) changed `defineTheme()` with no colours from `#2f5ad6` to `#3b6cf6` — 4.51:1 against 5.91:1. Both clear AA; the hand-picked value was more comfortable. Uniform derivation was preferred to a special case for one Theme. **Still open, and now load-bearing:** A-26's fix keeps white on `#3b6cf6` at 4.50 precisely because it measures rather than thresholds, so this colour is the one an eye should check |
 
 ---
 

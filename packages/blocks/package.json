@@ -33,6 +33,7 @@
     "@types/react": "^19.2.18",
     "react": "^19.2.8"
   },
+  "sideEffects": ["**/*.css"],
   "files": [
     "dist",
     "src"

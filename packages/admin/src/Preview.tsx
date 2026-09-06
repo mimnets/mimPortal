@@ -153,7 +153,32 @@ function BlockCard({
           <TrashIcon />
         </button>
       </div>
-      <div className="mn-ed-block-body">
+      {/*
+        The Block's own wrapper, carrying exactly what `BlockView` emits.
+
+        Without it the preview showed a Block with none of the styling its `data-` attributes
+        drive: a button has no colour of its own -- `.mn-btn` sets a transparent border and no
+        background, and every visible thing about it comes from
+        `.mn-block[data-variant="..."] .mn-btn` -- so in the Editor it rendered as invisible
+        text. Broken since variants landed, because nothing here ever carried `data-variant`.
+
+        Same fix as the Section band above, one level down, and for the same reason: the
+        Editor should be showing the Page's own stylesheet doing its work rather than a
+        second copy of the rules that can drift from it. `.mn-block` has no styling of its
+        own -- it is purely the hook the 33 attribute rules hang off -- so this brings the
+        rules and no layout.
+
+        On the body rather than on `.mn-ed-block`, so the chrome bar is outside it and cannot
+        be caught by a descendant selector meant for content.
+      */}
+      <div
+        className="mn-ed-block-body mn-block"
+        data-block={block.type}
+        data-tone={block.style?.tone !== "default" ? block.style?.tone : undefined}
+        data-font={block.style?.font !== "default" ? block.style?.font : undefined}
+        data-animate={block.style?.animate !== "none" ? block.style?.animate : undefined}
+        data-variant={block.style?.variant}
+      >
         {blockType ? (
           // Keyed on the props, so a Block that threw on a half-typed value recovers by
           // itself the moment the value becomes valid again.

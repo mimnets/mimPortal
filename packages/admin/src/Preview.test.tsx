@@ -151,3 +151,58 @@ describe("the band behind a Section", () => {
     expect(band({ divider: "none" }).hasAttribute("data-divider")).toBe(false);
   });
 });
+
+describe("the wrapper a Block is rendered inside", () => {
+  /**
+   * A button has no colour of its own. `.mn-btn` sets a transparent border and no background,
+   * and everything visible about it comes from `.mn-block[data-variant="..."] .mn-btn` — so a
+   * preview that does not carry `data-variant` renders it as invisible text. It did, from the
+   * day variants landed until somebody opened the Editor and said the button was missing.
+   */
+  function body(style: Record<string, unknown> = {}) {
+    const layout = pageWithOneSection();
+    Object.assign(layout.slots.main[0]!.columns[0]!.blocks[0]!.style, style);
+
+    const { container } = render(
+      <Preview
+        layout={layout}
+        registry={registry}
+        selection={null}
+        dispatch={vi.fn()}
+        context={emptyContext()}
+      />,
+    );
+
+    const el = container.querySelector(".mn-ed-block-body");
+    if (!el) throw new Error("the preview drew no Block body");
+    return el;
+  }
+
+  it("is the Site's own Block class, so the stylesheet applies", () => {
+    expect(body().classList.contains("mn-block")).toBe(true);
+  });
+
+  it("carries the variant, which is the only thing that colours a button", () => {
+    expect(body({ variant: "quote" }).getAttribute("data-variant")).toBe("quote");
+  });
+
+  it("carries tone, font and animate once they say something", () => {
+    const el = body({ tone: "gradient", font: "heading", animate: "fade" });
+
+    expect(el.getAttribute("data-tone")).toBe("gradient");
+    expect(el.getAttribute("data-font")).toBe("heading");
+    expect(el.getAttribute("data-animate")).toBe("fade");
+  });
+
+  it("leaves them off at their defaults, as the renderer does", () => {
+    const el = body({ tone: "default", font: "default", animate: "none" });
+
+    expect(el.hasAttribute("data-tone")).toBe(false);
+    expect(el.hasAttribute("data-font")).toBe(false);
+    expect(el.hasAttribute("data-animate")).toBe(false);
+  });
+
+  it("names the Block Type, so a Site can style one of its own", () => {
+    expect(body().getAttribute("data-block")).toBe("spacer");
+  });
+});
