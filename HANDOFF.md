@@ -12,24 +12,56 @@ wrong.
 
 ## Where to start
 
-**Publish to npm.** Everything a session can do is done: M11 is merged, its review is merged,
-the audit's H-1 is closed, and the milestone's last two features landed on 6 September. What
-is left needs a person, and the publish needs one most — `npm login` is interactive, the first
-publish claims the `@mimnets` scope permanently, and `sites/ledger` cannot be finished until
-it can install a real package rather than one from a disposable local registry.
+**Publish `main` at 0.3.0.** `npm login` is interactive, which is the only reason this is
+still open. Everything else a session could do without a decision is done.
+
+Two things learned the hard way on 6 September, both worth reading before running it:
+
+- **Publish from `main`, after `pnpm changeset version`.** `pnpm release` publishes but does
+  not version. Run alone it tried to publish 0.1.1, only `@mimnets/admin` went up, and the
+  result was a package on npm whose dependency did not exist. Run from a feature branch it
+  published code the changelog did not describe.
+- **`npm view <pkg> version` reports the `latest` tag, not what exists.** A freshly published
+  version can be there while the tag has not caught up, which read as a failed publish and was
+  not. `npm view <pkg> versions --json` is the honest question.
+
+`sites/ledger` still asks for `^0.1.1`, which does not match 0.2.0 or 0.3.0 — a caret on a 0.x
+pins the minor. That bump plus the two stylesheet lines in the changeset finishes Ledger, and
+neither can happen until there is something on the registry to install.
 
 Read what `pnpm release` prints rather than trusting it. A-28 was `pnpm build:packages`
 matching no packages at all and being willing to publish whatever happened to be in `dist`.
 
-Then **A-26 and A-27**, which have now been deferred three times and want a person with an
-opinion rather than another session.
+Nothing else needs a person. A-26 and A-27 — the button-text contrast decision this file had
+deferred three times — were settled the same day; `readableOn` measures both options and takes
+the more readable, which is not the same as lowering the threshold and the tests say why.
 
-`main` is at the merge of `fix/h1-theme-css-injection`. `pnpm typecheck` is 7/7, `pnpm test`
-is 609 passing with the Docker suites up, and `turbo build --force` is warning-free on an
-uncached build.
+`main` carries every milestone from M0 to M11, the second audit's H-1, and the punch-list items
+that did not need a decision. `pnpm typecheck` is 7/7, `pnpm test` is 643 passing with the
+Docker suites up, and `turbo build --force` is warning-free on an uncached build.
 
-The commits below are M11 and everything that followed it. The first four are the milestone;
-the nine after them are its review.
+### What else landed on 6 September
+
+After M11's review, and each merged into `main`:
+
+| | What it is |
+| --- | --- |
+| **H-1 closed** | A font stack could end the `<style>` element the whole Theme compiles into. Pre-existing since the Theme had six token families. Two guards that each hold alone, verified by breaking each separately |
+| **M11 finished** | Section dividers (`clip-path` on a pseudo-element, never on the Section) and `field.token`, a token picker that is deliberately not a colour picker |
+| **A-26 / A-27 settled** | Button text measures both options instead of comparing brightness to 0.55. Five of ten shipped button colours were below 4.5:1; all five were accents; all five pass in black |
+| **The Editor stopped lying** | A Section's band is painted, and a Block carries what the renderer emits — a button had no colour there at all since variants landed. Three bugs, one cause: the Editor kept a second copy of what the renderer does, and the copy drifted |
+| **"Where is this picture used?"** | The media library answers it, by walking layouts structurally rather than asking the registry — a Page can hold a Block whose type was removed and still hold its picture |
+| **Editable form fields** | A contact form asks more than name, email and message. Inputs are named by position, never by the Author's label, for the reason `recipient` is not a hidden input |
+| **Every Block Type has an icon** | Five of twenty-two did |
+
+**The audit was wrong about four things**, and that is worth more than any of the fixes. A-12,
+A-17, A-18 and A-19 were already closed by earlier sessions that never went back to say so, and
+the first one picked up was already done. An audit is a snapshot and the code moves: **verify a
+finding before acting on it.**
+
+### The M11 commits
+
+The first four are the milestone; the nine after them are its review.
 
 | | Commit | What it is |
 | --- | --- | --- |
@@ -195,6 +227,11 @@ times. Three defects were found by looking and could not have been found any oth
 
 None of the three was a failing test. All three were a screenshot.
 
+**Left on the Site deliberately, and none of it is content.** A mesh band with a testimonial
+on `/test`, a "Phone number" question on the published contact form, and one enquiry from
+"Ada Lovelace" — each was the end-to-end check for a feature that landed on 6 September, and
+each is safe to delete. `/test` is the scratch Page; nothing on it is a client's.
+
 The mesh band is worth looking at once before you touch it. `/test` currently carries one,
 with a testimonial on it, published on 6 September to see the band with a card on it. Delete
 the Section or restore an earlier version from that Page's History when it stops being
@@ -257,17 +294,21 @@ registry rather than by editing anything now. Its upgrade step is in the changes
 dependency, add `import "@mimnets/blocks/blocks.css";` above `import "./globals.css";`, then
 delete the Block sections from its own `globals.css`.
 
-**3. Two colour decisions are still deliberately left to you**, with their numbers pinned in
-`packages/core/src/theme/derive.test.ts`. `readableOn` picks white on the default accent at
-3.27:1 where black would be 5.77:1, and changing it flips button text on every Site whose accent
-sits in that range — a design decision rather than a bug fix, which is why it was recorded and
-not taken. See A-26 and A-27.
+**3. The two colour decisions were taken on 6 September**, after counting rather than
+arguing: five of the ten button colours the product ships were below 4.5:1, all of them
+accents, and every one passes in black. `readableOn` measures both options and takes the more
+readable.
 
-The previous version of this file said these were worth settling as part of M11. M11 has now
-largely landed and they were not settled, so that is a judgement this file has already deferred
-once: nothing in the token work depended on it, and `readableOn` still governs text on every
-coloured band on every Site. It is a five-minute change and an hour of looking at Sites, and it
-wants a person with an opinion rather than a session.
+Deliberately *not* a smaller threshold. The textbook crossover of 0.1791 would have flipped the
+default primary from 4.50 to 4.19 — so `derive.test.ts` now rejects both wrong answers, which
+is what stops the plausible one being mistaken for the correct one later. See A-26 and A-27,
+both marked closed in the audit.
+
+It had been deferred three times — once as part of M11, and twice by versions of this file
+saying it wanted a person rather than a session. What settled it was not an opinion in the end
+but a count: every button colour the product ships, both options measured, side by side. Five
+of ten were failing and all five were fixable, which turned a design argument into an
+arithmetic one. Worth remembering the next time something is recorded rather than taken.
 
 ## What exists today
 
@@ -340,7 +381,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **609 passing, 7 skipped, about a minute.** It was 2 failing, 152 passing
+`pnpm test` — **643 passing, 7 skipped, about a minute.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -416,12 +457,16 @@ in agreement:
 
 - **[docs/FEATURES.md](./docs/FEATURES.md)** — the inventory. What is built, what is partly
   built, what is planned, and the open audit findings.
-- **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for. M10.5, M11
-  and M12 were all written on 5 September. M11 has met its exit criterion and has two small
-  things left; M10.5 and M12 are untouched.
+- **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for. M10.5 gained
+  a fourth item on 6 September: a **button row** Block, because two buttons cannot sit side by
+  side today and the honest answer — set the Section to two Columns — puts them half a band
+  apart. M10.5, M11
+  and M12 were all written on 5 September. M11 is finished and merged; M10.5 and M12 are
+  untouched.
 
-The immediate job is at the top of this file: **publish**, then settle A-26 and A-27. Every
-milestone from M0 to M11 is now done and merged.
+The immediate job is at the top of this file: **publish**. A-26 and A-27 were settled on
+6 September — button text now picks black or white by measuring both rather than by a
+threshold. Every milestone from M0 to M11 is done and merged.
 
 
 ## The toolchain, and a diagnosis that was wrong
