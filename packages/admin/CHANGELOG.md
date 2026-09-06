@@ -1,5 +1,15 @@
 # @mimnets/admin
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [248dd62]
+- Updated dependencies [248dd62]
+- Updated dependencies [9fc4606]
+- Updated dependencies [248dd62]
+  - @mimnets/core@0.2.0
+
 ## 0.1.1
 
 ### Patch Changes
