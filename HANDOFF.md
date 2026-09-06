@@ -416,7 +416,10 @@ in agreement:
 
 - **[docs/FEATURES.md](./docs/FEATURES.md)** — the inventory. What is built, what is partly
   built, what is planned, and the open audit findings.
-- **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for. M10.5, M11
+- **[docs/ROADMAP.md](./docs/ROADMAP.md)** — the milestones and what each is for. M10.5 gained
+  a fourth item on 6 September: a **button row** Block, because two buttons cannot sit side by
+  side today and the honest answer — set the Section to two Columns — puts them half a band
+  apart. M10.5, M11
   and M12 were all written on 5 September. M11 has met its exit criterion and has two small
   things left; M10.5 and M12 are untouched.
 

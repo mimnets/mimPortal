@@ -146,8 +146,10 @@ Raised the same day, and written into the roadmap rather than left as wishes. M1
 met its exit criterion and has two small things left; M10.5 and M12 are untouched:
 
 - **M10.5** — a Header that stays (scrolls, sticky or fixed), per-Section width so a gallery or
-  a map can run edge to edge, and popovers for a biography or a service's detail. Each is a
-  property the layout engine could already carry, sitting one field away from existing.
+  a map can run edge to edge, popovers for a biography or a service's detail, and a button row
+  so two buttons can sit side by side. The first three are a property the layout engine could
+  already carry; the button row is a Block, because Blocks in a Column stack and that rule is
+  not worth reopening for two buttons.
 - **M11** is done and merged, including the review that followed it. It is described above;
   the only thing consciously left out of it is CSS 3D.
 - **M12** — what the AI does next, and what it must not: importing a client's existing site as

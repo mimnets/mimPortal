@@ -447,11 +447,14 @@ width to see it stack, all without leaving the Editor.
 
 ---
 
-## M10.5 — Three things a client asks for in the first week
+## M10.5 — Four things a client asks for in the first week
 
-Raised on 5 September, none of them in any milestone, and all three small enough that leaving
-them unplanned was the only reason they were not built. They share a shape: each is a property
-the layout engine could already carry, sitting one field away from existing.
+Raised on 5 September, none of them in any milestone, and all small enough that leaving them
+unplanned was the only reason they were not built. Three of the four share a shape: each is a
+property the layout engine could already carry, sitting one field away from existing. The
+fourth, the button row, is a Block rather than a property, and it is here because it is the
+same size of job and comes from the same place — somebody trying to build an ordinary page and
+finding they cannot.
 
 **A Header that stays.** A Site's Header scrolls away and there is no option not to. `position:
 fixed` appears exactly once in the whole stylesheet and it is the gallery's lightbox. The
@@ -467,6 +470,26 @@ added in M8.5: a gallery, a carousel and a map all want the full width of the wi
 they cannot have it. The field is `width: "measure" | "wide" | "full"`, resolving to Theme
 tokens like every other Section property ([ADR-0013](./adr/0013-the-band-is-the-sections-job.md)) —
 and *not* a free number, for the same reason there is no colour picker.
+
+**Two buttons side by side.** Asked for on 6 September, and the answer today is "set the
+Section to two Columns", which is the wrong answer: it puts each button at half the width of
+the band with a gutter between them, when what a hero wants is "Book a table" and "See the
+menu" sitting next to each other. Blocks inside a Column stack, always — `.mn-column` is a
+flex column, and Blocks never contain other Blocks, which is
+[ADR-0003](./adr/0003-sections-and-columns-not-free-canvas.md)'s rule and is not the thing to
+reopen for this.
+
+So: **a button row Block** — a repeater of buttons laid out horizontally, wrapping on a phone,
+each with the same variants a single button has. It is the same shape as `logos` and `social`,
+which are already repeaters that lay their items out in a line, so it needs nothing from the
+layout engine and no new concept for an Author to learn.
+
+The alternative was a Column property — "lay these Blocks out in a row" — which is more
+general and was rejected for now. It is a change to the layout engine rather than an addition
+to the library; it needs answers about wrapping, alignment and what happens to a Block that
+does not want to be in a row; and the case that actually comes up is two buttons. A general
+mechanism for one common case is how a page builder acquires a second layout system nobody
+can explain. Worth revisiting if a third case appears.
 
 **Popovers.** Clicking a word or a button to open a panel with more detail and a picture: a
 team member's biography, what a service includes, the story behind a photograph. There is a
