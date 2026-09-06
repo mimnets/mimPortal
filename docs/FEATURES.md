@@ -85,7 +85,7 @@ rather than a failed Preset. Optional, and off until a key is set — see
   something to draw the new Blocks with. The Starter's own stylesheet is 33 lines.
 - **A publish guard** that checks the artefact as well as the package manager.
 - **19 architecture decision records** in `docs/adr/`.
-- **558 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
+- **588 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
 
 ---
 
@@ -113,6 +113,14 @@ rather than a failed Preset. Optional, and off until a key is set — see
   first two, migrated out of `props` at the parse boundary rather than in a database. Still
   missing from M11: Section dividers and `field.token`. CSS 3D is deliberately held back; the
   roadmap says why.
+
+  Reviewed on 6 September and five defects fixed, all of one shape — an existing guard with
+  one new case not added to it. The Dashboard was deleting `theme.texture` on every colour
+  edit; the derived radius scale could produce a value its own schema refused; an unknown
+  Section tone blanked a Page rather than repainting the band; AI page generation had silently
+  lost the button-colour choice when `style` stopped being a field; and a flat card on a mesh
+  band was the colour of the band. The two mechanisms the milestone is named for —
+  `data-variant` and the legacy-variant lift — had almost no test coverage and now have it.
 - **Animation.** A Block can be set to appear with `fade` or `rise` as it scrolls into view,
   chosen from the Theme rather than as a utility class. That is the whole of it: three options
   on one control. There is no Section stagger, no slide, scale, blur or wipe, no parallax, no
@@ -152,6 +160,10 @@ Each of these is a decision with reasoning behind it, not an oversight:
 - **The nav is one level deep** (`render/context.ts`). A dropdown reopens that decision, and
   hover intent, keyboard traps and mobile behaviour make it harder than it looks.
 - **Nothing is cached.** Every request reads the database.
+- **The Editor's preview does not paint a Section's tone.** A band set to Mesh looks
+  unchanged in the split view and only appears on the published Page. The Blocks inside it are
+  honest; the band around them is not. Padding and background are the same kind of Section
+  property and have not been checked.
 - **Deleting a file leaves Pages pointing at nothing** (ADR-0012), and there is no
   "where is this used?" view.
 - **A form's fields are fixed**: name, email, message.
