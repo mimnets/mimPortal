@@ -13,6 +13,8 @@ export type { Field, FieldKind, FieldsShape, InferFields } from "./blocks/fields
 export { createRegistry } from "./blocks/registry";
 export type { BlockRegistry } from "./blocks/registry";
 
+export { mediaKeysIn, usesMediaKey } from "./layout/media-keys";
+
 export { COLOR_TOKENS } from "./theme";
 export type { ColorToken } from "./theme";
 

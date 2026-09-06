@@ -3,7 +3,8 @@
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { assertUploadable, imageDimensions, mediaKey } from "@mimnets/core/storage";
-import { createDatabase, media } from "@mimnets/core/db";
+import { createDatabase, media, pages, sharedSlots } from "@mimnets/core/db";
+import { mediaKeysIn } from "@mimnets/core";
 
 import { requireDatabaseUrl } from "../../lib/env";
 import { requireOwner, requireUser } from "../../lib/session";
@@ -14,6 +15,16 @@ import { storage } from "../../lib/storage";
  * re-checked here, the file is validated here, and nothing the browser claimed about the
  * file is believed.
  */
+
+/** One place a picture is used, named the way an Author would recognise it. */
+export interface MediaUse {
+  /** "Home", "Main header" -- what the thing is called in the Dashboard. */
+  where: string;
+  /** Whether it is live, or only in an unpublished draft. */
+  state: "published" | "draft" | "shared";
+  /** Where to go and look, when there is somewhere to go. */
+  href?: string;
+}
 
 export interface MediaItem {
   id: string;
@@ -46,6 +57,65 @@ function toItem(row: typeof media.$inferSelect): MediaItem {
     alt: row.alt,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+/**
+ * Every place each stored picture is used, keyed by storage key.
+ *
+ * One pass over every Page and Shared Slot rather than a query per file: a Site has a few
+ * dozen Pages and a few hundred images, and asking the database once per image would be a
+ * few hundred round trips to answer one screen.
+ *
+ * Drafts count, and are reported separately. A picture used only in an unpublished draft is
+ * not on the Site yet, but deleting it still breaks something somebody is in the middle of
+ * writing -- which is a worse surprise than breaking a published Page, because nobody
+ * looking at the live Site would see it.
+ */
+export async function mediaUsage(): Promise<Record<string, MediaUse[]>> {
+  await requireUser();
+  const db = database();
+
+  const usage: Record<string, MediaUse[]> = {};
+  const record = (key: string, use: MediaUse) => {
+    (usage[key] ??= []).push(use);
+  };
+
+  const pageRows = await db
+    .select({
+      id: pages.id,
+      title: pages.title,
+      draftLayout: pages.draftLayout,
+      publishedLayout: pages.publishedLayout,
+    })
+    .from(pages);
+
+  for (const page of pageRows) {
+    const href = `/admin/pages/${page.id}`;
+    const published = mediaKeysIn(page.publishedLayout);
+    const draft = mediaKeysIn(page.draftLayout);
+
+    for (const key of published) record(key, { where: page.title, state: "published", href });
+
+    // Only what the draft adds. A picture in both is on the Page, and saying so twice would
+    // make every image look twice as used as it is.
+    for (const key of draft) {
+      if (!published.includes(key)) record(key, { where: page.title, state: "draft", href });
+    }
+  }
+
+  const slotRows = await db
+    .select({ id: sharedSlots.id, name: sharedSlots.name, sections: sharedSlots.sections })
+    .from(sharedSlots);
+
+  for (const slot of slotRows) {
+    for (const key of mediaKeysIn(slot.sections)) {
+      // A Shared Slot is on every Page at once, which is the thing worth knowing before
+      // deleting anything it uses.
+      record(key, { where: slot.name, state: "shared", href: `/admin/slots/${slot.id}` });
+    }
+  }
+
+  return usage;
 }
 
 export async function listMedia(): Promise<MediaItem[]> {
