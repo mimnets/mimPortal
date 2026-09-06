@@ -162,8 +162,14 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
       id: z.string().min(1),
       layout: z.enum(COLUMN_LAYOUT_NAMES),
       columns: z.array(column),
-      // Defaulted, so every Page written before Sections could be painted still parses.
-      tone: z.enum(SECTION_TONES).default("default"),
+      // Defaulted, so every Page written before Sections could be painted still parses; and
+      // caught, so one written *after* this enum grew still parses too. `lenientLayoutSchema`
+      // relaxes only the Block schema, so without the catch a single Section carrying a tone
+      // this Site does not know fails the salvage parse as well as the strict one and the
+      // whole Page comes back empty — I-04's failure exactly, one level up, and reachable by
+      // rolling back a deploy or by publishing a Shared Slot from a Site on newer packages.
+      // Falling back to "default" also keeps the value that reaches the DOM inside the enum.
+      tone: z.enum(SECTION_TONES).default("default").catch("default"),
       padding: z.enum(SECTION_PADDINGS).default("normal"),
       background: z
         .object({

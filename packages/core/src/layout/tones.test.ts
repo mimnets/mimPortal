@@ -60,10 +60,26 @@ describe("a Section's tone", () => {
     expect(parsed.layout?.slots.main[0]?.tone).toBe("default");
   });
 
-  it("still refuses one that is not a tone", () => {
-    // The enum is the boundary: `tone` reaches the DOM as a data attribute and selects CSS.
-    expect(registry.safeParseLayout(layout({ tone: "mesh; }" })).error).not.toBeNull();
-    expect(registry.safeParseLayout(layout({ tone: "rainbow" })).error).not.toBeNull();
+  it("falls back to default for a tone it does not know, rather than blanking the Page", () => {
+    // The enum is still the boundary — `tone` reaches the DOM as a data attribute and selects
+    // CSS, and neither of these values reaches it. What changed is the failure: a Section is
+    // repainted rather than the Page emptied. `lenientLayoutSchema` relaxes only the Block
+    // schema, so before the catch both of these failed the salvage parse too and a visitor
+    // met a blank Page. This is the case a rollback produces, and the one a Shared Slot
+    // published from a Site on newer packages produces.
+    for (const tone of ["mesh; }", "rainbow"]) {
+      const parsed = registry.safeParseLayout(layout({ tone }));
+
+      expect(parsed.error).toBeNull();
+      expect(parsed.layout?.slots.main[0]?.tone).toBe("default");
+    }
+  });
+
+  it("keeps a tone it does know", () => {
+    // The other half of the catch: it must not be swallowing valid values as well.
+    for (const tone of SECTION_TONES) {
+      expect(registry.safeParseLayout(layout({ tone })).layout?.slots.main[0]?.tone).toBe(tone);
+    }
   });
 
   it("offers exactly the bands the Editor draws", () => {
