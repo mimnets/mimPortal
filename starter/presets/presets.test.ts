@@ -131,15 +131,28 @@ describe("the built-in designs", () => {
             for (const block of column.blocks) {
               if (block.type !== "button") continue;
 
+              type Written = {
+                type?: string;
+                props?: Record<string, unknown>;
+                style?: Record<string, unknown>;
+              };
               const source = page.sections.flatMap((s) =>
-                ((s as { columns?: { blocks?: { type?: string; props?: Record<string, unknown> }[] }[] })
-                  .columns ?? []
-                ).flatMap((c) => c.blocks ?? []),
+                ((s as { columns?: { blocks?: Written[] }[] }).columns ?? []).flatMap(
+                  (c) => c.blocks ?? [],
+                ),
               );
               const written = source.find(
                 (b) => b.type === "button" && b.props?.label === block.props.label,
               );
-              const wanted = (written?.props?.style as string | undefined) ?? "primary";
+
+              // Read either shape on purpose. These designs state `style.variant` now, but
+              // the assertion that matters is "the colour the author wrote is the colour that
+              // survives parsing", and that has to keep holding for a design still written
+              // the old way -- which is every design any Site has stored.
+              const wanted =
+                (written?.style?.variant as string | undefined) ??
+                (written?.props?.style as string | undefined) ??
+                "primary";
 
               expect(block.style.variant).toBe(wanted);
               checked += 1;

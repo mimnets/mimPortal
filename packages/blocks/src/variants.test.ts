@@ -66,6 +66,22 @@ describe("the two Block Types that had a look before there was a mechanism", () 
     expect(block?.style.variant).toBe("full");
   });
 
+  it("parses the shape the presets and the seed now write", () => {
+    // Worth pinning because `pnpm seed` inserts its JSON raw, with no `parseLayout` between
+    // the script and the database: a wrong shape there is not caught until somebody looks at
+    // a seeded Site. This is that exact document -- no `props.style`, the variant stated.
+    const block = parse({
+      type: "button",
+      props: { label: "See how it works", href: "/about", size: "large" },
+      style: { variant: "accent" },
+    });
+
+    expect(block?.style.variant).toBe("accent");
+    expect(block?.props).not.toHaveProperty("style");
+    // The rest of the style object still fills in, so a partial style is a valid one.
+    expect(block?.style.tone).toBe("default");
+  });
+
   it("leaves a button that was already saved with a variant alone", () => {
     const block = parse({
       type: "button",
