@@ -49,6 +49,26 @@ function RepeaterItem({
   );
 }
 
+/**
+ * A token name as the Theme emits it.
+ *
+ * `themeToCss` kebab-cases every colour key, so `accentText` is `--mn-color-accent-text`.
+ * The swatch has to use the same spelling or it shows the wrong colour, or none.
+ */
+function swatch(token: string): string {
+  return token.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
+/** What each token is *for*, since the key names are the Theme's vocabulary, not a client's. */
+const TOKEN_LABELS: Record<string, string> = {
+  text: "Body text",
+  muted: "Muted text",
+  primary: "Primary",
+  accent: "Accent",
+  primaryText: "Primary, for reading",
+  accentText: "Accent, for reading",
+};
+
 export function FieldInput({ field, name, value, onChange }: FieldInputProps) {
   const id = `field-${name}`;
 
@@ -92,6 +112,30 @@ export function FieldInput({ field, name, value, onChange }: FieldInputProps) {
             value={Number(value ?? 0)}
             onChange={(event) => onChange(event.target.valueAsNumber)}
           />
+        </label>
+      );
+
+    case "token":
+      // Nearly the select above, and deliberately a separate case: the swatch is what makes
+      // the choice legible, and the value is a Theme token name rather than a colour.
+      return (
+        <label className="mn-field" htmlFor={id}>
+          <span>{field.label}</span>
+          <div className="mn-token-row">
+            <span
+              className="mn-token-swatch"
+              style={{ background: `var(--mn-color-${swatch(String(value))})` }}
+              aria-hidden="true"
+            />
+            <select id={id} value={String(value)} onChange={(event) => onChange(event.target.value)}>
+              {(field.options ?? []).map((option) => (
+                <option key={option} value={option}>
+                  {TOKEN_LABELS[option] ?? option}
+                </option>
+              ))}
+            </select>
+          </div>
+          {field.help ? <small>{field.help}</small> : null}
         </label>
       );
 

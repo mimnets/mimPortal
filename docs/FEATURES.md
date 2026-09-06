@@ -85,7 +85,7 @@ rather than a failed Preset. Optional, and off until a key is set — see
   something to draw the new Blocks with. The Starter's own stylesheet is 33 lines.
 - **A publish guard** that checks the artefact as well as the package manager.
 - **19 architecture decision records** in `docs/adr/`.
-- **588 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
+- **609 tests passing**, 7 skipped (the live-provider suites, opt-in with `AI_LIVE_TESTS=1`).
 
 ---
 
@@ -102,7 +102,7 @@ rather than a failed Preset. Optional, and off until a key is set — see
 
 ### Partly built
 
-- **M11's Theme tokens and its CSS-only looks.** The vocabulary is built and wired through
+- **M11's Theme tokens, its CSS-only looks, and the rest of it.** The vocabulary is built and wired through
   the Block library: `elevation` mixed from the Site's primary, a five-step `radius` scale,
   three `border` weights, `surface` as one of four keywords, and `texture` as grain or
   nothing. On top of them, a **mesh** Section tone built from the Site's own two brand
@@ -110,9 +110,13 @@ rather than a failed Preset. Optional, and off until a key is set — see
   asset, a request or a dependency. And **variants**: a Block Type declares its looks the way
   it declares its fields, the renderer emits `data-variant`, and the Editor generates the
   control. The testimonial has three; a button's `style` field and prose's `width` became the
-  first two, migrated out of `props` at the parse boundary rather than in a database. Still
-  missing from M11: Section dividers and `field.token`. CSS 3D is deliberately held back; the
-  roadmap says why.
+  first two, migrated out of `props` at the parse boundary rather than in a database.
+
+  **Section dividers** give a band an angled or curved bottom edge, and **`field.token`** lets
+  a Block offer a choice between the Theme's own colours rather than a free colour picker --
+  the eyebrow is the first to use it, keeping `accent` as its default so nothing changes
+  colour on any Site. CSS 3D is deliberately held back; the roadmap says why. Nothing else is
+  outstanding.
 
   Reviewed on 6 September and five defects fixed, all of one shape — an existing guard with
   one new case not added to it. The Dashboard was deleting `theme.texture` on every colour
@@ -144,9 +148,8 @@ met its exit criterion and has two small things left; M10.5 and M12 are untouche
 - **M10.5** — a Header that stays (scrolls, sticky or fixed), per-Section width so a gallery or
   a map can run edge to edge, and popovers for a biography or a service's detail. Each is a
   property the layout engine could already carry, sitting one field away from existing.
-- **M11** is no longer planned — it is on `feat/m11-theme-tokens` and has met its exit
-  criterion. It is described under *Partly built* above; Section dividers and `field.token`
-  are what remain of it.
+- **M11** is done and merged, including the review that followed it. It is described above;
+  the only thing consciously left out of it is CSS 3D.
 - **M12** — what the AI does next, and what it must not: importing a client's existing site as
   a draft, regenerating one Section rather than a whole Page, telling an Author what a Page is
   missing, and generating the catalogue pages. It also writes down the boundary — schemas,

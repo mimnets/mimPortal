@@ -13,12 +13,16 @@ export type { Field, FieldKind, FieldsShape, InferFields } from "./blocks/fields
 export { createRegistry } from "./blocks/registry";
 export type { BlockRegistry } from "./blocks/registry";
 
+export { COLOR_TOKENS } from "./theme";
+export type { ColorToken } from "./theme";
+
 export {
   BLOCK_ANIMATIONS,
   BLOCK_FONTS,
   BLOCK_TONES,
   blockStyleDefaults,
   COLUMN_LAYOUTS,
+  SECTION_DIVIDERS,
   SECTION_PADDINGS,
   SECTION_TONES,
   SLOT_NAMES,
@@ -39,6 +43,7 @@ export type {
   PageLayout,
   SectionBackground,
   SectionNode,
+  SectionDivider,
   SectionPadding,
   SectionTone,
   SlotName,

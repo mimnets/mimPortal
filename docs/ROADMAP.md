@@ -528,7 +528,7 @@ the code:
   leave existing Sites looking as they did rather than to be the best of the four. A token that
   changes every Site the day it lands is a token nobody trusts.
 
-Still to build below: the variants themselves, Section dividers and `field.token`.
+Built below: the variants themselves, Section dividers and `field.token`.
 
 **The tinted shadow is the single highest-value line here.** A grey `box-shadow` reads as a
 2015 card; the same shadow mixed with the Site's own primary reads as considered. It is one
@@ -678,17 +678,32 @@ Two decisions:
   read; a Page rewrites itself into the new shape the next time an Author saves it. No
   downtime, no script, and deletable once every Site has re-saved.
 
-Not done here: **Section dividers** and **`field.token`**, both below.
+Done on 6 September: **Section dividers** and **`field.token`**, both below.
 
 **Section dividers** land here for the same reason: an angled or curved edge between two
 bands is `clip-path` and a Section property, and it does more for how composed a Page looks
-than three more Block Types would. *Not built.*
+than three more Block Types would. *Built, 6 September.*
+
+The one decision inside it: the shape is on a pseudo-element and never on the Section.
+`clip-path` on the Section would establish a containing block for fixed and absolutely
+positioned descendants, trapping the gallery lightbox and the mobile nav drawer inside
+whatever band they sit in -- which is the grain overlay's bug exactly, and the reason it is
+worth writing down twice. A pseudo-element has no descendants, so clipping one traps nothing.
+The edge inherits the band's own colour, so a Section on the page background draws none:
+there is no edge between two things that are the same colour.
 
 **And a token picker, not a colour picker.** There is no `field.color`, and there should not
 be — a free hex picker is [ADR-0003](./adr/0003-sections-and-columns-not-free-canvas.md)'s
 mistake wearing a different hat, and a client who can put anything behind anything will.
-What is missing is `field.token`: choose one of the Theme's own colours, so a Block that
-offers a choice still cannot offer an unreadable one. *Not built.*
+What was missing is `field.token`: choose one of the Theme's own colours, so a Block that
+offers a choice still cannot offer an unreadable one. *Built, 6 September.*
+
+The Block Type narrows the list rather than the Theme doing it, because which colours read
+depends on where they land -- an eyebrow is small, bold and uppercase, so it offers the four
+that hold at that size and not body-text grey. The eyebrow is the first to use it and keeps
+`accent`, the colour it had hard-coded, as its default: a field that repaints every Site the
+day it lands is a field nobody adds, which is the same rule the first declared variant
+follows.
 
 **Done when:** the same testimonial Block looks like three different Sites without a line of
 new render code, and changing six values in `theme.ts` still rebrands all three.

@@ -1,4 +1,5 @@
 import { isSafeStorageKey, UNSAFE_KEY_MESSAGE } from "../layout/storage-key";
+import type { ColorToken } from "../theme";
 import { z } from "zod";
 
 /**
@@ -10,6 +11,7 @@ export type FieldKind =
   | "text"
   | "textarea"
   | "select"
+  | "token"
   | "number"
   | "boolean"
   | "image"
@@ -23,7 +25,7 @@ export interface Field<TSchema extends z.ZodType = z.ZodType> {
   schema: TSchema;
   /** Present only on repeaters, so the Editor can build a sub-form per item. */
   fields?: FieldsShape;
-  /** Present only on selects, so the Editor can render the choices. */
+  /** Present on selects and tokens, so the Editor can render the choices. */
   options?: readonly string[];
 }
 
@@ -124,6 +126,34 @@ export const field = {
       options.label ?? "Choice",
       z.enum(options.options).default(options.default ?? options.options[0]),
       { help: options.help, options: options.options },
+    );
+  },
+
+  /**
+   * One of the Theme's own colours, by name.
+   *
+   * The distinction from `select` is not the control, which is nearly the same -- it is what
+   * the value means. A select's options are this Block Type's business; a token's are the
+   * Theme's, so the same Page rebrands when the Theme does and a Block can never name a
+   * colour the Site has not chosen. That is the whole of ADR-0003 in a field.
+   *
+   * The Block Type narrows the list to what makes sense where it will be used: an eyebrow
+   * offers the four that read at its size, not all six. Whichever token was the Block's
+   * existing hard-coded colour should be the default, for the reason the first declared
+   * variant is a Block's existing look -- a field that repaints every Site the day it lands
+   * is a field nobody adds.
+   */
+  token<const T extends readonly [ColorToken, ...ColorToken[]]>(options: {
+    label?: string;
+    help?: string;
+    tokens: T;
+    default?: T[number];
+  }) {
+    return makeField(
+      "token",
+      options.label ?? "Colour",
+      z.enum(options.tokens).default(options.default ?? options.tokens[0]),
+      { help: options.help, options: options.tokens },
     );
   },
 

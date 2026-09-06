@@ -159,6 +159,70 @@ a {
   --mn-surface-background: var(--mn-color-background);
 }
 
+/* ---- Section dividers -------------------------------------------------------
+   An angled or curved edge between two bands, which is ADR-0013's argument again: the edge
+   belongs to the band, not to a Block sitting in it.
+
+   The shape is on a pseudo-element and never on the Section. That is the whole design
+   constraint, and it is the grain overlay's lesson applied before it cost anything rather
+   than after: `clip-path` on the Section would establish a containing block for fixed and
+   absolutely positioned descendants, which traps the gallery lightbox (`z-index: 50`) and
+   the mobile nav drawer inside whatever Section they live in. A pseudo-element has no
+   descendants, so clipping one can trap nothing.
+
+   `position: relative` on the Section is safe for the same two: the drawer already positions
+   against `.mn-nav`, and `position: relative` is not a containing block for `position: fixed`.
+
+   The edge is painted in the band's own colour by inheriting it, so it extends the band down
+   over whatever follows. A Section on the page background has no colour to extend and draws
+   nothing, which is correct rather than a limitation — there is no edge between two things
+   that are the same colour. */
+
+.mn-section[data-divider] {
+  position: relative;
+}
+
+.mn-section[data-divider]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: var(--mn-divider-height, 4rem);
+  /* The band's own colour, whatever the tone set it to. */
+  background-color: inherit;
+  /* Above the next Section's background, which paints later in document order. The next
+     Section's own padding keeps this off its content. */
+  z-index: 1;
+  /* Decoration: it must never eat a click meant for the Page underneath. */
+  pointer-events: none;
+}
+
+/* A diagonal falling left to right. The triangle's hypotenuse runs from the band's bottom
+   left corner up to the far side, so the band appears to shear off. */
+.mn-section[data-divider="angle"]::after {
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+/* A single soft arc. An ellipse wider than the box keeps the curve shallow at any width --
+   a circle would go from gentle on a phone to a semicircle on a desktop. */
+.mn-section[data-divider="curve"]::after {
+  clip-path: ellipse(75% 100% at 50% 0);
+}
+
+/* Shorter on a phone, where 4rem of angled colour is a large share of the screen. */
+@media (max-width: 720px) {
+  .mn-section[data-divider]::after {
+    --mn-divider-height: 2rem;
+  }
+}
+
+/* A band with a photograph behind it sets `background-image` inline and its own
+   `background-color` stays transparent, so there is nothing to extend. Saying so here stops
+   a half-drawn edge appearing under a hero. */
+.mn-section[data-has-image="true"][data-divider]::after {
+  display: none;
+}
+
 /* ---- Blocks ---- */
 
 /* Tailwind's preflight resets headings to inherit their size, so the scale is stated here
@@ -505,6 +569,23 @@ h3.mn-heading {
   text-transform: uppercase;
   color: var(--mn-color-accent);
 }
+
+/* The eyebrow's colour is a Theme token chosen per Block (`field.token`), mapped here rather
+   than set inline: a rule per token keeps the stylesheet the only place a colour is named,
+   and the field's enum keeps this list closed. `accent` is the default and is what every
+   eyebrow written before the field existed still gets, from the rule above. */
+.mn-eyebrow[data-colour="primary"] {
+  color: var(--mn-color-primary);
+}
+
+.mn-eyebrow[data-colour="accentText"] {
+  color: var(--mn-color-accent-text);
+}
+
+.mn-eyebrow[data-colour="primaryText"] {
+  color: var(--mn-color-primary-text);
+}
+
 
 .mn-muted {
   margin: 0;

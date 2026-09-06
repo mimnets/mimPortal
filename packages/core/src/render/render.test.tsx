@@ -99,6 +99,41 @@ describe("the variant on a rendered Block", () => {
   });
 });
 
+describe("a Section's bottom edge", () => {
+  /** One Section carrying whatever the caller says about its edge. */
+  function band(section: Record<string, unknown>) {
+    const parsed = registry.parseLayout({
+      version: 1,
+      slots: {
+        header: [],
+        main: [{ id: "sec-1", layout: "1", columns: [{ id: "col-1", blocks: [] }], ...section }],
+        sidebar: [],
+        footer: [],
+      },
+    });
+
+    const { container } = render(<SlotView layout={parsed} slot="main" registry={registry} />);
+    const el = container.querySelector(".mn-section");
+    if (!el) throw new Error("no Section was rendered");
+    return el;
+  }
+
+  it("reaches the page as data-divider", () => {
+    expect(band({ divider: "angle" }).getAttribute("data-divider")).toBe("angle");
+    expect(band({ divider: "curve" }).getAttribute("data-divider")).toBe("curve");
+  });
+
+  /**
+   * Omitted at "none", unlike a Block's variant. The two look inconsistent and are not: a
+   * variant has no value meaning "unstyled", and an edge does -- "none" is the absence of an
+   * edge, so there is nothing for the stylesheet to select and no attribute to write.
+   */
+  it("is absent when the edge is straight, which is most Sections", () => {
+    expect(band({ divider: "none" }).hasAttribute("data-divider")).toBe(false);
+    expect(band({}).hasAttribute("data-divider")).toBe(false);
+  });
+});
+
 describe("the style keys that are omitted at their defaults", () => {
   /**
    * Not a variant, and the contrast is the point: each of these has a value meaning "nothing

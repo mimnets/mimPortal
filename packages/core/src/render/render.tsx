@@ -87,6 +87,9 @@ function SectionView({
       data-layout={section.layout}
       data-tone={section.tone}
       data-padding={section.padding}
+      // Omitted at "none", like tone and font on a Block: "none" means no edge to draw, so
+      // there is nothing for the stylesheet to select on and no reason to state it.
+      data-divider={section.divider !== "none" ? section.divider : undefined}
       data-has-image={image ? "true" : undefined}
       style={
         image
