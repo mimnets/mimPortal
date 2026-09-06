@@ -1573,7 +1573,23 @@
    rather than escaping over the Section below it in the list. */
 .mn-ed-band {
   border-radius: 0 0 5px 5px;
-  overflow: hidden;
+}
+
+/* The divider's overhang is contained by making it shorter here, NOT by clipping the band.
+
+   `overflow: hidden` was the first attempt and it was wrong for the same reason `clip-path`
+   on a Section is wrong: it clips descendants. The Add Block menu opens downward out of the
+   last Column, so it was cut off mid-list -- an Author could see "Heading" and "Text" and
+   nothing below them. Reported within minutes of the change going in.
+
+   Nothing in the Editor may clip a Section's contents. Menus open out of them. */
+.mn-ed-band[data-divider] {
+  --mn-divider-height: 1.5rem;
+}
+
+/* Room for that overhang to land in, so it does not paint over the next Section's toolbar. */
+.mn-ed-section:has(.mn-ed-band[data-divider]) {
+  margin-bottom: 2.25rem;
 }
 
 /* A Section with no tone has no background of its own, and the Editor's own white is what
