@@ -12,12 +12,24 @@ wrong.
 
 ## Where to start
 
-**Merge `feat/m11-theme-tokens`.** Thirteen commits, pushed, reviewed, nothing outstanding.
-`pnpm typecheck` is 7/7, `pnpm test` is 588 passing with the Docker suites up, and
-`turbo build --force` is warning-free on an uncached build. Then the job below it is
-**A-26 and A-27**, which have now been deferred twice and want a person rather than a session.
+**Publish to npm.** Everything a session can do is done: M11 is merged, its review is merged,
+the audit's H-1 is closed, and the milestone's last two features landed on 6 September. What
+is left needs a person, and the publish needs one most — `npm login` is interactive, the first
+publish claims the `@mimnets` scope permanently, and `sites/ledger` cannot be finished until
+it can install a real package rather than one from a disposable local registry.
 
-The first four commits are the milestone. The nine after them are the review.
+Read what `pnpm release` prints rather than trusting it. A-28 was `pnpm build:packages`
+matching no packages at all and being willing to publish whatever happened to be in `dist`.
+
+Then **A-26 and A-27**, which have now been deferred three times and want a person with an
+opinion rather than another session.
+
+`main` is at the merge of `fix/h1-theme-css-injection`. `pnpm typecheck` is 7/7, `pnpm test`
+is 609 passing with the Docker suites up, and `turbo build --force` is warning-free on an
+uncached build.
+
+The commits below are M11 and everything that followed it. The first four are the milestone;
+the nine after them are its review.
 
 | | Commit | What it is |
 | --- | --- | --- |
@@ -109,12 +121,18 @@ re-saved — worth deleting then. `packages/core/src/blocks/variants.test.ts` is
 this, including the shape almost every stored Block is actually in: a `style` object that
 predates variants and has no `variant` key.
 
-### What is left of M11
+### What was left of M11, and is not any more
 
-- **Section dividers** — an angled or curved edge between two bands, which is `clip-path` and
-  a Section property. ADR-0013 is why it belongs on the Section rather than on a Block.
-- **`field.token`** — choose one of the Theme's own colours, so a Block that offers a choice
-  still cannot offer an unreadable one.
+Both landed on 6 September, on `feat/m11-dividers-and-token`.
+
+- **Section dividers** — an angled or curved bottom edge, a Section property for ADR-0013's
+  reason. The shape is on a pseudo-element and never on the Section: `clip-path` there would
+  become a containing block for fixed and absolutely positioned descendants and trap the
+  gallery lightbox and the mobile nav drawer inside the band. That is the grain overlay's bug,
+  avoided this time before it cost anything rather than after.
+- **`field.token`** — a Block offers names from the Theme rather than a colour. The eyebrow is
+  the first to use it and keeps `accent`, the colour it had hard-coded, so nothing changes on
+  any Site.
 - **CSS 3D**, which is held back rather than missed. A tilt on hover is a hover affordance and
   a quote is not something a visitor clicks; the tinted elevation already carries the depth it
   was for. It belongs on whatever a variant makes genuinely interactive. The roadmap has the
@@ -322,7 +340,7 @@ and the documentation findings already closed. `research.md` remains the record.
 
 ### Tests
 
-`pnpm test` — **588 passing, 7 skipped, about a minute.** It was 2 failing, 152 passing
+`pnpm test` — **609 passing, 7 skipped, about a minute.** It was 2 failing, 152 passing
 and red without Docker.
 
 The seven skips are the live-provider suites, off unless asked for:
@@ -399,8 +417,8 @@ in agreement:
   and M12 were all written on 5 September. M11 has met its exit criterion and has two small
   things left; M10.5 and M12 are untouched.
 
-The immediate job is at the top of this file: **merge `feat/m11-theme-tokens`**, then settle
-A-26 and A-27.
+The immediate job is at the top of this file: **publish**, then settle A-26 and A-27. Every
+milestone from M0 to M11 is now done and merged.
 
 
 ## The toolchain, and a diagnosis that was wrong
