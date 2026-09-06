@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import type { EditableTheme } from "./editable-theme";
+
 /**
  * Changing a Theme by hand.
  *
@@ -33,22 +35,7 @@ const FONT_STACKS = [
   ["ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", "Monospace"],
 ] as const;
 
-export interface EditableTheme {
-  colors: Record<string, string>;
-  fonts: { body: string; heading: string };
-  /**
-   * Carried, not edited.
-   *
-   * `save` posts the whole draft and the action replaces the stored Theme with it, so
-   * anything missing here is silently dropped — a Site that had stated a corner scale or a
-   * surface style in `theme.ts` would lose it the first time somebody moved a colour.
-   */
-  radius: Record<string, string>;
-  border: Record<string, string>;
-  surface: string;
-  spacing: { section: string; gutter: string };
-  measure: string;
-}
+export type { EditableTheme };
 
 export function ThemeEditor({
   theme,
