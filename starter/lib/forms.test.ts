@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { blockStyleDefaults, sectionDefaults, type PageLayout } from "@mimnets/core";
+import { emptyContext } from "@mimnets/core";
 import { contactBlock } from "@mimnets/blocks";
 import { describe, expect, it } from "vitest";
 
@@ -41,6 +42,7 @@ describe("the contact form's markup", () => {
           buttonLabel: "Send",
           successMessage: "Thanks",
           slug: "contact",
+          extras: [],
         },
         {
           siteName: "Example",
@@ -110,5 +112,57 @@ describe("finding the recipient in a published layout", () => {
     ];
 
     expect(recipientInSections(sections, "contact")).toBeNull();
+  });
+});
+
+describe("the extra questions in the markup", () => {
+  function html(extras: unknown[]) {
+    return renderToStaticMarkup(
+      contactBlock.render(
+        {
+          heading: "Get in touch",
+          intro: "",
+          recipient: "owner@example.com",
+          buttonLabel: "Send",
+          successMessage: "Thanks",
+          slug: "contact",
+          extras,
+        } as Parameters<typeof contactBlock.render>[0],
+        { ...emptyContext(), formToken: "t", currentPath: "/contact", query: {} },
+      ),
+    );
+  }
+
+  it("names each input by position, not by the Author's label", () => {
+    // The rule that stops a visitor inventing a question. If the label were the name, a
+    // posted `Account balance` would arrive looking exactly like something that was asked.
+    const markup = html([
+      { label: "Phone number", type: "phone", required: false },
+      { label: "How did you hear about us?", type: "one line", required: true },
+    ]);
+
+    expect(markup).toContain('name="x_0"');
+    expect(markup).toContain('name="x_1"');
+    expect(markup).not.toContain('name="Phone number"');
+    expect(markup).toContain("Phone number");
+    expect(markup).toContain('type="tel"');
+  });
+
+  it("still asks for a name, an email and a message", () => {
+    // The three that are not configurable, because they are what an enquiry is: the sender,
+    // the address a reply goes to, and the thing they wrote.
+    const markup = html([]);
+
+    expect(markup).toContain('name="name"');
+    expect(markup).toContain('name="email"');
+    expect(markup).toContain('name="message"');
+  });
+
+  it("renders nothing for a question with no label yet", () => {
+    expect(html([{ label: "", type: "one line", required: false }])).not.toContain('name="x_0"');
+  });
+
+  it("marks a required question required", () => {
+    expect(html([{ label: "Phone", type: "phone", required: true }])).toContain("required");
   });
 });

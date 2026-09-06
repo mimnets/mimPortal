@@ -1,0 +1,1 @@
+ALTER TABLE "form_submissions" ADD COLUMN "extra" jsonb DEFAULT '[]'::jsonb NOT NULL;

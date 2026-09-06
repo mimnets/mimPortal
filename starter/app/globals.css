@@ -60,3 +60,27 @@
 .mn-media-use[data-state="shared"] {
   font-weight: 600;
 }
+
+/* Answers to the questions an Author added, above the message they came with. A definition
+   list because that is what it is: each answer belongs to the question it was asked under. */
+.mn-enquiry-extra {
+  display: grid;
+  gap: 0.25rem 1rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.mn-enquiry-extra > div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mn-enquiry-extra dt {
+  color: #6b6b78;
+  min-width: 8rem;
+}
+
+.mn-enquiry-extra dd {
+  margin: 0;
+  font-weight: 500;
+}
