@@ -420,11 +420,12 @@ in agreement:
   a fourth item on 6 September: a **button row** Block, because two buttons cannot sit side by
   side today and the honest answer — set the Section to two Columns — puts them half a band
   apart. M10.5, M11
-  and M12 were all written on 5 September. M11 has met its exit criterion and has two small
-  things left; M10.5 and M12 are untouched.
+  and M12 were all written on 5 September. M11 is finished and merged; M10.5 and M12 are
+  untouched.
 
-The immediate job is at the top of this file: **publish**, then settle A-26 and A-27. Every
-milestone from M0 to M11 is now done and merged.
+The immediate job is at the top of this file: **publish**. A-26 and A-27 were settled on
+6 September — button text now picks black or white by measuring both rather than by a
+threshold. Every milestone from M0 to M11 is done and merged.
 
 
 ## The toolchain, and a diagnosis that was wrong
