@@ -155,7 +155,9 @@ export const defaultTheme: Theme = {
     primary: DEFAULT_PRIMARY,
     onPrimary: "#ffffff",
     accent: "#f0568c",
-    onAccent: "#ffffff",
+    // Black, not white: 5.77:1 against 3.27:1. Stated rather than derived because every other
+    // colour here is stated, but it is now the same answer `readableOn` would give.
+    onAccent: "#111111",
     primaryText: "#2f5ad6",
     accentText: "#b8285e",
     border: "#e4e4e9",
@@ -623,12 +625,6 @@ export const themeSchema = z.object({
 
 export type ThemeInput = z.infer<typeof themeSchema>;
 
-/**
- * Black or white, whichever is readable on the given colour.
- *
- * The sRGB relative-luminance formula from WCAG. The 0.55 threshold is a shade above the
- * mathematical midpoint because white text on a mid-tone reads worse than black does.
- */
 /** Relative luminance, per WCAG. Shared by everything below that reasons about contrast. */
 function luminanceOf(hex: string): number {
   const channel = (pair: string) => {
@@ -687,18 +683,26 @@ export function readableText(colour: string, background: string): string {
   return towardsBlack ? "#111111" : "#ffffff";
 }
 
+/**
+ * Black or white, whichever actually reads on the given colour.
+ *
+ * This measured both options from 6 September. Before that it compared relative luminance to
+ * a fixed 0.55, which was far too high: five of the ten button colours the product ships were
+ * given white text below the 4.5:1 that normal text needs, all five of them accents, and
+ * every one of them passes in black. That was recorded as a known wrong answer (A-26, A-27)
+ * and deferred twice, because flipping it changes the button text on every Site whose accent
+ * sits in that range and so is a design decision rather than a bug fix.
+ *
+ * It is not a smaller threshold, and that is the point. The textbook crossover is 0.1791, and
+ * the product's own default primary sits at 0.1831 — the wrong side of it, where white reaches
+ * 4.50 and black only 4.19. Any threshold has an edge like that somewhere; comparing the two
+ * ratios has none, costs the same, and cannot be wrong by construction.
+ *
+ * A Site that states `onPrimary` or `onAccent` itself still keeps what it stated. This decides
+ * only what happens when nobody has chosen.
+ */
 export function readableOn(hex: string): string {
-  const channel = (pair: string) => {
-    const value = parseInt(pair, 16) / 255;
-    return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
-  };
-
-  const r = channel(hex.slice(1, 3));
-  const g = channel(hex.slice(3, 5));
-  const b = channel(hex.slice(5, 7));
-  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-
-  return luminance > 0.55 ? "#111111" : "#ffffff";
+  return contrastRatio("#111111", hex) > contrastRatio("#ffffff", hex) ? "#111111" : "#ffffff";
 }
 
 /** Fills in the colours a generated Theme is allowed to leave out. */

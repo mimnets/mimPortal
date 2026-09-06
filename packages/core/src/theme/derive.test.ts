@@ -20,7 +20,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { defaultTheme, defineTheme, themeSchema } from "./index";
+import { defaultTheme, defineTheme, readableOn, themeSchema } from "./index";
 
 /** Ink & Ember, as the Starter ships it — jade and ember, nothing like the defaults. */
 const siteColours = {
@@ -127,9 +127,9 @@ describe("whatever is derived is readable", () => {
 
   it("derives text on a band for a Site rather than inheriting it", () => {
     // The fix, at the level that matters: a Site with a pale accent no longer inherits the
-    // default's white. `readableOn` chooses by a luminance threshold rather than by ratio,
-    // so it promises a sensible pick and not a number — which is why this asserts the choice
-    // rather than a contrast figure.
+    // default's white. `readableOn` measures both options and takes the more readable, so
+    // what it promises is "the better of black and white" rather than any particular ratio —
+    // which is why this asserts the choice rather than a contrast figure.
     const pale = defineTheme({ colors: { ...siteColours, accent: "#ffe9a8" } });
     expect(pale.colors.onAccent).toBe("#111111");
 
@@ -137,20 +137,58 @@ describe("whatever is derived is readable", () => {
     expect(dark.colors.onPrimary).toBe("#ffffff");
   });
 
-  it("records that the shipped defaults put white on a pink that black would suit better", () => {
-    // Not a regression and not introduced here: `defaultTheme` states onAccent explicitly,
-    // and an explicit value is kept. But white on #f0568c is 3.27:1 where black is 5.77:1,
-    // so the threshold in `readableOn` picks the less readable of the only two options on
-    // the colours the product ships with.
+  it("sets the shipped accent in black, which is the readable one", () => {
+    // This test used to record the opposite as a known and deliberate wrong answer: white on
+    // #f0568c is 3.27:1 where black is 5.77:1, and the old threshold picked white. It was left
+    // alone twice because flipping it changes the button text on every Site whose accent sits
+    // in that range, which is a design decision rather than an audit fix.
     //
-    // Left alone deliberately. Flipping it would change the button text on every Site whose
-    // accent sits in that range, and on the default blue the margin is 4.70 against 4.47 —
-    // a design decision about brand buttons, not a bug fix, and not one to make in an audit.
-    // Recorded here so it is a known number rather than a surprise.
-    expect(ratio("#ffffff", defaultTheme.colors.accent)).toBeLessThan(4.5);
-    expect(ratio("#111111", defaultTheme.colors.accent)).toBeGreaterThan(
-      ratio("#ffffff", defaultTheme.colors.accent),
+    // Taken on 6 September, after counting: five of the ten button colours the product ships
+    // were below 4.5:1, all five were accents, and every one of them passes in black.
+    expect(defaultTheme.colors.onAccent).toBe("#111111");
+    expect(ratio(defaultTheme.colors.onAccent, defaultTheme.colors.accent)).toBeGreaterThanOrEqual(
+      4.5,
     );
+  });
+
+  it("keeps the shipped primary in white, which a brightness threshold would have got wrong", () => {
+    // The reason this is not a threshold change. #3b6cf6 has a relative luminance of 0.1831,
+    // a hair above the 0.1791 crossover the textbooks give — so lowering the old 0.55 to that
+    // value would have flipped this button to black and taken it from 4.50 down to 4.19.
+    //
+    // Measuring both and taking the larger has no such edge. Any threshold has one somewhere.
+    expect(defaultTheme.colors.onPrimary).toBe("#ffffff");
+    expect(ratio("#ffffff", defaultTheme.colors.primary)).toBeGreaterThan(
+      ratio("#111111", defaultTheme.colors.primary),
+    );
+  });
+
+  it("picks whichever of the two actually reads, across every colour the product ships", () => {
+    // The rule, stated as the property rather than as a list of answers. Every one of these
+    // is a real primary or accent from `defaultTheme`, `starter/theme.ts` or a built-in
+    // design, and each is a button somebody will click.
+    const shipped = [
+      "#3b6cf6", "#f0568c", // built-in default
+      "#0b6b62", "#e05a26", // the Starter
+      "#16243f", "#b0813b", // Chambers
+      "#2e3a22", "#d08a1e", // Larder
+      "#4338ca", "#f43f5e", // Signal
+    ];
+
+    for (const colour of shipped) {
+      const chosen = readableOn(colour);
+      const other = chosen === "#111111" ? "#ffffff" : "#111111";
+
+      expect(
+        ratio(chosen, colour),
+        `${colour} was given ${chosen} at ${ratio(chosen, colour).toFixed(2)}:1 when ` +
+          `${other} reaches ${ratio(other, colour).toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(ratio(other, colour));
+
+      // Not a promise the rule can always keep -- a mid-grey has no readable answer -- but it
+      // is one every colour the product actually ships happens to keep.
+      expect(ratio(chosen, colour), `${colour} fails AA at best`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it("derives the default theme's own text colours rather than carrying hand-picked ones", () => {
