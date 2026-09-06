@@ -238,6 +238,11 @@ function Section({
     selection.path.slot === slot &&
     selection.path.section === index;
 
+  // A key, never a URL (ADR-0012) -- composed here the way `SectionView` composes it.
+  const sectionImage = section.background.key
+    ? `${context.mediaBaseUrl}/${section.background.key}`
+    : null;
+
   return (
     <section
       ref={setNodeRef}
@@ -299,23 +304,49 @@ function Section({
         </button>
       </div>
 
+      {/*
+        The band, drawn with the Site's own stylesheet rather than the Editor's.
+
+        `mn-section` and these four attributes are exactly what `SlotView` emits, so the tone,
+        the padding, the divider and a background photograph are painted by `blocks.css` and
+        cannot drift from the published Page -- which is the whole claim the split view makes.
+        Before this the band was Editor chrome: setting a Section to Dark or Mesh changed
+        nothing here and only appeared after publishing.
+      */}
       <div
-        className="mn-ed-columns"
-        style={{ ["--mn-columns" as string]: columnTemplate(section.layout) }}
+        className="mn-section mn-ed-band"
+        data-tone={section.tone}
+        data-padding={section.padding}
+        data-divider={section.divider !== "none" ? section.divider : undefined}
+        data-has-image={sectionImage ? "true" : undefined}
+        style={
+          sectionImage
+            ? {
+                backgroundImage:
+                  `linear-gradient(rgb(0 0 0 / ${section.background.overlay}), ` +
+                  `rgb(0 0 0 / ${section.background.overlay})), url("${sectionImage}")`,
+              }
+            : undefined
+        }
       >
-        {section.columns.map((column, columnIndex) => (
-          <Column
-            key={column.id}
-            column={column}
-            slot={slot}
-            section={index}
-            columnIndex={columnIndex}
-            registry={registry}
-            selection={selection}
-            dispatch={dispatch}
-            context={context}
-          />
-        ))}
+        <div
+          className="mn-ed-columns"
+          style={{ ["--mn-columns" as string]: columnTemplate(section.layout) }}
+        >
+          {section.columns.map((column, columnIndex) => (
+            <Column
+              key={column.id}
+              column={column}
+              slot={slot}
+              section={index}
+              columnIndex={columnIndex}
+              registry={registry}
+              selection={selection}
+              dispatch={dispatch}
+              context={context}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

@@ -1564,3 +1564,42 @@
   border: 1px solid rgb(0 0 0 / 0.15);
   border-radius: 4px;
 }
+
+/* The band inside the Editor.
+
+   `.mn-section` brings the Site's real padding, which is the point -- a Section set to "Tall"
+   should look tall here too. What it must not bring is the page's full-width bleed, so the
+   band is clipped to the chrome's rounded corners and the divider's overhang is contained
+   rather than escaping over the Section below it in the list. */
+.mn-ed-band {
+  border-radius: 0 0 5px 5px;
+  overflow: hidden;
+}
+
+/* A Section with no tone has no background of its own, and the Editor's own white is what
+   shows through. Stated so the two cannot disagree about what "no band" looks like. */
+.mn-ed-section .mn-ed-band[data-tone="default"]:not([data-has-image]) {
+  background-color: transparent;
+}
+
+/* Inside a painted band, the Block card gets out of the way.
+
+   The card's white background was invisible while the preview drew no band, which is why it
+   was never a problem. Once the band is painted it becomes a white rectangle the published
+   Page does not have -- and worse, `blocks.css` turns text white on a dark band, so the
+   Block's own words end up white on the card's white and disappear entirely. Found by
+   looking, one screenshot after the band first appeared.
+
+   The chrome bar keeps its own background: it is Editor UI rather than content, it has to
+   stay legible on any band, and it is the one part of this that will never be on the Page. */
+.mn-ed-band:not([data-tone="default"]) .mn-ed-block,
+.mn-ed-band[data-has-image] .mn-ed-block {
+  background: transparent;
+}
+
+.mn-ed-band:not([data-tone="default"]) .mn-ed-block-bar,
+.mn-ed-band[data-has-image] .mn-ed-block-bar {
+  background: #fff;
+  color: #666;
+  border-radius: 3px;
+}
