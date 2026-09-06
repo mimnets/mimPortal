@@ -12,11 +12,22 @@ wrong.
 
 ## Where to start
 
-**Publish to npm.** Everything a session can do is done: M11 is merged, its review is merged,
-the audit's H-1 is closed, and the milestone's last two features landed on 6 September. What
-is left needs a person, and the publish needs one most — `npm login` is interactive, the first
-publish claims the `@mimnets` scope permanently, and `sites/ledger` cannot be finished until
-it can install a real package rather than one from a disposable local registry.
+**Publish `main` at 0.3.0.** `npm login` is interactive, which is the only reason this is
+still open. Everything else a session could do without a decision is done.
+
+Two things learned the hard way on 6 September, both worth reading before running it:
+
+- **Publish from `main`, after `pnpm changeset version`.** `pnpm release` publishes but does
+  not version. Run alone it tried to publish 0.1.1, only `@mimnets/admin` went up, and the
+  result was a package on npm whose dependency did not exist. Run from a feature branch it
+  published code the changelog did not describe.
+- **`npm view <pkg> version` reports the `latest` tag, not what exists.** A freshly published
+  version can be there while the tag has not caught up, which read as a failed publish and was
+  not. `npm view <pkg> versions --json` is the honest question.
+
+`sites/ledger` still asks for `^0.1.1`, which does not match 0.2.0 or 0.3.0 — a caret on a 0.x
+pins the minor. That bump plus the two stylesheet lines in the changeset finishes Ledger, and
+neither can happen until there is something on the registry to install.
 
 Read what `pnpm release` prints rather than trusting it. A-28 was `pnpm build:packages`
 matching no packages at all and being willing to publish whatever happened to be in `dist`.
@@ -29,8 +40,28 @@ the more readable, which is not the same as lowering the threshold and the tests
 that did not need a decision. `pnpm typecheck` is 7/7, `pnpm test` is 643 passing with the
 Docker suites up, and `turbo build --force` is warning-free on an uncached build.
 
-The commits below are M11 and everything that followed it. The first four are the milestone;
-the nine after them are its review.
+### What else landed on 6 September
+
+After M11's review, and each merged into `main`:
+
+| | What it is |
+| --- | --- |
+| **H-1 closed** | A font stack could end the `<style>` element the whole Theme compiles into. Pre-existing since the Theme had six token families. Two guards that each hold alone, verified by breaking each separately |
+| **M11 finished** | Section dividers (`clip-path` on a pseudo-element, never on the Section) and `field.token`, a token picker that is deliberately not a colour picker |
+| **A-26 / A-27 settled** | Button text measures both options instead of comparing brightness to 0.55. Five of ten shipped button colours were below 4.5:1; all five were accents; all five pass in black |
+| **The Editor stopped lying** | A Section's band is painted, and a Block carries what the renderer emits — a button had no colour there at all since variants landed. Three bugs, one cause: the Editor kept a second copy of what the renderer does, and the copy drifted |
+| **"Where is this picture used?"** | The media library answers it, by walking layouts structurally rather than asking the registry — a Page can hold a Block whose type was removed and still hold its picture |
+| **Editable form fields** | A contact form asks more than name, email and message. Inputs are named by position, never by the Author's label, for the reason `recipient` is not a hidden input |
+| **Every Block Type has an icon** | Five of twenty-two did |
+
+**The audit was wrong about four things**, and that is worth more than any of the fixes. A-12,
+A-17, A-18 and A-19 were already closed by earlier sessions that never went back to say so, and
+the first one picked up was already done. An audit is a snapshot and the code moves: **verify a
+finding before acting on it.**
+
+### The M11 commits
+
+The first four are the milestone; the nine after them are its review.
 
 | | Commit | What it is |
 | --- | --- | --- |
@@ -195,6 +226,11 @@ times. Three defects were found by looking and could not have been found any oth
   fixing or worth writing down as a limit; it is currently neither.
 
 None of the three was a failing test. All three were a screenshot.
+
+**Left on the Site deliberately, and none of it is content.** A mesh band with a testimonial
+on `/test`, a "Phone number" question on the published contact form, and one enquiry from
+"Ada Lovelace" — each was the end-to-end check for a feature that landed on 6 September, and
+each is safe to delete. `/test` is the scratch Page; nothing on it is a client's.
 
 The mesh band is worth looking at once before you touch it. `/test` currently carries one,
 with a testimonial on it, published on 6 September to see the band with a card on it. Delete
