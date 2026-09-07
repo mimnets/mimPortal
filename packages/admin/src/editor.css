@@ -37,6 +37,38 @@
   background: #f4f4f6;
 }
 
+/* The preview's own container, and the only place in the product that declares one.
+ *
+ * `container-type: inline-size` is what makes `blocks.css`'s `@container` rules fire, so
+ * narrowing this genuinely stacks the Columns rather than scaling a picture of them. It
+ * also implies `contain: layout`, which makes this a containing block for `position: fixed`
+ * descendants -- inside a preview pane that is what you want, and it is exactly why the
+ * declaration is here and never on published markup.
+ *
+ * The two narrow widths get a rule and a shadow so the edge of the "device" is visible;
+ * without it an Author cannot tell a stacked layout from a narrow one. */
+.mn-ed-frame {
+  container-type: inline-size;
+  width: 100%;
+  margin-inline: auto;
+  background: #fff;
+  transition: max-width 0.15s ease;
+}
+
+.mn-ed-frame[data-viewport="tablet"] {
+  max-width: 48rem;
+}
+
+.mn-ed-frame[data-viewport="phone"] {
+  max-width: 24rem;
+}
+
+.mn-ed-frame[data-viewport="tablet"],
+.mn-ed-frame[data-viewport="phone"] {
+  outline: 1px solid #d8d8de;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.08);
+}
+
 .mn-ed-panel {
   overflow: auto;
   border-left: 1px solid #e2e2e6;

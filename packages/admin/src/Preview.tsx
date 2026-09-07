@@ -378,6 +378,17 @@ function Section({
   );
 }
 
+/**
+ * The widths the preview offers, and deliberately only three.
+ *
+ * Not a free pixel field, for the reason a Section's width is three keywords and there is no
+ * colour picker: an Author dragging a slider to 431px is checking a number rather than a
+ * layout. These are the two edges that matter -- a phone, and a tablet -- plus the pane
+ * itself.
+ */
+export const PREVIEW_VIEWPORTS = ["full", "tablet", "phone"] as const;
+export type PreviewViewport = (typeof PREVIEW_VIEWPORTS)[number];
+
 export function Preview({
   layout,
   registry,
@@ -387,6 +398,7 @@ export function Preview({
   lockedSlots = [],
   slotNotes = {},
   visibleSlots,
+  viewport = "full",
 }: Common & {
   layout: PageLayout;
   lockedSlots?: SlotName[];
@@ -401,9 +413,23 @@ export function Preview({
    * a person finding that place and concluding the product is broken.
    */
   slotNotes?: Partial<Record<SlotName, string>>;
+  /**
+   * Which width to draw the Page at. "full" is the pane's own width.
+   *
+   * This is not a zoom and not a scaled screenshot: the frame below declares
+   * `container-type`, so narrowing it makes the Block stylesheet's `@container` rules fire
+   * and the Columns genuinely stack -- the same rules a phone gets from `@media`, written
+   * once beside each other in `blocks.css`.
+   */
+  viewport?: PreviewViewport;
 }) {
   return (
     <div className="mn-ed-preview" onClick={() => dispatch({ type: "select", selection: null })}>
+      {/* The container. It is here, in the Dashboard, and never in published markup --
+          `container-type` implies `contain: layout`, which would make any element carrying
+          it a containing block for the gallery lightbox and the popover panels. Inside a
+          preview pane that is harmless and arguably right; on a Page it would break both. */}
+      <div className="mn-ed-frame" data-viewport={viewport}>
       {(visibleSlots ?? SLOT_NAMES).map((slot) =>
         lockedSlots.includes(slot) ? (
           // A locked Slot renders through the public renderer: an Author sees exactly what a
@@ -459,6 +485,7 @@ export function Preview({
         </div>
         ),
       )}
+      </div>
     </div>
   );
 }

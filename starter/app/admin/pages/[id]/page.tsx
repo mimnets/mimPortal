@@ -14,6 +14,7 @@ import { storage } from "../../../../lib/storage";
 import { listPages, listVersions, publishPage, restoreVersion, saveDraft } from "../../actions";
 import { listMedia, uploadMedia } from "../../media-actions";
 import { signOut } from "../../sign-out";
+import { forgetBlueprint, listBlueprints, saveBlueprint } from "../../blueprint-actions";
 import { EditorClient } from "./EditorClient";
 import { PageSwitcher } from "./PageSwitcher";
 
@@ -76,6 +77,9 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
       onListMedia={listMedia}
       onUploadMedia={uploadMedia}
       mediaBaseUrl={storage().baseUrl}
+      onListBlueprints={listBlueprints}
+      onSaveBlueprint={saveBlueprint}
+      onForgetBlueprint={forgetBlueprint}
       assist={{ enabled: aiConfigured(), pageTitle: page.title }}
       nav={
         <>

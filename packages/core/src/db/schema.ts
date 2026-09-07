@@ -250,3 +250,28 @@ export const sharedSlots = pgTable(
 );
 
 export type SharedSlotRow = typeof sharedSlots.$inferSelect;
+
+/**
+ * A Section saved by name, to be dropped into a Page as a copy.
+ *
+ * **Not a Shared Slot, and the difference is the whole point.** A Shared Slot is one Section
+ * used in many places and edited once (ADR-0015); a Blueprint stops being related to its
+ * source the moment it is inserted. Editing a Blueprint changes nothing already placed, and
+ * editing a placed Section changes no Blueprint -- which is what makes it a starting point
+ * rather than a dependency.
+ *
+ * `section` holds one `SectionNode`, the same shape a Page's Slot holds an array of, and it
+ * is validated through the same registry schema the Editor writes through before it is
+ * stored. That is what it inherits from the Preset guarantee: a Blueprint cannot name a Block
+ * Type this Site does not register, because it never got saved if it did.
+ */
+export const blueprints = pgTable("blueprints", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  /** One Section, in the shape `SectionNode` describes. */
+  section: jsonb("section").$type<unknown>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type BlueprintRow = typeof blueprints.$inferSelect;
+

@@ -18,8 +18,9 @@ import { emptyContext } from "@mimnets/core";
 import { History, type PageVersionSummary } from "./History";
 import { AssistProvider, type AssistSettings } from "./assist-context";
 import { MediaProvider, type MediaBridge } from "./media";
+import { BlueprintProvider, type BlueprintBridge } from "./blueprints";
 import { RedoIcon, SaveIcon, UndoIcon } from "./icons";
-import { Preview } from "./Preview";
+import { Preview, PREVIEW_VIEWPORTS, type PreviewViewport } from "./Preview";
 import { SettingsPanel } from "./SettingsPanel";
 import {
   canRedo,
@@ -72,6 +73,11 @@ export interface EditorProps {
    */
   media?: MediaBridge;
   /**
+   * Saved Sections an Author can drop into a Page. Absent hides the controls entirely,
+   * the same way an absent media bridge leaves the image field showing a storage key.
+   */
+  blueprints?: BlueprintBridge;
+  /**
    * Links back to the rest of the Dashboard.
    *
    * Passed in rather than built here, because the admin package does not know a Site's
@@ -112,12 +118,17 @@ export function Editor({
   signedInAs,
   onSignOut,
   media,
+  blueprints,
   nav,
   assist,
 }: EditorProps) {
   const [state, dispatch] = useReducer(editorReducer, layout, initialState);
   const [status, setStatus] = useState<"idle" | "saving" | "publishing">("idle");
   const [message, setMessage] = useState<string | null>(null);
+  // Not persisted, deliberately. Which width you last checked is a property of the
+  // checking, not of the Page, and a Page that reopened at phone width would read as
+  // broken rather than as remembered.
+  const [viewport, setViewport] = useState<PreviewViewport>("full");
   const [error, setError] = useState<string | null>(null);
   const [versions, setVersions] = useState(initialVersions);
   const [tab, setTab] = useState<Tab>("settings");
@@ -248,6 +259,7 @@ export function Editor({
 
   return (
     <MediaProvider value={media ?? null}>
+      <BlueprintProvider value={blueprints ?? null}>
       <AssistProvider value={assist ?? null}>
       <div className="mn-ed">
         <header className="mn-ed-bar">
@@ -268,6 +280,26 @@ export function Editor({
           >
             {error ?? message ?? (state.dirty ? "Unsaved changes" : "All changes saved")}
           </span>
+
+          {/* Columns stack on narrow screens without anybody authoring it, so until this
+              existed an Author never saw the stacked result until they published. It is a
+              real narrowing rather than a zoom: the frame is a CSS container and the Block
+              stylesheet carries `@container` twins of its `@media` rules. */}
+          <label className="mn-ed-viewport" htmlFor="preview-viewport">
+            <span className="mn-visually-hidden">Preview width</span>
+            <select
+              id="preview-viewport"
+              value={viewport}
+              onChange={(event) => setViewport(event.target.value as PreviewViewport)}
+              title="Preview width"
+            >
+              {PREVIEW_VIEWPORTS.map((name) => (
+                <option key={name} value={name}>
+                  {name === "full" ? "Full width" : name === "tablet" ? "Tablet" : "Phone"}
+                </option>
+              ))}
+            </select>
+          </label>
 
           {/* Before Save, because they are the pair an Author reaches for most and undo is
               the one that has to be findable in a hurry. Titled rather than labelled: the
@@ -360,6 +392,7 @@ export function Editor({
               slotNotes={slotNotes}
               visibleSlots={visibleSlots}
               context={context}
+              viewport={viewport}
             />
 
             <aside className="mn-ed-panel">
@@ -407,6 +440,7 @@ export function Editor({
         </DndContext>
       </div>
       </AssistProvider>
+      </BlueprintProvider>
     </MediaProvider>
   );
 }

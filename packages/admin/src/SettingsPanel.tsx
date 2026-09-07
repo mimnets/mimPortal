@@ -1,6 +1,6 @@
 "use client";
 
-import type { Dispatch } from "react";
+import { useEffect, useState, type Dispatch } from "react";
 
 import type {
   BlockRegistry,
@@ -8,6 +8,7 @@ import type {
   PageLayout,
   SectionDivider,
   SectionPadding,
+  SectionNode,
   SectionTone,
   SectionWidth,
 } from "@mimnets/core";
@@ -17,7 +18,145 @@ import type { BlockAnimation, BlockFont, BlockTone } from "@mimnets/core";
 import { FieldInput } from "./FieldInput";
 import { BlockIcon, ICONS_BY_BLOCK, TrashIcon } from "./icons";
 import { LayoutPicker } from "./pickers";
-import { blockAt, blockTypeFor, type EditorAction, type Selection } from "./state";
+import {
+  blockAt,
+  blockTypeFor,
+  type EditorAction,
+  type SectionPath,
+  type Selection,
+} from "./state";
+import { useBlueprints, type Blueprint } from "./blueprints";
+
+
+/**
+ * Save this Section by name, and drop a saved one in below it.
+ *
+ * Rendered only when a Dashboard wired a bridge, so the Editor in isolation shows nothing
+ * rather than buttons that fail -- the same rule the image field follows without a media
+ * library.
+ *
+ * **A Blueprint is a copy, not a link.** `insertSection` runs it through `copySection`, so
+ * what lands in the Page shares no ids with what is stored and editing either leaves the
+ * other alone. That is the whole difference from a Shared Slot (ADR-0015), and it is the
+ * thing to say out loud in the UI, because "saved Section" could reasonably mean either.
+ */
+function SectionBlueprints({
+  section,
+  path,
+  dispatch,
+}: {
+  section: SectionNode;
+  path: SectionPath;
+  dispatch: Dispatch<EditorAction>;
+}) {
+  const bridge = useBlueprints();
+  const [saved, setSaved] = useState<Blueprint[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!bridge) return;
+    let live = true;
+    bridge
+      .list()
+      .then((rows) => {
+        if (live) setSaved(rows);
+      })
+      .catch(() => {
+        if (live) setError("Saved Sections could not be loaded.");
+      });
+    return () => {
+      live = false;
+    };
+  }, [bridge]);
+
+  if (!bridge) return null;
+
+  async function save() {
+    const name = prompt("Name this Blueprint", "Untitled Section");
+    if (name === null) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      // The Section as it stands, ids and all. They are replaced on the way back in, so what
+      // is stored here is a template rather than a reference to this Page.
+      const created = await bridge!.save(name.trim() || "Untitled Section", section);
+      setSaved((rows) => [created, ...rows]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "That could not be saved.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mn-field-group">
+      <h3>Blueprints</h3>
+
+      {error ? (
+        <p className="mn-media-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <button type="button" className="mn-button" disabled={busy} onClick={save}>
+        Save this Section as a Blueprint
+      </button>
+
+      {saved.length === 0 ? (
+        <small>
+          A Blueprint is a starting point: inserting one drops in a copy, and the copy stops
+          being related to it. Changing a Blueprint later leaves every Section already placed
+          alone &mdash; which is what makes it different from a shared Header or Footer.
+        </small>
+      ) : (
+        <ul className="mn-page-list">
+          {saved.map((blueprint) => (
+            <li key={blueprint.id} className="mn-page-row">
+              <span className="mn-page-main">
+                <strong>{blueprint.name}</strong>
+              </span>
+              <button
+                type="button"
+                className="mn-button"
+                disabled={busy}
+                onClick={() =>
+                  dispatch({
+                    type: "insertSection",
+                    slot: path.slot,
+                    index: path.section + 1,
+                    section: blueprint.section,
+                  })
+                }
+              >
+                Insert below
+              </button>
+              <button
+                type="button"
+                className="mn-button mn-button-danger"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await bridge!.remove(blueprint.id);
+                    setSaved((rows) => rows.filter((row) => row.id !== blueprint.id));
+                  } catch (cause) {
+                    setError(cause instanceof Error ? cause.message : "That could not be removed.");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Forget
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 /**
  * "no-image" reads as "No image". Variants are declared as the strings that reach CSS, so
@@ -304,6 +443,8 @@ export function SettingsPanel({
             carousel or a map wants and what a paragraph does not.
           </small>
         </label>
+
+        <SectionBlueprints section={section} path={selection.path} dispatch={dispatch} />
 
         <FieldInput
           name="section-background"

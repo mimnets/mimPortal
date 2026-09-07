@@ -206,3 +206,53 @@ describe("the wrapper a Block is rendered inside", () => {
     expect(body().getAttribute("data-block")).toBe("spacer");
   });
 });
+
+/**
+ * The responsive preview, M10's fourth.
+ *
+ * Columns stack on narrow screens without anybody authoring it, which meant an Author never
+ * saw the stacked result until they published — the one thing a live preview promises not to
+ * do, and the same complaint the Section band answered above.
+ *
+ * The mechanism is the thing to protect. `blocks.css` carries a `@container` twin of each
+ * `@media` layout rule, and this frame is the only element in the product that declares
+ * `container-type`. jsdom does not evaluate container queries, so what is tested here is the
+ * contract that makes them fire: the frame exists, it carries the chosen width, and it is in
+ * the Dashboard rather than in anything a Site publishes.
+ */
+describe("the preview's width", () => {
+  function frame(viewport?: "full" | "tablet" | "phone") {
+    const { container } = render(
+      <Preview
+        layout={pageWithOneSection()}
+        registry={registry}
+        selection={null}
+        dispatch={vi.fn()}
+        context={emptyContext()}
+        viewport={viewport}
+      />,
+    );
+    const el = container.querySelector(".mn-ed-frame");
+    if (!el) throw new Error("the preview drew no frame");
+    return el;
+  }
+
+  it("draws the Page at full width unless asked otherwise", () => {
+    expect(frame().getAttribute("data-viewport")).toBe("full");
+  });
+
+  it("carries the width an Author picked", () => {
+    expect(frame("phone").getAttribute("data-viewport")).toBe("phone");
+    expect(frame("tablet").getAttribute("data-viewport")).toBe("tablet");
+  });
+
+  /**
+   * The frame wraps the Slots rather than sitting beside them. A container only governs its
+   * descendants, so a frame that did not contain the Sections would change nothing at any
+   * width and the whole feature would be a select box that does nothing.
+   */
+  it("wraps the Slots, because a container only governs what is inside it", () => {
+    const el = frame("phone");
+    expect(el.querySelector(".mn-ed-slot")).not.toBeNull();
+  });
+});

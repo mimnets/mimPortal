@@ -1,4 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Blocks is browser-only at runtime and ships no server code. Node's types are here for
+    // one test: `stylesheet.test.ts` reads `blocks.css` off disk, because the two things it
+    // guards -- that no `container-type` reaches published CSS, and that the `@container`
+    // twins are not deleted as dead rules -- are properties of the file rather than of
+    // anything a component renders.
+    "types": ["node"]
+  },
   "include": ["src"]
 }

@@ -30,10 +30,13 @@
     "@mimnets/core": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "react": "^19.2.8"
   },
-  "sideEffects": ["**/*.css"],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "files": [
     "dist",
     "src"

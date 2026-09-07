@@ -1,6 +1,6 @@
 "use client";
 
-import { Editor, type AssistSettings, type MediaItem } from "@mimnets/admin";
+import { Editor, type AssistSettings, type Blueprint, type MediaItem } from "@mimnets/admin";
 import type { ReactNode } from "react";
 import type { PageLayout, RenderContext, SlotName } from "@mimnets/core";
 
@@ -27,6 +27,9 @@ export function EditorClient({
   onListMedia,
   onUploadMedia,
   mediaBaseUrl,
+  onListBlueprints,
+  onSaveBlueprint,
+  onForgetBlueprint,
   nav,
   assist,
   slotNotes,
@@ -46,6 +49,9 @@ export function EditorClient({
   onListMedia: () => Promise<MediaItem[]>;
   onUploadMedia: (form: FormData) => Promise<MediaItem>;
   mediaBaseUrl: string;
+  onListBlueprints: () => Promise<Blueprint[]>;
+  onSaveBlueprint: (name: string, section: unknown) => Promise<Blueprint>;
+  onForgetBlueprint: (id: string) => Promise<void>;
   nav: ReactNode;
   assist: AssistSettings;
   slotNotes: Partial<Record<SlotName, string>>;
@@ -65,6 +71,11 @@ export function EditorClient({
       onRestore={onRestore}
       onSignOut={onSignOut}
       media={{ list: onListMedia, upload: onUploadMedia, baseUrl: mediaBaseUrl }}
+      blueprints={{
+        list: onListBlueprints,
+        save: onSaveBlueprint,
+        remove: onForgetBlueprint,
+      }}
       nav={nav}
       assist={assist}
       slotNotes={slotNotes}

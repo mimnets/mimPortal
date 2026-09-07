@@ -75,6 +75,7 @@ export type EditorAction =
   | { type: "addSection"; slot: SlotName; layout: ColumnLayout }
   | { type: "deleteSection"; path: SectionPath }
   | { type: "duplicateSection"; path: SectionPath }
+  | { type: "insertSection"; slot: SlotName; index: number; section: SectionNode }
   | { type: "moveSection"; slot: SlotName; from: number; to: number }
   | { type: "setSectionLayout"; path: SectionPath; layout: ColumnLayout }
   | { type: "setSectionStyle"; path: SectionPath; style: Partial<SectionStyle> }
@@ -388,6 +389,32 @@ function documentReducer(state: DocumentState, action: EditorAction): DocumentSt
         layout,
         dirty: true,
         selection: { kind: "section", path: { slot: action.path.slot, section: index } },
+      };
+    }
+
+    /**
+     * Drop a Section in from somewhere that is not this Page -- today, a Blueprint.
+     *
+     * It goes through `copySection` rather than being spliced in as it arrived, and that is
+     * the load-bearing line. A Blueprint is stored once and may be inserted many times, into
+     * the same Page twice if an Author likes, so the ids it carries are *somebody else's* --
+     * reusing them would give dnd-kit two draggables with one id and `findBlockPath` would
+     * stop at the first, exactly as the duplicate case above describes.
+     *
+     * Copying is also what makes a Blueprint a starting point rather than a dependency: what
+     * lands in the Page shares no identity with what is stored, so editing either leaves the
+     * other alone. That is the whole difference from a Shared Slot (ADR-0015).
+     */
+    case "insertSection": {
+      const layout = structuredClone(state.layout);
+      const sections = layout.slots[action.slot];
+      const index = Math.max(0, Math.min(action.index, sections.length));
+
+      sections.splice(index, 0, copySection(action.section));
+      return {
+        layout,
+        dirty: true,
+        selection: { kind: "section", path: { slot: action.slot, section: index } },
       };
     }
 

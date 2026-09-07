@@ -766,3 +766,139 @@ describe("a duplicated Block is independent of its original", () => {
     expect(edited.past[0]).toEqual(before);
   });
 });
+
+/**
+ * Inserting a Blueprint, M10's fourth and last piece.
+ *
+ * A Blueprint is stored once and may be inserted many times — into the same Page twice, if
+ * an Author likes — so the ids it carries belong to whoever saved it. Everything below is
+ * about the consequence of that, and it is the same hazard `duplicateSection` has with one
+ * extra edge: a duplicate copies something already in this Page, while this copies something
+ * that may be in *no* Page, or in three.
+ */
+describe("inserting a Section from a Blueprint", () => {
+  /** A stored Blueprint: a Section with ids that came from somewhere else entirely. */
+  function stored(): SectionNode {
+    return {
+      id: "sec-from-a-blueprint",
+      layout: "1",
+      columns: [
+        {
+          id: "col-from-a-blueprint",
+          blocks: [
+            { id: "blk-from-a-blueprint", type: "heading", props: { text: "Our team", level: "h2" } },
+          ],
+        },
+      ],
+      tone: "surface",
+      padding: "normal",
+      width: "measure",
+      divider: "none",
+      background: { key: "", overlay: 0.45 },
+      // Through `unknown`, and honestly so: a Blueprint arrives from a `jsonb` column, so
+      // this is the shape a row actually has rather than one the compiler built.
+    } as unknown as SectionNode;
+  }
+
+  it("drops the Section in at the index asked for", () => {
+    const state = fixture();
+    const before = state.layout.slots.main.length;
+
+    const next = editorReducer(state, {
+      type: "insertSection",
+      slot: "main",
+      index: 0,
+      section: stored(),
+    });
+
+    expect(next.layout.slots.main).toHaveLength(before + 1);
+    expect(next.layout.slots.main[0]!.tone).toBe("surface");
+    expect(next.selection).toEqual({ kind: "section", path: { slot: "main", section: 0 } });
+  });
+
+  /**
+   * The load-bearing assertion. Inserting the *same* Blueprint twice must produce two
+   * Sections sharing no id at all — otherwise dnd-kit sees one draggable twice and
+   * `findBlockPath` stops at the first, so the settings panel edits the copy an Author is
+   * not looking at.
+   */
+  it("gives every insertion its own ids, even from one Blueprint", () => {
+    const blueprint = stored();
+    let state = fixture();
+
+    state = editorReducer(state, { type: "insertSection", slot: "main", index: 0, section: blueprint });
+    state = editorReducer(state, { type: "insertSection", slot: "main", index: 0, section: blueprint });
+
+    const idsOf = (section: SectionNode) => [
+      section.id,
+      ...section.columns.flatMap((column) => [column.id, ...column.blocks.map((b) => b.id)]),
+    ];
+    const first = idsOf(state.layout.slots.main[0]!);
+    const second = idsOf(state.layout.slots.main[1]!);
+
+    expect(first.filter((id) => second.includes(id))).toEqual([]);
+    // And neither reuses the ids the Blueprint was stored with.
+    for (const ids of [first, second]) {
+      expect(ids).not.toContain("sec-from-a-blueprint");
+      expect(ids).not.toContain("col-from-a-blueprint");
+      expect(ids).not.toContain("blk-from-a-blueprint");
+    }
+  });
+
+  /**
+   * What makes it a starting point rather than a dependency, and the whole difference from a
+   * Shared Slot (ADR-0015). Editing what was inserted must not reach back into the object the
+   * Blueprint was inserted from.
+   */
+  it("shares no structure with the Blueprint, so editing one leaves the other alone", () => {
+    const blueprint = stored();
+    const next = editorReducer(fixture(), {
+      type: "insertSection",
+      slot: "main",
+      index: 0,
+      section: blueprint,
+    });
+
+    next.layout.slots.main[0]!.columns[0]!.blocks[0]!.props.text = "Changed on the Page";
+
+    expect(blueprint.columns[0]!.blocks[0]!.props.text).toBe("Our team");
+  });
+
+  /**
+   * The clamp, and the half of it that is not free.
+   *
+   * An index past the end needs no guard: `splice` already appends, and a test asserting so
+   * passes with the clamp deleted -- which is what happened when this was written, and is
+   * why it now tests the other end. A *negative* index is the case `Math.max(0, ...)` is
+   * for, because `splice(-1, 0, x)` counts from the end and would quietly insert the
+   * Section second-to-last instead of first.
+   */
+  it("appends when the index is past the end", () => {
+    const next = editorReducer(fixture(), {
+      type: "insertSection",
+      slot: "main",
+      index: 99,
+      section: stored(),
+    });
+
+    const sections = next.layout.slots.main;
+    expect(sections[sections.length - 1]!.tone).toBe("surface");
+    expect(sections.every(Boolean)).toBe(true);
+  });
+
+  it("puts a negative index first, rather than counting from the end", () => {
+    const state = fixture();
+    // Give the fixture a second Section, so "first" and "second to last" differ.
+    const seeded = editorReducer(state, { type: "addSection", slot: "main", layout: "1" });
+
+    const next = editorReducer(seeded, {
+      type: "insertSection",
+      slot: "main",
+      index: -1,
+      section: stored(),
+    });
+
+    expect(next.layout.slots.main[0]!.tone).toBe("surface");
+    expect(next.selection).toEqual({ kind: "section", path: { slot: "main", section: 0 } });
+  });
+});
