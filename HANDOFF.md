@@ -1,60 +1,138 @@
-# Handoff — 6 September 2026
+# Handoff — 7 September 2026
 
 Where Mimnets stands, what is not finished, and where to pick up. Read this first; it is
 written to be the only thing you need before starting.
 
-**This replaces the second 5 September version at `2232ced`.** That one said the next
-session's job was to review and merge `feat/m11-theme-tokens`. The review has happened, it
-found five things worth stopping for, all five are fixed, and the branch is pushed — so its
-whole "Where to start" is spent. Anything older than this file is safe to discard; if you are
-reading a copy dated 3 September, see the toolchain note below for why its central claim was
-wrong.
+**This replaces the 6 September version.** That one said the next session's job was to publish
+`main` at 0.3.0. It went out at 0.4.0 on the day it was written, the version bump is committed,
+Ledger is merged onto it, and M10.5 is built on top — so its whole "Where to start" is spent.
+Anything older than this file is safe to discard; if you are reading a copy dated 3 September,
+see the toolchain note below for why its central claim was wrong.
 
 ## Where to start
 
-**The publish is done, and this section's old instruction is spent.** It said to publish
-`main` at 0.3.0. That happened on 6 September, and it went out at 0.4.0 rather than 0.3.0
-because the editable-form-fields changeset was still unconsumed when the version was cut.
-`npm view @mimnets/core versions --json` lists 0.1.1, 0.2.0, 0.3.0 and 0.4.0, and blocks and
-admin match it -- the scope moves as one version, which is what `fixed` in
-`.changeset/config.json` buys.
+**M10.5 is finished. Pick the next milestone.**
 
-The session that ran the publish ended without committing `pnpm changeset version`'s output,
-so for a day the repository could not say what it had released. That is committed now, and
-`sites/ledger` is merged onto the published `^0.4.0` -- the bump three handoffs in a row
-called blocked on the publish.
+The four things a client asks for in the first week are built, merged, tested and checked in a
+browser. Nothing in this file is blocked on a person, and nothing is half-done.
 
-**Where to actually start: M10.5.** Four things a client asks for in the first week, none of
-them needing a decision from a person. See `docs/ROADMAP.md` for the four and why the button
-row is a Block rather than a Column property.
+The honest options, in the order they are worth doing:
 
-Two things learned the hard way on 6 September, both worth reading before running it:
+- **M10** — the Editor an Author lives in. Its most-wanted item is already there: **undo and
+  redo exist** in `packages/admin/src/state.ts`, with a 50-step history. What is left is
+  duplicate a Block and a Section, Blueprints, and the responsive preview. The preview is the
+  only real unknown in the milestone — container queries or an iframe, and the roadmap argues
+  for trying container queries first.
+- **M12** — what the AI does and what it must not. The largest and least specified.
+- **The Medium and Low audit bands**, mostly untouched. `specs/project-audit-2/research.md` has
+  each with a file and a line number, so picking one up costs no investigation — but **verify a
+  finding before acting on it**, because four of the last batch were already closed by sessions
+  that never went back to say so.
 
-- **Publish from `main`, after `pnpm changeset version`.** `pnpm release` publishes but does
-  not version. Run alone it tried to publish 0.1.1, only `@mimnets/admin` went up, and the
-  result was a package on npm whose dependency did not exist. Run from a feature branch it
-  published code the changelog did not describe.
-- **`npm view <pkg> version` reports the `latest` tag, not what exists.** A freshly published
-  version can be there while the tag has not caught up, which read as a failed publish and was
-  not. `npm view <pkg> versions --json` is the honest question.
+**Two things a person still has to decide**, neither blocking:
 
-`sites/ledger` asked for `^0.1.1` for three handoffs running, which matches neither 0.2.0 nor
-0.3.0 because a caret on a 0.x pins the minor. It asks for `^0.4.0` now and installs from npm
-proper. The stylesheet half went with it: `app/globals.css` fell from 936 lines to 93, because
-everything removed was a drifted copy of the standard Block stylesheet that now arrives as
-`@mimnets/blocks/blocks.css`. Ledger gained the accordion, carousel, compare and embed Blocks,
-plus variants, by deleting code rather than writing any.
+- **Nothing is pushed.** `main` is seven commits ahead of `origin/main`, and
+  `chore/ledger-0.4.0` is merged but unpushed. That was deliberate; pushing is yours.
+- **Whether to publish 0.5.0.** There are three unconsumed changesets in `.changeset/`
+  describing the M10.5 work and the href fix. `pnpm changeset version`, then `pnpm release`,
+  **from `main`** — and read what it prints. The publishing notes further down are still the
+  ones that matter.
 
-Read what `pnpm release` prints rather than trusting it. A-28 was `pnpm build:packages`
-matching no packages at all and being willing to publish whatever happened to be in `dist`.
+### What landed on 7 September
 
-Nothing else needs a person. A-26 and A-27 — the button-text contrast decision this file had
-deferred three times — were settled the same day; `readableOn` measures both options and takes
-the more readable, which is not the same as lowering the threshold and the tests say why.
+**M10.5, all four, each its own commit and each verified by breaking it.**
 
-`main` carries every milestone from M0 to M11, the second audit's H-1, and the punch-list items
-that did not need a decision. `pnpm typecheck` is 7/7, `pnpm test` is 643 passing with the
-Docker suites up, and `turbo build --force` is warning-free on an uncached build.
+| | What it is |
+| --- | --- |
+| **Per-Section width** (`1c1cafd`) | `width` of measure, wide or full. A gallery, carousel or map can finally run edge to edge. `wide` is `--mn-measure-wide`, *derived* as `calc(measure * 1.25)` rather than stated, so it is wider than the measure for every Theme instead of only the default one |
+| **A Header that stays** (`1ee93b8`) | A `sticky` column on the Shared Slot. **Two values, not three** — ADR-0020 rejects `fixed` |
+| **A button row** (`83e4a48`) | The 23rd Block Type. Each button carries its own style, which is the point: a hero wants one solid and one outline |
+| **Popovers** (`70bd0b8`) | The 24th. Built on `:target` like the gallery lightbox, so no JavaScript. A Block rather than a field — the milestone's open question, answered |
+
+**And a security fix found on the way** (`2941464`): the **button and the logo Blocks were not
+checking their links.** Both take a "Links to" field — free text a client edits — and
+interpolated it straight into an `href`, while every sibling ran it through `safeHref`.
+
+Nothing looked wrong because **React refuses `javascript:` on its own**, which is exactly why
+this survived the audit that found the other six. It refuses neither `vbscript:` nor a `data:`
+URL, both of which reached the DOM verbatim — proved with a failing test before the fix. The
+logo is the worse of the two: it lives in the Header, a Header is shared, so one bad address is
+on every Page at once. **Neither Block had a test file at all**, which is the finding behind the
+finding.
+
+The rest of that sweep came back clean, and the reasoning is in the commit so the next one is
+cheaper: gallery and carousel fragments are constructed internally, the map's link is built from
+numeric coordinates, `embedFrom` rejects anything that is not http or https before it returns,
+and the social row filters through `socialHref`.
+
+### The decision worth reading: ADR-0020
+
+`fixed` was asked for and is not there. It takes the Header out of flow, so the first band of
+every Page needs offsetting by the Header's own height — one line on a desktop, two when a long
+Site name wraps, and unknowable in CSS. The roadmap had already rejected a magic number. The
+other answer is to measure it, and **that would be the first JavaScript a published Mimnets Site
+has ever shipped.** Not "very little" — none: the lightbox is `:target`, the mobile drawer is a
+checkbox and a sibling selector, reveal-on-scroll is `animation-timeline` behind an `@supports`
+guard. What `fixed` buys over `sticky` is a Header overlaying a hero, which is its own feature
+with its own contrast problems.
+
+### What breaking things taught, three times
+
+The habit earned its keep again, and twice it said something the tests did not:
+
+- **A `.default()` that could not be broken.** Reverting `.default("measure")` on the new
+  Section field failed **nothing** — `.catch()` swallows a missing key too, so the back-compat
+  test does not prove what its comment claimed. `tone`, `padding` and `divider` have carried the
+  identical redundancy since each landed. Both are kept for consistency, and a test now says so
+  out loud rather than leaving the next person to read a green suite as permission.
+- **A prop default that was pure decoration.** `sticky = "scrolls"` on `SlotView` could not be
+  broken either, because `undefined === "sticky"` is already false. That one was removed rather
+  than documented: a line that cannot be broken is not doing anything.
+- **The icon tripwire did not fire.** Taking a new Block's icon away failed nothing, because
+  `icons.test.tsx` cannot import `@mimnets/blocks` and keeps its list by hand. The list is the
+  guard and it only works if it is updated — both new Block Types are in it now, and removing
+  either icon fails as intended.
+
+### It was checked in a browser, and the numbers are re-runnable
+
+`starter/scripts/verify-m105.mjs` writes one Page at `/m105` exercising all four and sets the
+main header sticky. Measured in Chrome on a 1920 viewport:
+
+- measure **1120px**, wide **1400px**, full **1905px** — so wide is exactly measure × 1.25, the
+  derived token doing on a real Theme what its unit test says
+- the full band's columns start at **x=0** with `padding-inline: 0`, while the measure band
+  above it is indented
+- the Header sits at **top:0 after scrolling 1500px**, opaque rather than showing the Page
+  through itself
+- the two buttons share a row; squeezed to 200px they wrap rather than overflow
+- a popover is `display: none` closed, and opens on `:target` with its Markdown rendered
+
+**One correction, because the screenshot lied.** The sticky Header looked painted *above* the
+popover's dim overlay. It is not — `document.elementFromPoint` inside the Header returns
+`.mn-popover`. The eye was wrong and the measurement was right, which is the reverse of the
+usual lesson and the reason to keep taking both.
+
+### Current numbers
+
+`pnpm typecheck` 7/7. `pnpm test` **689 passing, 7 skipped** with the Docker suites up — higher
+than the 643 this file used to quote because the database-backed suites ran. `pnpm build` 4/4
+and warning-free. **Migration 0011 is applied locally** and adds one defaulted `text` column to
+`shared_slots`; an upgrading Site runs `pnpm db:migrate`, and the changeset says so.
+
+**The one flake to know about:** `packages/core/src/ai/idle.test.ts` — "does not abort while it
+is still being fed" — failed once under full-suite load and passed 3/3 in isolation. Timing
+sensitive, in code this session never touched. Worth a look if it recurs; not worth chasing on
+one occurrence.
+
+**Left running, so nothing surprises you:** a dev server on port 3000, the Docker db, mail and
+storage containers, and the `/m105` Page with the main header set to sticky. Those last two are
+the only stateful leftovers; re-running `pnpm seed` restores the demo Site, and the Page can go
+from the Dashboard.
+
+**A hazard hit this session, exactly as this file predicts it.** A dev server was running while
+`pnpm build` ran, which overwrites `.next` underneath it — the server then serves stale
+JavaScript while its CSS keeps updating. It was caught by comparing the process start time with
+the `.next` mtime, and fixed by restarting the server. **Stop `pnpm dev` before `pnpm build`.**
 
 ### What else landed on 6 September
 
@@ -458,7 +536,9 @@ Honest list. None of it is hidden behind a green tick.
   not, because that needs an account and a verified domain.
 - **Provisioning mode of the installer is still untested.** This machine already had a
   database configured, so the no-database path has never been run.
-- **A form's fields are fixed**: name, email, message.
+- ~~**A form's fields are fixed**: name, email, message.~~ **Closed in 0.4.0.** A contact form
+  takes an `extras` list, and the inputs are named by position rather than by the Author's
+  label — for the reason `recipient` is not a hidden input.
 - **Deleting a file leaves the Pages that used it pointing at nothing.** Deliberate, argued
   in ADR-0012, but there is no "where is this used?" view.
 - **AVIF and SVG upload without dimensions.** They render; just without width and height.
