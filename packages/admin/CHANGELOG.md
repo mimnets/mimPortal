@@ -1,5 +1,12 @@
 # @mimnets/admin
 
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [c2d1c73]
+  - @mimnets/core@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
