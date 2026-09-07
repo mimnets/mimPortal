@@ -40,7 +40,7 @@ function props(overrides: Record<string, unknown> = {}): CompareProps {
 }
 
 function draw(value: CompareProps) {
-  return render(<>{compareBlock.render(value, emptyContext())}</>);
+  return render(<>{compareBlock.render(value, emptyContext(), { id: "blk-test" })}</>);
 }
 
 describe("the comparison table Block", () => {

@@ -29,7 +29,7 @@ function props(url: string, overrides: Record<string, unknown> = {}): EmbedProps
 }
 
 function draw(url: string, overrides: Record<string, unknown> = {}) {
-  return render(<>{embedBlock.render(props(url, overrides), emptyContext())}</>);
+  return render(<>{embedBlock.render(props(url, overrides), emptyContext(), { id: "blk-test" })}</>);
 }
 
 const frameSrc = (c: HTMLElement) =>

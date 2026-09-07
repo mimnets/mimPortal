@@ -24,7 +24,7 @@ function draw(overrides: Record<string, unknown> = {}) {
     text: "Mimnets",
     ...overrides,
   }) as LogoProps;
-  return render(<>{logoBlock.render(props, emptyContext())}</>);
+  return render(<>{logoBlock.render(props, emptyContext(), { id: "blk-test" })}</>);
 }
 
 const href = (c: HTMLElement) => c.querySelector("a.mn-logo")?.getAttribute("href");

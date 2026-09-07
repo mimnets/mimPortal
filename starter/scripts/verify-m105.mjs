@@ -45,8 +45,23 @@ const main = [
       size: "medium",
       items: [
         { label: "Book a table", href: "/contact", style: "primary" },
-        { label: "See the menu", href: "/menu", style: "outline" },
+        {
+          label: "See the menu",
+          href: "/menu",
+          style: "outline",
+          panelHeading: "Tonight's menu",
+          panelBody: "Twelve courses, changing **weekly**. Snacks, bread, five plates.",
+          image: { key: "", alt: "", width: null, height: null },
+        },
       ],
+    }),
+    block("button", {
+      label: "What a visit includes",
+      href: "/",
+      size: "large",
+      panelHeading: "What a visit includes",
+      panelBody: "A single **button** opening a panel, with no popovers Block anywhere near it.",
+      panelImage: { key: "", alt: "", width: null, height: null },
     }),
   ])], { tone: "surface" }),
 

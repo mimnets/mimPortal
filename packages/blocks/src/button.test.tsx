@@ -24,7 +24,7 @@ function draw(overrides: Record<string, unknown> = {}) {
     label: "Learn more",
     ...overrides,
   }) as ButtonProps;
-  return render(<>{buttonBlock.render(props, emptyContext())}</>);
+  return render(<>{buttonBlock.render(props, emptyContext(), { id: "blk-test" })}</>);
 }
 
 const href = (c: HTMLElement) => c.querySelector("a.mn-btn")?.getAttribute("href");
@@ -70,5 +70,75 @@ describe("addresses it refuses", () => {
       cleanup();
       expect(href(draw({ href: good }).container)).toBe(good);
     }
+  });
+});
+
+/**
+ * A button that opens a panel instead of going somewhere.
+ *
+ * The narrow half of "a popover an Author can attach to anything": the case that actually
+ * comes up is a button, and a button already renders its own markup, so it needed only the
+ * one thing the popovers Block got for free — an id nothing else on the Page shares.
+ */
+describe("a button with a panel", () => {
+  const withPanel = { panelHeading: "What this includes", panelBody: "Two visits a **year**." };
+
+  it("becomes a popover rather than a link", () => {
+    const { container } = draw(withPanel);
+
+    expect(container.querySelector("a.mn-btn")).toBeNull();
+    expect(container.querySelector("label.mn-btn")).not.toBeNull();
+    expect(container.querySelector("input.mn-popover-toggle")).not.toBeNull();
+    expect(container.querySelector(".mn-popover-panel")).not.toBeNull();
+  });
+
+  it("stays an ordinary link when no panel is written", () => {
+    const { container } = draw({ href: "/book" });
+
+    expect(container.querySelector("a.mn-btn")?.getAttribute("href")).toBe("/book");
+    expect(container.querySelector("input.mn-popover-toggle")).toBeNull();
+  });
+
+  it("opens on either half of a filled-in panel", () => {
+    // A heading alone, or text alone, is enough. Requiring both would make an Author who
+    // wrote only a paragraph wonder why nothing happened.
+    for (const partial of [{ panelHeading: "Just a heading" }, { panelBody: "Just some text" }]) {
+      cleanup();
+      expect(draw(partial).container.querySelector("input.mn-popover-toggle")).not.toBeNull();
+    }
+  });
+
+  /**
+   * The id comes from the Block's own id, which is why `BlockMeta` was added to `render`.
+   * Two identical buttons on one Page — the same label opening the same panel, which is
+   * exactly what a repeated call to action looks like — must not share a checkbox.
+   */
+  it("gives two identical buttons their own panels", () => {
+    const first = draw(withPanel).container.querySelector("input.mn-popover-toggle")!.id;
+    cleanup();
+    const props = buttonBlock.propsSchema.parse({ label: "Learn more", ...withPanel }) as ButtonProps;
+    const { container } = render(<>{buttonBlock.render(props, emptyContext(), { id: "blk-two" })}</>);
+    const second = container.querySelector("input.mn-popover-toggle")!.id;
+
+    expect(first).not.toBe(second);
+  });
+
+  it("renders the panel's Markdown, and never raw HTML", () => {
+    const { container } = draw({
+      panelBody: "A **senior** partner.<script>alert(1)</script>",
+    });
+
+    expect(container.querySelector(".mn-prose strong")?.textContent).toBe("senior");
+    expect(container.querySelector("script")).toBeNull();
+  });
+
+  /**
+   * A button either goes somewhere or opens something. Doing both would follow the link a
+   * moment after showing the panel, which reads as a flash rather than a feature.
+   */
+  it("ignores the link when a panel is written, rather than doing both", () => {
+    const { container } = draw({ ...withPanel, href: "https://example.com/book" });
+
+    expect(container.querySelectorAll("a[href]")).toHaveLength(0);
   });
 });

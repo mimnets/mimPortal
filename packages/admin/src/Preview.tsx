@@ -72,12 +72,15 @@ function RenderedBlock({
   blockType,
   props,
   context,
+  id,
 }: {
   blockType: NonNullable<ReturnType<BlockRegistry["get"]>>;
   props: BlockInstance["props"];
   context: RenderContext;
+  /** The Block's own id, so a Block drawing a control mints the same one the Page will. */
+  id: string;
 }) {
-  return <>{blockType.render(props, context)}</>;
+  return <>{blockType.render(props, context, { id })}</>;
 }
 
 function BlockCard({
@@ -186,7 +189,12 @@ function BlockCard({
             resetKey={JSON.stringify(block.props)}
             label={blockType.label ?? block.type}
           >
-            <RenderedBlock blockType={blockType} props={block.props} context={context} />
+            <RenderedBlock
+              blockType={blockType}
+              props={block.props}
+              context={context}
+              id={block.id}
+            />
           </BlockBoundary>
         ) : (
           <em>Unknown Block: {block.type}</em>

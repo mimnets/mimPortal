@@ -21,7 +21,7 @@ type EyebrowProps = Parameters<typeof eyebrowBlock.render>[0];
 
 function draw(overrides: Record<string, unknown> = {}) {
   const props = eyebrowBlock.propsSchema.parse({ text: "Open Wednesday to Sunday", ...overrides });
-  const { container } = render(<>{eyebrowBlock.render(props as EyebrowProps, emptyContext())}</>);
+  const { container } = render(<>{eyebrowBlock.render(props as EyebrowProps, emptyContext(), { id: "blk-test" })}</>);
   return container.querySelector(".mn-eyebrow");
 }
 

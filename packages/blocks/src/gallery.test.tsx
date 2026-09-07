@@ -36,7 +36,7 @@ function props(overrides: Record<string, unknown> = {}): GalleryProps {
 }
 
 function draw(value: GalleryProps) {
-  return render(<>{galleryBlock.render(value, emptyContext())}</>);
+  return render(<>{galleryBlock.render(value, emptyContext(), { id: "blk-test" })}</>);
 }
 
 describe("the image gallery Block", () => {

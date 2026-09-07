@@ -29,7 +29,7 @@ function draw(overrides: Record<string, unknown> = {}) {
     body: "## Our terms\n\nPayment is due within **30 days**.",
     ...overrides,
   }) as ProseProps;
-  return render(<>{proseBlock.render(props, emptyContext())}</>);
+  return render(<>{proseBlock.render(props, emptyContext(), { id: "blk-test" })}</>);
 }
 
 describe("the prose Block", () => {

@@ -32,7 +32,7 @@ function props(overrides: Partial<Record<string, unknown>> = {}): AccordionProps
 }
 
 function draw(value: AccordionProps) {
-  return render(<>{accordionBlock.render(value, emptyContext())}</>);
+  return render(<>{accordionBlock.render(value, emptyContext(), { id: "blk-test" })}</>);
 }
 
 describe("the accordion Block", () => {

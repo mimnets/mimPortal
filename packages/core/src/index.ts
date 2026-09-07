@@ -5,7 +5,7 @@
 export type { PageVersionRow } from "./db/schema";
 
 export { defineBlock } from "./blocks/define";
-export type { AnyBlockType, BlockType, BlockTypeConfig } from "./blocks/define";
+export type { AnyBlockType, BlockMeta, BlockType, BlockTypeConfig } from "./blocks/define";
 
 export { field, fieldsToSchema } from "./blocks/fields";
 export type { Field, FieldKind, FieldsShape, InferFields } from "./blocks/fields";

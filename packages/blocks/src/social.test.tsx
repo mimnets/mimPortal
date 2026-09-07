@@ -23,7 +23,7 @@ function draw(items: { network: string; href: string; label?: string }[], rest =
     items,
     ...rest,
   }) as SocialProps;
-  return render(<>{socialBlock.render(props, emptyContext())}</>);
+  return render(<>{socialBlock.render(props, emptyContext(), { id: "blk-test" })}</>);
 }
 
 const hrefs = (c: HTMLElement) =>

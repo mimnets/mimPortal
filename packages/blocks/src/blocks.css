@@ -831,6 +831,29 @@ h3.mn-heading {
   justify-content: flex-end;
 }
 
+/* A button that opens a panel is three elements -- a checkbox, a label and the panel -- and
+   they have to sit in the row as if they were one. `display: contents` drops the wrapper out
+   of the layout entirely, so the label is the flex item and lines up with the plain links
+   beside it. The checkbox is absolutely positioned and the panel is `display: none` until
+   checked, so neither takes part. */
+.mn-buttons-item {
+  display: contents;
+}
+
+/* The button is a `<label>` when it opens a panel and an `<a>` when it links, and the two
+   must be indistinguishable. A label is not interactive by default, so it needs the cursor
+   an anchor has for free. */
+label.mn-btn {
+  cursor: pointer;
+}
+
+/* And the focus ring goes on the label, because the checkbox that actually holds focus is
+   invisible -- the same arrangement as the nav drawer and the popover trigger. */
+.mn-popover-toggle:focus-visible ~ label.mn-btn {
+  outline: 2px solid var(--mn-color-primary);
+  outline-offset: 2px;
+}
+
 /* ---- Feature grid ---- */
 
 .mn-features {

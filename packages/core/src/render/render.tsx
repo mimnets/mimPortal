@@ -46,7 +46,7 @@ function BlockView({
       // here that means "unstyled" and nothing to leave off.
       data-variant={block.style?.variant}
     >
-      {blockType.render(block.props, context)}
+      {blockType.render(block.props, context, { id: block.id })}
     </div>
   );
 }

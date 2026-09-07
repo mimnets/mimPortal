@@ -35,7 +35,7 @@ function props(overrides: Record<string, unknown> = {}): CarouselProps {
 }
 
 function draw(value: CarouselProps) {
-  return render(<>{carouselBlock.render(value, emptyContext())}</>);
+  return render(<>{carouselBlock.render(value, emptyContext(), { id: "blk-test" })}</>);
 }
 
 describe("the carousel Block", () => {

@@ -39,7 +39,26 @@ export interface BlockTypeConfig<F extends FieldsShape> {
    * Blocks are pure functions of their own fields, plus whatever the Site resolved once for
    * this request — Menus, the Site name, the current path. A Block never queries anything.
    */
-  render: (props: InferFields<F>, context: RenderContext) => ReactNode;
+  render: (props: InferFields<F>, context: RenderContext, meta: BlockMeta) => ReactNode;
+}
+
+/**
+ * What a Block knows about *itself*, as opposed to what it was given.
+ *
+ * Just the instance id, and it exists for one reason: a Block that renders a control needs a
+ * DOM id nothing else on the Page shares. Before this, the Blocks that needed one hashed
+ * their own content -- `stableName` in `@mimnets/blocks` -- which is unique in practice and
+ * not in principle: two buttons with the same label opening the same panel would mint the
+ * same id, and one trigger would open the other's panel.
+ *
+ * A third argument rather than a field on `RenderContext`, because the context is the same
+ * object for every Block on the Page and this is the one thing that is not. Optional to
+ * *use* and required to accept, which costs nothing: a render that ignores it is unchanged,
+ * and every Block Type in the library did ignore it on the day this landed.
+ */
+export interface BlockMeta {
+  /** The Block instance's id, unique within the Page being rendered. */
+  id: string;
 }
 
 export interface BlockType<F extends FieldsShape = FieldsShape> extends BlockTypeConfig<F> {

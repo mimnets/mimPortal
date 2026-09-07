@@ -52,6 +52,7 @@ describe("the contact form's markup", () => {
           formToken: "t",
           query: {},
         },
+        { id: "blk-test" },
       ),
     );
 
@@ -129,6 +130,7 @@ describe("the extra questions in the markup", () => {
           extras,
         } as Parameters<typeof contactBlock.render>[0],
         { ...emptyContext(), formToken: "t", currentPath: "/contact", query: {} },
+        { id: "blk-test" },
       ),
     );
   }

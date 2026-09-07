@@ -22,7 +22,7 @@ type RowProps = Parameters<typeof buttonRowBlock.render>[0];
 
 function draw(items: { label: string; href?: string; style?: string }[], rest = {}) {
   const props = buttonRowBlock.propsSchema.parse({ items, ...rest }) as RowProps;
-  return render(<>{buttonRowBlock.render(props, emptyContext())}</>);
+  return render(<>{buttonRowBlock.render(props, emptyContext(), { id: "blk-test" })}</>);
 }
 
 const buttons = (c: HTMLElement) => Array.from(c.querySelectorAll("a.mn-btn"));
@@ -99,5 +99,46 @@ describe("addresses it refuses", () => {
       const { container } = draw([{ label: "Book", href }]);
       expect(buttons(container)[0]?.getAttribute("href")).toBe(href);
     }
+  });
+});
+
+/**
+ * A row where each button decides for itself whether it links or opens a panel.
+ *
+ * This is the case the whole feature is for: "Book a table" going to the booking page beside
+ * "See the menu" opening one, in the same row.
+ */
+describe("a button row with panels", () => {
+  it("lets one button open a panel while another still links", () => {
+    const { container } = draw([
+      { label: "Book a table", href: "/book" },
+      { label: "See the menu", panelBody: "Twelve courses." } as never,
+    ]);
+
+    expect(container.querySelector("a.mn-btn")?.getAttribute("href")).toBe("/book");
+    expect(container.querySelector("label.mn-btn")?.textContent).toBe("See the menu");
+    expect(container.querySelectorAll("input.mn-popover-toggle")).toHaveLength(1);
+  });
+
+  it("gives every panel in the row its own id", () => {
+    const { container } = draw([
+      { label: "One", panelBody: "First" },
+      { label: "Two", panelBody: "Second" },
+    ] as never);
+
+    const ids = Array.from(container.querySelectorAll("input.mn-popover-toggle")).map((el) => el.id);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  it("keeps the style and size on a button that opens a panel", () => {
+    const { container } = draw(
+      [{ label: "See the menu", style: "outline", panelBody: "Twelve courses." }] as never,
+      { size: "large" },
+    );
+
+    const button = container.querySelector("label.mn-btn")!;
+    expect(button.getAttribute("data-style")).toBe("outline");
+    expect(button.getAttribute("data-size")).toBe("large");
   });
 });

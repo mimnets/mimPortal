@@ -23,9 +23,10 @@ type PopoverProps = Parameters<typeof popoversBlock.render>[0];
 function draw(
   items: { trigger: string; heading?: string; body?: string }[],
   rest: Record<string, unknown> = {},
+  id = "blk-test",
 ) {
   const props = popoversBlock.propsSchema.parse({ items, ...rest }) as PopoverProps;
-  return render(<>{popoversBlock.render(props, emptyContext())}</>);
+  return render(<>{popoversBlock.render(props, emptyContext(), { id })}</>);
 }
 
 const TEAM = [
@@ -145,25 +146,27 @@ describe("what it draws", () => {
 
 describe("two of them on one Page", () => {
   /**
-   * The bug the gallery's `stableName` scope exists to prevent, and the reason this Block
-   * derives its ids from its own content rather than from the index alone. Two popover
-   * Blocks whose panels were `#mn-pop-0` and `#mn-pop-0` would open each other's.
+   * The ids come from the Block's own id now, not from a hash of its content.
+   *
+   * The hash was unique in practice and not in principle: two popover Blocks holding the
+   * same three people — a team page and a "meet the team" band on the home page, say —
+   * minted identical ids, and one Block's trigger opened the other's panel. A Block id is
+   * unique within a Page by construction, which is why `BlockMeta` was added.
    */
-  it("do not share fragment ids", () => {
-    const first = draw(TEAM).container.querySelector(".mn-popovers")?.id;
+  it("do not share ids, even holding exactly the same people", () => {
+    const first = draw(TEAM, {}, "blk-aaa").container.querySelector("input.mn-popover-toggle")!.id;
     cleanup();
-    const second = draw([{ trigger: "Our approach", heading: "Our approach", body: "Careful." }])
-      .container.querySelector(".mn-popovers")?.id;
+    const second = draw(TEAM, {}, "blk-bbb").container.querySelector("input.mn-popover-toggle")!.id;
 
     expect(first).not.toBe(second);
   });
 
-  it("give the same content the same id, so a shared link keeps working", () => {
-    const once = draw(TEAM).container.querySelector(".mn-popovers")?.id;
-    cleanup();
-    const again = draw(TEAM).container.querySelector(".mn-popovers")?.id;
+  it("give each panel in one Block its own id", () => {
+    const { container } = draw(TEAM);
+    const ids = Array.from(container.querySelectorAll("input.mn-popover-toggle")).map((el) => el.id);
 
-    expect(once).toBe(again);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
   });
 });
 

@@ -30,7 +30,7 @@ function props(overrides: Record<string, unknown> = {}): MapProps {
 }
 
 function draw(value: MapProps) {
-  return render(<>{mapBlock.render(value, emptyContext())}</>);
+  return render(<>{mapBlock.render(value, emptyContext(), { id: "blk-test" })}</>);
 }
 
 const frame = (c: HTMLElement) => c.querySelector<HTMLIFrameElement>(".mn-map-frame")!;

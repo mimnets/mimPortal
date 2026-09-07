@@ -1,4 +1,5 @@
 import { defineBlock, field, renderMarkdown, safeHref } from "@mimnets/core";
+import type { RenderContext } from "@mimnets/core";
 
 /**
  * Blocks that carry a design.
@@ -41,6 +42,66 @@ export const eyebrowBlock = defineBlock({
     ) : null,
 });
 
+
+/**
+ * The panel half of a popover, shared by every Block that can open one.
+ *
+ * Extracted when the button gained a panel, because the alternative was a second copy of the
+ * checkbox/backdrop/panel markup — and a second copy is how the Editor's preview drifted
+ * from the renderer in the first place. One shape, one stylesheet, one set of rules about
+ * what closes it.
+ *
+ * The caller owns the id and the checkbox. That is deliberate: the checkbox has to be a
+ * *sibling* preceding the panel for `:checked ~ .mn-popover` to select it, and only the
+ * caller knows what else is in its own markup.
+ */
+function PopoverPanel({
+  id,
+  heading,
+  body,
+  image,
+  context,
+}: {
+  id: string;
+  heading: string;
+  body: string;
+  image?: { key: string; alt: string; decorative?: boolean; width?: number | null; height?: number | null };
+  context: RenderContext;
+}) {
+  return (
+    <div className="mn-popover">
+      <label htmlFor={id} className="mn-popover-backdrop" aria-hidden="true" />
+
+      <div className="mn-popover-panel">
+        <label htmlFor={id} className="mn-popover-close" aria-hidden="true">
+          <span>&times;</span>
+        </label>
+
+        {image?.key ? (
+          <img
+            className="mn-popover-image"
+            src={`${context.mediaBaseUrl}/${image.key}`}
+            alt={image.decorative ? "" : image.alt}
+            width={image.width ?? undefined}
+            height={image.height ?? undefined}
+            loading="lazy"
+          />
+        ) : null}
+
+        {heading ? <h3 className="mn-popover-heading">{heading}</h3> : null}
+        {/* The same Markdown renderer the prose Block uses, so raw HTML is never parsed --
+            an Author is a client, which is ADR-0011's argument. */}
+        <div className="mn-prose">{renderMarkdown(body)}</div>
+      </div>
+    </div>
+  );
+}
+
+/** Whether an Author actually filled a panel in. An empty one is a link, not a popover. */
+function hasPanel(panel: { heading: string; body: string }): boolean {
+  return Boolean(panel.heading || panel.body);
+}
+
 /**
  * A link styled as a button.
  *
@@ -63,18 +124,72 @@ export const buttonBlock = defineBlock({
     label: field.text({ label: "Label", default: "Learn more" }),
     href: field.text({ label: "Links to", default: "/" }),
     size: field.select({ label: "Size", options: ["medium", "large"], default: "medium" }),
+    /**
+     * Fill either of these in and the button opens a panel instead of going anywhere.
+     *
+     * Flat fields rather than a group, because `defineBlock` has no group and the Editor
+     * generates its controls from this shape. Named so they sort together in the panel.
+     */
+    panelHeading: field.text({ label: "Panel heading", default: "" }),
+    panelBody: field.textarea({
+      label: "Panel text",
+      help: "Fill this in and the button opens a panel instead of following its link.",
+      default: "",
+    }),
+    panelImage: field.image({ label: "Panel picture", help: "Optional" }),
   },
-  render: ({ label, href, size }) =>
-    label ? (
-      // Author input that becomes an href, so it goes through the same check the call to
-      // action, a pricing plan, the carousel, the comparison table, the menu and the social
-      // row all use. This Block was the one that did not, and it is the most likely of the
-      // lot to carry a link somebody typed: React refuses `javascript:` on its own, which is
-      // why nothing looked wrong, and refuses neither `vbscript:` nor a `data:` URL.
+  render: ({ label, href, size, panelHeading, panelBody, panelImage }, context, meta) => {
+    if (!label) return null;
+
+    const panel = { heading: panelHeading, body: panelBody };
+
+    /**
+     * A button either goes somewhere or opens something, and it cannot do both.
+     *
+     * An anchor that opened a panel and also navigated would do the second on click and the
+     * first a moment later, which is a link that appears to flash a panel at you. So the
+     * panel wins when an Author has written one, and the "Links to" field is simply unused
+     * -- visible in the Editor, ignored here, which is the honest way round: the alternative
+     * is hiding a field whose value is still stored.
+     */
+    if (hasPanel(panel)) {
+      // The Block's own id, so two identical buttons on one Page still open their own
+      // panels. This is what `meta` was added for; hashing the content would collide.
+      const toggleId = `mn-pop-${meta.id}`;
+
+      return (
+        <>
+          <input
+            type="checkbox"
+            id={toggleId}
+            className="mn-popover-toggle"
+            aria-label={panelHeading ? `${label}: ${panelHeading}` : label}
+          />
+          <label htmlFor={toggleId} className="mn-btn" data-size={size} aria-hidden="true">
+            {label}
+          </label>
+          <PopoverPanel
+            id={toggleId}
+            heading={panelHeading}
+            body={panelBody}
+            image={panelImage}
+            context={context}
+          />
+        </>
+      );
+    }
+
+    // Author input that becomes an href, so it goes through the same check the call to
+    // action, a pricing plan, the carousel, the comparison table, the menu and the social
+    // row all use. This Block was the one that did not, and it is the most likely of the
+    // lot to carry a link somebody typed: React refuses `javascript:` on its own, which is
+    // why nothing looked wrong, and refuses neither `vbscript:` nor a `data:` URL.
+    return (
       <a className="mn-btn" data-size={size} href={safeHref(href) || "/"}>
         {label}
       </a>
-    ) : null,
+    );
+  },
 });
 
 /**
@@ -1154,10 +1269,17 @@ export const buttonRowBlock = defineBlock({
           options: ["primary", "accent", "outline"],
           default: "primary",
         }),
+        panelHeading: field.text({ label: "Panel heading", default: "" }),
+        panelBody: field.textarea({
+          label: "Panel text",
+          help: "Fill this in and this button opens a panel instead of following its link.",
+          default: "",
+        }),
+        panelImage: field.image({ label: "Panel picture", help: "Optional" }),
       },
     }),
   },
-  render: ({ align, size, items }) => {
+  render: ({ align, size, items }, context, meta) => {
     // A button with no label is a link nobody can see or click, which is what an Author
     // leaves behind when they add a row item and change their mind. The same filter the
     // logo strip and the social row apply to their own empty items.
@@ -1166,21 +1288,62 @@ export const buttonRowBlock = defineBlock({
 
     return (
       <div className="mn-buttons" data-align={align}>
-        {shown.map((item, index) => (
-          // eslint-disable-next-line react/no-array-index-key
-          <a
-            key={index}
-            className="mn-btn"
-            data-style={item.style}
-            data-size={size}
-            // Author input that becomes an href, so it goes through the same check every
-            // other Block with a link uses. React refuses `javascript:` on its own and does
-            // not refuse `vbscript:` -- see the note in carousel.test.tsx.
-            href={safeHref(item.href) || "/"}
-          >
-            {item.label}
-          </a>
-        ))}
+        {shown.map((item, index) => {
+          const panel = { heading: item.panelHeading, body: item.panelBody };
+
+          // Each button in the row gets its own panel, so a hero can have "Book a table"
+          // going to the booking page beside "See the menu" opening one. The id is the
+          // Block's own plus the position, which is unique on the Page because the Block id
+          // is -- the same reasoning as the single button, one level down.
+          if (hasPanel(panel)) {
+            const toggleId = `mn-pop-${meta.id}-${index}`;
+            return (
+              // eslint-disable-next-line react/no-array-index-key
+              <span className="mn-buttons-item" key={index}>
+                <input
+                  type="checkbox"
+                  id={toggleId}
+                  className="mn-popover-toggle"
+                  aria-label={
+                    item.panelHeading ? `${item.label}: ${item.panelHeading}` : item.label
+                  }
+                />
+                <label
+                  htmlFor={toggleId}
+                  className="mn-btn"
+                  data-style={item.style}
+                  data-size={size}
+                  aria-hidden="true"
+                >
+                  {item.label}
+                </label>
+                <PopoverPanel
+                  id={toggleId}
+                  heading={item.panelHeading}
+                  body={item.panelBody}
+                  image={item.panelImage}
+                  context={context}
+                />
+              </span>
+            );
+          }
+
+          return (
+            // eslint-disable-next-line react/no-array-index-key
+            <a
+              key={index}
+              className="mn-btn"
+              data-style={item.style}
+              data-size={size}
+              // Author input that becomes an href, so it goes through the same check every
+              // other Block with a link uses. React refuses `javascript:` on its own and does
+              // not refuse `vbscript:` -- see the note in carousel.test.tsx.
+              href={safeHref(item.href) || "/"}
+            >
+              {item.label}
+            </a>
+          );
+        })}
       </div>
     );
   },
@@ -1235,7 +1398,7 @@ export const popoversBlock = defineBlock({
       },
     }),
   },
-  render: ({ title, items }, context) => {
+  render: ({ title, items }, context, meta) => {
     // An item with nothing to click on is not a popover. The same filter the logo strip and
     // the button row apply to their own half-finished items.
     const shown = items.filter((item) => item.trigger);
@@ -1243,7 +1406,10 @@ export const popoversBlock = defineBlock({
 
     // Derived from the content, exactly as the gallery and carousel derive theirs, so two
     // popover Blocks on one Page do not share fragment ids and open each other's panels.
-    const scope = stableName(shown.map((item) => `${item.trigger} | ${item.heading}`).join(" / "));
+    // The Block's own id rather than a hash of its content. The hash was unique in
+    // practice and not in principle -- two popover Blocks holding the same people would
+    // have minted the same ids and opened each other's panels. `meta` exists for this.
+    const scope = meta.id;
 
     return (
       <div className="mn-popovers" id={`mn-pop-${scope}`}>
@@ -1269,43 +1435,13 @@ export const popoversBlock = defineBlock({
                   {item.trigger}
                 </label>
 
-                <div className="mn-popover">
-                  {/* Clicking away closes it: a label the size of the backdrop, painted
-                      behind the panel. Unchecking the box is all any of these do. */}
-                  <label
-                    htmlFor={toggleId}
-                    className="mn-popover-backdrop"
-                    aria-hidden="true"
-                  />
-
-                  <div className="mn-popover-panel">
-                    <label
-                      htmlFor={toggleId}
-                      className="mn-popover-close"
-                      aria-hidden="true"
-                    >
-                      <span>&times;</span>
-                    </label>
-
-                    {item.image.key ? (
-                      <img
-                        className="mn-popover-image"
-                        src={`${context.mediaBaseUrl}/${item.image.key}`}
-                        alt={item.image.decorative ? "" : item.image.alt}
-                        width={item.image.width ?? undefined}
-                        height={item.image.height ?? undefined}
-                        loading="lazy"
-                      />
-                    ) : null}
-
-                    {item.heading ? (
-                      <h3 className="mn-popover-heading">{item.heading}</h3>
-                    ) : null}
-                    {/* The same Markdown renderer the prose Block uses, so raw HTML is never
-                        parsed -- an Author is a client, which is ADR-0011's argument. */}
-                    <div className="mn-prose">{renderMarkdown(item.body)}</div>
-                  </div>
-                </div>
+                <PopoverPanel
+                  id={toggleId}
+                  heading={item.heading}
+                  body={item.body}
+                  image={item.image}
+                  context={context}
+                />
               </li>
             );
           })}
