@@ -446,6 +446,11 @@ export function themeToCss(theme: Theme): string {
     `--mn-section-spacing: ${theme.spacing.section};`,
     `--mn-gutter: ${theme.spacing.gutter};`,
     `--mn-measure: ${theme.measure};`,
+    // Derived rather than stated, like the mesh and the text gradient above: a Site
+    // says how wide its prose runs and this is a Section asking for more than that.
+    // Expressed against `measure` so a Theme set narrow stays proportionally narrow,
+    // and so "wide" can never come out narrower than the default it is widening.
+    `--mn-measure-wide: calc(${theme.measure} * 1.25);`,
   ];
 
   // Nothing this function emits may contain `</`, whatever reached it and however it got

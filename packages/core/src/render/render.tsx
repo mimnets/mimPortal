@@ -87,6 +87,11 @@ function SectionView({
       data-layout={section.layout}
       data-tone={section.tone}
       data-padding={section.padding}
+      // Stated even at "measure", unlike divider and Block tone. Those omit their
+      // default because "none"/"default" means there is nothing to draw; a width is
+      // always drawn, and a Section that states its width is one the Editor can show
+      // and a Site can override without guessing what absence meant.
+      data-width={section.width}
       // Omitted at "none", like tone and font on a Block: "none" means no edge to draw, so
       // there is nothing for the stylesheet to select on and no reason to state it.
       data-divider={section.divider !== "none" ? section.divider : undefined}

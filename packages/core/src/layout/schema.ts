@@ -68,6 +68,27 @@ export type SectionDivider = (typeof SECTION_DIVIDERS)[number];
 export const SECTION_PADDINGS = ["normal", "large", "flush"] as const;
 export type SectionPadding = (typeof SECTION_PADDINGS)[number];
 
+/**
+ * How wide a Section's content may run.
+ *
+ * Until this existed every band was the Theme's one global `measure`, which is the right
+ * default for prose and the wrong one for exactly the Blocks M8.5 added: a gallery, a
+ * carousel and a map all want more room than a column of text should ever have, and could
+ * not have it.
+ *
+ * Three keywords rather than a free number, for ADR-0013's reason and the reason there is no
+ * colour picker: a Site that can state any width will state one that does not belong to it.
+ * "wide" resolves to a token derived from the Site's own `measure`, so a Theme set narrow
+ * stays proportionally narrow and a Site cannot end up with a "wide" that is narrower than
+ * its own default.
+ *
+ * "full" is the only one that also drops the band's horizontal padding. That is the whole
+ * point of it -- an edge-to-edge gallery with 1.5rem of gutter still showing is not edge to
+ * edge -- and it is why "full" is a poor choice for a Section holding prose.
+ */
+export const SECTION_WIDTHS = ["measure", "wide", "full"] as const;
+export type SectionWidth = (typeof SECTION_WIDTHS)[number];
+
 export interface SectionBackground {
   /** A storage key, like every other image in a layout. Empty means no image. */
   key: string;
@@ -152,6 +173,7 @@ export interface SectionNode {
   columns: ColumnNode[];
   tone: SectionTone;
   padding: SectionPadding;
+  width: SectionWidth;
   divider: SectionDivider;
   background: SectionBackground;
 }
@@ -193,6 +215,10 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
       // reason it has not bitten is only that this enum has not grown yet. Leaving the
       // identical hole open beside a closed one is how the next instance happens.
       padding: z.enum(SECTION_PADDINGS).default("normal").catch("normal"),
+      // Defaulted and caught for the reason the two above are, and this is the case that
+      // reasoning was written for: every Page in existence predates this field, so without
+      // the default not one of them parses. "measure" is what they were all rendered at.
+      width: z.enum(SECTION_WIDTHS).default("measure").catch("measure"),
       // Defaulted and caught like the two above, so a Page written before dividers existed
       // parses, and one written after this enum grows still parses on an older Site.
       divider: z.enum(SECTION_DIVIDERS).default("none").catch("none"),
@@ -234,11 +260,12 @@ export function buildLayoutSchema(blockSchema: z.ZodType<BlockInstance>) {
  */
 export function sectionDefaults(): Pick<
   SectionNode,
-  "tone" | "padding" | "divider" | "background"
+  "tone" | "padding" | "width" | "divider" | "background"
 > {
   return {
     tone: "default",
     padding: "normal",
+    width: "measure",
     divider: "none",
     background: { key: "", overlay: 0.45 },
   };

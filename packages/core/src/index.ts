@@ -27,6 +27,7 @@ export {
   SECTION_DIVIDERS,
   SECTION_PADDINGS,
   SECTION_TONES,
+  SECTION_WIDTHS,
   SLOT_NAMES,
   buildLayoutSchema,
   columnCount,
@@ -47,6 +48,7 @@ export type {
   SectionNode,
   SectionDivider,
   SectionPadding,
+  SectionWidth,
   SectionTone,
   SlotName,
 } from "./layout/schema";

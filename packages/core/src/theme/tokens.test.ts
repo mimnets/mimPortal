@@ -329,3 +329,35 @@ describe("a generated Theme completed", () => {
     expect(completeTheme({ colors: PALETTE }).elevation.high).toContain("#2f6b8f");
   });
 });
+
+/**
+ * M10.5 gave a Section a width, and "wide" needed a token to resolve to.
+ *
+ * Derived rather than stated, like the mesh and the text gradient: a Site says how wide its
+ * prose runs, and this is a Section asking for more than that. Expressing it against
+ * `measure` rather than as a second literal is what makes "wide" always wider -- a Theme set
+ * narrow for an editorial Site gets a proportionally narrow "wide", and no Theme can end up
+ * with a "wide" that is narrower than the default it is supposed to be widening.
+ */
+describe("the wide measure", () => {
+  it("is derived from the Site's own measure, not a second number", () => {
+    expect(themeToCss(defineTheme())).toContain("--mn-measure-wide: calc(72rem * 1.25);");
+  });
+
+  it("tracks a Theme that states its own measure", () => {
+    const css = themeToCss(defineTheme({ measure: "60rem" }));
+
+    expect(css).toContain("--mn-measure: 60rem;");
+    expect(css).toContain("--mn-measure-wide: calc(60rem * 1.25);");
+  });
+
+  it("is always wider than the measure it widens, whatever the Theme states", () => {
+    // The property the derivation buys, and the reason it is not two independent values.
+    // A literal "90rem" beside a Site that sets `measure: "96rem"` would give that Site a
+    // "wide" narrower than its normal, which is the kind of wrong nobody reports as a bug.
+    for (const measure of ["48rem", "60rem", "72rem", "96rem"]) {
+      const css = themeToCss(defineTheme({ measure }));
+      expect(css).toContain(`--mn-measure-wide: calc(${measure} * 1.25);`);
+    }
+  });
+});

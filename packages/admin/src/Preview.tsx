@@ -342,6 +342,7 @@ function Section({
         className="mn-section mn-ed-band"
         data-tone={section.tone}
         data-padding={section.padding}
+        data-width={section.width}
         data-divider={section.divider !== "none" ? section.divider : undefined}
         data-has-image={sectionImage ? "true" : undefined}
         style={

@@ -9,6 +9,7 @@ import type {
   SectionDivider,
   SectionPadding,
   SectionTone,
+  SectionWidth,
 } from "@mimnets/core";
 import { BLOCK_ANIMATIONS, BLOCK_FONTS, BLOCK_TONES, field, type ColumnLayout } from "@mimnets/core";
 import type { BlockAnimation, BlockFont, BlockTone } from "@mimnets/core";
@@ -278,6 +279,30 @@ export function SettingsPanel({
             <option value="large">Tall</option>
             <option value="flush">No space</option>
           </select>
+        </label>
+
+        <label className="mn-field" htmlFor="section-width">
+          <span>Width</span>
+          <select
+            id="section-width"
+            value={section.width}
+            onChange={(event) =>
+              dispatch({
+                type: "setSectionStyle",
+                path: selection.path,
+                style: { width: event.target.value as SectionWidth },
+              })
+            }
+          >
+            <option value="measure">Normal</option>
+            <option value="wide">Wide</option>
+            <option value="full">Full width</option>
+          </select>
+          <small>
+            How wide the content runs, not the band &mdash; a band is always the full width of
+            the window. Full width also removes the side gutter, which is what a gallery, a
+            carousel or a map wants and what a paragraph does not.
+          </small>
         </label>
 
         <FieldInput

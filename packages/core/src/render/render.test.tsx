@@ -132,6 +132,19 @@ describe("a Section's bottom edge", () => {
     expect(band({ divider: "none" }).hasAttribute("data-divider")).toBe(false);
     expect(band({}).hasAttribute("data-divider")).toBe(false);
   });
+
+  it("reaches the page as data-width, including at its default", () => {
+    expect(band({ width: "wide" }).getAttribute("data-width")).toBe("wide");
+    expect(band({ width: "full" }).getAttribute("data-width")).toBe("full");
+
+    // Stated even at the default, which is the opposite of `divider` three tests up, and the
+    // difference is real rather than an inconsistency. "none" is the absence of an edge, so
+    // there is nothing to select on; "measure" is a width the Section genuinely has. A
+    // Section that stated nothing would leave the Editor and any Site override guessing
+    // whether absence meant "the measure" or "written before widths existed".
+    expect(band({ width: "measure" }).getAttribute("data-width")).toBe("measure");
+    expect(band({}).getAttribute("data-width")).toBe("measure");
+  });
 });
 
 describe("the style keys that are omitted at their defaults", () => {

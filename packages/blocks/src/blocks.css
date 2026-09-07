@@ -94,6 +94,34 @@ a {
   align-items: center;
 }
 
+/* A Section's width, which until M10.5 was always the Theme's one global measure.
+ *
+ * The band is always full-bleed -- that is what a Section is -- so what these change is how
+ * wide its *content* may run inside it. `measure` needs no rule: it is what `.mn-columns`
+ * already does, and stating it again would be two places to keep in step.
+ *
+ * `full` is the only one that also drops the horizontal padding, and it has to: a gallery
+ * asked to run edge to edge with 1.5rem still showing on each side has not run edge to edge,
+ * and that gutter is the whole reason this field exists. It is set on the Section rather
+ * than on `.mn-columns` because the padding is the Section's, and `padding-inline` alone
+ * leaves the vertical rhythm from `--mn-section-spacing` untouched.
+ *
+ * Deliberately not applied in the Header or Footer. Those already override their own
+ * padding-block, they are a logo and a menu rather than content wanting room, and a Header
+ * that could be set to run edge to edge would put a Site's navigation against the glass. */
+.mn-section[data-width="wide"] .mn-columns {
+  max-width: var(--mn-measure-wide);
+}
+
+.mn-section[data-width="full"] .mn-columns {
+  max-width: none;
+}
+
+.mn-slot[data-slot="main"] .mn-section[data-width="full"],
+.mn-slot[data-slot="sidebar"] .mn-section[data-width="full"] {
+  padding-inline: 0;
+}
+
 /* Columns stack on narrow screens, which is why absolute positioning was rejected
    (ADR-0003): responsive behaviour is a property of the layout, not something an Author
    has to author twice. */
