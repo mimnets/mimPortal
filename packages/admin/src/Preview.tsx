@@ -3,7 +3,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Dispatch } from "react";
+import { Fragment, type Dispatch } from "react";
 
 import { BlockBoundary } from "./BlockBoundary";
 
@@ -17,7 +17,14 @@ import type {
   SectionNode,
   SlotName,
 } from "@mimnets/core";
-import { columnTemplate, emptyContext, SLOT_NAMES, SlotView } from "@mimnets/core";
+import {
+  columnShares,
+  columnTemplate,
+  emptyContext,
+  layoutsWithColumns,
+  SLOT_NAMES,
+  SlotView,
+} from "@mimnets/core";
 
 import {
   BlockIcon,
@@ -29,7 +36,7 @@ import {
   TrashIcon,
 } from "./icons";
 import { BlockPicker, LayoutPicker } from "./pickers";
-import type { BlockPath, EditorAction, Selection } from "./state";
+import type { BlockPath, EditorAction, SectionPath, Selection } from "./state";
 
 /**
  * The preview is the Editor's left-hand side. It renders Blocks with their real `render`
@@ -81,6 +88,95 @@ function RenderedBlock({
   id: string;
 }) {
   return <>{blockType.render(props, context, { id })}</>;
+}
+
+
+/**
+ * Dragging the boundary between two Columns to change their proportions.
+ *
+ * **The drag snaps to a named layout and stores nothing new.** That is the whole design.
+ * Asked for as "can we just drag and resize", and the honest objection to a free ratio is
+ * the one behind Section tones and the missing colour picker: a client who can drag to any
+ * proportion will produce 63/37, with a gutter lining up with nothing else on the Page. So
+ * the gesture is a drag and the value is still one of `COLUMN_LAYOUTS` -- an Author gets
+ * directness, and no Page anywhere gained a number. ADR-0003 is untouched: nothing here is
+ * absolutely positioned, Columns still stack on a phone, and no Block gained a coordinate.
+ *
+ * Only layouts with this Section's own Column count are candidates. Changing the count moves
+ * Blocks between Columns, and a drag that quietly emptied one into its neighbour would not be
+ * undoable by dragging back.
+ *
+ * Plain pointer events rather than dnd-kit, which already owns dragging Blocks. Two drag
+ * systems on one surface is why this stops propagation on the way down.
+ */
+function ColumnResizer({
+  section,
+  path,
+  boundary,
+  dispatch,
+}: {
+  section: SectionNode;
+  path: SectionPath;
+  /** Which gap this is: 0 is between the first and second Column. */
+  boundary: number;
+  dispatch: Dispatch<EditorAction>;
+}) {
+  const options = layoutsWithColumns(section.columns.length);
+  if (options.length < 2) return null;
+
+  function apply(event: { clientX: number; currentTarget: HTMLElement }) {
+    const columns = event.currentTarget.closest(".mn-ed-columns");
+    if (!(columns instanceof HTMLElement)) return;
+
+    const box = columns.getBoundingClientRect();
+    if (box.width === 0) return;
+
+    // Where the pointer is across the Section, 0 to 1.
+    const at = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
+
+    // The layout whose own boundary sits closest to the pointer wins. Comparing the
+    // cumulative share up to this gap is what makes the handle follow the finger.
+    let best = options[0]!;
+    let bestGap = Infinity;
+    for (const option of options) {
+      const shares = columnShares(option);
+      const edge = shares.slice(0, boundary + 1).reduce((sum, n) => sum + n, 0);
+      const gap = Math.abs(edge - at);
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = option;
+      }
+    }
+
+    if (best !== section.layout) {
+      dispatch({ type: "setSectionLayout", path, layout: best });
+    }
+  }
+
+  return (
+    <div
+      className="mn-ed-resizer"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize Columns"
+      title="Drag to change the Column widths"
+      onPointerDown={(event) => {
+        // dnd-kit is listening for a drag on the Blocks underneath.
+        event.stopPropagation();
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        apply(event);
+      }}
+      onPointerMove={(event) => {
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+        apply(event);
+      }}
+      onPointerUp={(event) => {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }}
+      onClick={(event) => event.stopPropagation()}
+    />
+  );
 }
 
 function BlockCard({
@@ -368,17 +464,27 @@ function Section({
           style={{ ["--mn-columns" as string]: columnTemplate(section.layout) }}
         >
           {section.columns.map((column, columnIndex) => (
-            <Column
-              key={column.id}
-              column={column}
-              slot={slot}
-              section={index}
-              columnIndex={columnIndex}
-              registry={registry}
-              selection={selection}
-              dispatch={dispatch}
-              context={context}
-            />
+            <Fragment key={column.id}>
+              <Column
+                column={column}
+                slot={slot}
+                section={index}
+                columnIndex={columnIndex}
+                registry={registry}
+                selection={selection}
+                dispatch={dispatch}
+                context={context}
+              />
+              {/* A handle in each gap, so a three-Column Section has two. */}
+              {columnIndex < section.columns.length - 1 ? (
+                <ColumnResizer
+                  section={section}
+                  path={{ slot, section: index }}
+                  boundary={columnIndex}
+                  dispatch={dispatch}
+                />
+              ) : null}
+            </Fragment>
           ))}
         </div>
       </div>

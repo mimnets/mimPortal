@@ -14,6 +14,9 @@ import { field } from "../blocks/fields";
 import { createRegistry } from "../blocks/registry";
 import {
   BLOCK_TONES,
+  COLUMN_LAYOUTS,
+  columnShares,
+  layoutsWithColumns,
   SECTION_TONES,
   SECTION_WIDTHS,
   SLOT_STICKY,
@@ -273,6 +276,65 @@ describe("reading a Slot's scrolling behaviour out of a row", () => {
     // ADR-0020 rejected it, and a Site that had it before this decision must not get it.
     for (const value of ["fixed", "", "STICKY", "sticky; }", null, undefined, 7, {}]) {
       expect(toSlotSticky(value)).toBe("scrolls");
+    }
+  });
+});
+
+/**
+ * The layout helpers the Editor's Column drag uses.
+ *
+ * Asked for as "can we just drag and resize the blocks". The answer built was: drag is the
+ * gesture, and it snaps to a name — so an Author gets directness and no Page gains a free
+ * number that lines up with nothing. These two functions are what the snapping reads.
+ */
+describe("choosing a layout by proportion", () => {
+  it("offers only layouts with the Column count asked for", () => {
+    // Same-count only, deliberately: changing the count moves an Author's Blocks between
+    // Columns, and a drag that emptied one into its neighbour could not be undone by
+    // dragging back.
+    for (const count of [1, 2, 3, 4]) {
+      for (const name of layoutsWithColumns(count)) {
+        expect(columnShares(name)).toHaveLength(count);
+      }
+    }
+  });
+
+  it("orders them by how wide the first Column is", () => {
+    // The Editor turns a pointer position into a choice from this list, so "further right"
+    // has to mean "first Column is wider" or the handle fights the finger.
+    const firsts = layoutsWithColumns(2).map((name) => columnShares(name)[0]!);
+
+    expect(firsts.length).toBeGreaterThan(2);
+    expect([...firsts].sort((a, b) => a - b)).toEqual(firsts);
+  });
+
+  it("gives two Columns enough stops for a drag to feel like anything", () => {
+    // Three was the whole set before dragging landed, and three stops across a whole Section
+    // is a control that jumps rather than follows.
+    expect(layoutsWithColumns(2).length).toBeGreaterThanOrEqual(5);
+    // And three Columns had exactly one, so the boundary could not move at all.
+    expect(layoutsWithColumns(3).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("describes each layout as shares that add up to the whole Section", () => {
+    for (const name of Object.keys(COLUMN_LAYOUTS) as (keyof typeof COLUMN_LAYOUTS)[]) {
+      const shares = columnShares(name);
+      const total = shares.reduce((sum, n) => sum + n, 0);
+
+      expect(total).toBeCloseTo(1, 10);
+      for (const share of shares) expect(share).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps every layout parseable, including the ones added for dragging", () => {
+    // `layout` is the one Section field that is not caught, so a name this Site cannot read
+    // is a refused Page rather than a repainted Section. Every name here must round-trip.
+    for (const name of Object.keys(COLUMN_LAYOUTS) as (keyof typeof COLUMN_LAYOUTS)[]) {
+      const columns = columnShares(name).map((_, index) => ({ id: `col-${index}`, blocks: [] }));
+      const parsed = registry.safeParseLayout(layout({ layout: name, columns }));
+
+      expect(parsed.error, `${name} did not parse`).toBeNull();
+      expect(parsed.layout?.slots.main[0]?.layout).toBe(name);
     }
   });
 });

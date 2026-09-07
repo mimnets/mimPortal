@@ -51,6 +51,7 @@ were worth anything.
 | ✅ | **M9** Presets | Generate a Theme and Pages together, validated against the registry before they land |
 | ✅ | **Stock images** | Photographs fetched into the Site's own store when a Preset is applied |
 | ✅ | **M10** The Editor an Author lives in | Undo/redo, duplicate, Blueprints, and a preview that narrows to a phone |
+| ✅ | **M10.6** Asked for while using it | A popover on a button, and dragging to resize Columns — snapped to named layouts, so nothing new is stored |
 
 ### The Block library — 22 types
 
@@ -141,9 +142,8 @@ rather than a failed Preset. Optional, and off until a key is set — see
 ### On the roadmap, not started
 
 A preview panel in the Design tab · AI provider and model settings · a Vercel deploy button
-with Neon · **M10.6**, raised on 7 September: a popover an Author can attach to anything, and
-dragging to resize Columns. Both reopen a decision made deliberately, and
-[docs/ROADMAP.md](./ROADMAP.md) says which one each argues with.
+with Neon · the *general* form of M10.6's popover, attachable to any Block Type rather than to
+a button (see [docs/ROADMAP.md](./ROADMAP.md) for the three things it still needs).
 
 ### Planned on 5 September
 

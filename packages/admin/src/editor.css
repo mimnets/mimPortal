@@ -69,6 +69,49 @@
   box-shadow: 0 6px 24px rgb(0 0 0 / 0.08);
 }
 
+/* The handle between two Columns. Grid places it in the gap, so it needs no width of its
+   own to sit in -- `--mn-gutter` is the space it lives in, and the visible line is drawn
+   inside that rather than taking room from a Column.
+
+   Editor chrome, so it exists only here. The published Page has no handle and no resizer:
+   the Section stores a layout name, and the drag is a way of picking one. */
+.mn-ed-resizer {
+  position: relative;
+  align-self: stretch;
+  min-height: 2rem;
+  width: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.mn-ed-resizer::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  border-radius: 1px;
+  background: transparent;
+  transition: background 0.12s ease;
+}
+
+.mn-ed-resizer:hover::before,
+.mn-ed-resizer:focus-visible::before {
+  background: #7c7cf0;
+}
+
+/* Wider than it looks, because a 2px line is not a target. The hit area is the whole
+   gutter; only the line is drawn. */
+.mn-ed-resizer::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 1.25rem;
+  transform: translateX(-50%);
+}
+
 .mn-ed-panel {
   overflow: auto;
   border-left: 1px solid #e2e2e6;

@@ -519,6 +519,12 @@ photographs open a biography — none of it needing a line of custom code in a S
 
 ## M10.6 — Two things asked for on 7 September
 
+**Both built and merged the same day.** The popover half shipped as the narrow version this
+section recommends -- a button and each button in a button row gain an optional panel -- with
+`BlockMeta` added to `render` to solve the id question, which the general version needs too.
+The resize half shipped as **drag that snaps to a named layout**, which is the resolution
+predicted below: the gesture without the free ratio, and nothing new stored.
+
 Raised while using the Editor rather than while planning it, which is the best reason an item
 gets onto this list. Neither is built. Both reopen a decision that was made deliberately, so
 each is written against the decision it argues with.

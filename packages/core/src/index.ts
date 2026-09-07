@@ -33,7 +33,9 @@ export {
   toSlotSticky,
   buildLayoutSchema,
   columnCount,
+  columnShares,
   columnTemplate,
+  layoutsWithColumns,
   emptyLayout,
   sectionDefaults,
 } from "./layout/schema";

@@ -11,6 +11,22 @@ export const SLOT_NAMES = ["header", "main", "sidebar", "footer"] as const;
 export type SlotName = (typeof SLOT_NAMES)[number];
 
 /** Column layouts, as ratios. Anything not in this map cannot be expressed. */
+/**
+ * The proportions a Section may be split into, named rather than free.
+ *
+ * A name rather than a pair of numbers, and that is the decision worth keeping: a client who
+ * can drag to any ratio will produce 63/37, with a gutter that lines up with nothing else on
+ * the Page. The Editor lets an Author *drag* the boundary -- the gesture they asked for --
+ * and the drag snaps to this list, so directness costs nothing structural. The stored value
+ * is still one of these names, so no Page anywhere gained a number.
+ *
+ * **Adding to this list is forward-only.** `layout` is deliberately the one Section field
+ * that is not `.catch()`ed -- a Section whose layout cannot be read is refused rather than
+ * repainted, because the Column count has to match it -- so a Page saved with a name added
+ * here will not parse on a Site running older packages. That is the right trade for a field
+ * whose failure would produce a document that breaks its own structural rule, and it is why
+ * this list grows at a release rather than quietly.
+ */
 export const COLUMN_LAYOUTS = {
   "1": [1],
   "1-1": [1, 1],
@@ -18,6 +34,14 @@ export const COLUMN_LAYOUTS = {
   "1-1-1-1": [1, 1, 1, 1],
   "2-1": [2, 1],
   "1-2": [1, 2],
+  // Added when dragging landed: two Columns had three stops, which is not enough for a drag
+  // to feel like anything. Five is.
+  "3-1": [3, 1],
+  "1-3": [1, 3],
+  // And three Columns had exactly one, so the boundary could not move at all.
+  "2-1-1": [2, 1, 1],
+  "1-2-1": [1, 2, 1],
+  "1-1-2": [1, 1, 2],
 } as const;
 
 export type ColumnLayout = keyof typeof COLUMN_LAYOUTS;
@@ -27,6 +51,40 @@ const COLUMN_LAYOUT_NAMES = Object.keys(COLUMN_LAYOUTS) as [ColumnLayout, ...Col
 /** CSS `grid-template-columns` for a layout, e.g. "2-1" becomes "2fr 1fr". */
 export function columnTemplate(layout: ColumnLayout): string {
   return COLUMN_LAYOUTS[layout].map((ratio) => `${ratio}fr`).join(" ");
+}
+
+/**
+ * The layouts with a given number of Columns, ordered by how wide the first Column is.
+ *
+ * What a drag snaps to. Ordered because the Editor turns a pointer position into an index
+ * into this list, and because "the next one to the right" has to mean something.
+ *
+ * Same-count only, deliberately: changing the number of Columns moves an Author's Blocks
+ * between them, and a drag that silently emptied a Column into its neighbour would be a
+ * gesture nobody could undo by dragging back.
+ */
+export function layoutsWithColumns(count: number): ColumnLayout[] {
+  return (Object.keys(COLUMN_LAYOUTS) as ColumnLayout[])
+    .filter((name) => COLUMN_LAYOUTS[name].length === count)
+    .sort((a, b) => {
+      const share = (name: ColumnLayout) => {
+        const ratios = COLUMN_LAYOUTS[name] as readonly number[];
+        return ratios[0]! / ratios.reduce((sum, n) => sum + n, 0);
+      };
+      return share(a) - share(b);
+    });
+}
+
+/**
+ * The share of the Section each Column takes, as fractions summing to 1.
+ *
+ * The Editor compares a pointer position against these to decide which layout a drag is
+ * nearest to.
+ */
+export function columnShares(layout: ColumnLayout): number[] {
+  const ratios = COLUMN_LAYOUTS[layout] as readonly number[];
+  const total = ratios.reduce((sum, n) => sum + n, 0);
+  return ratios.map((n) => n / total);
 }
 
 export function columnCount(layout: ColumnLayout): number {

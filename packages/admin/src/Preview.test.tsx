@@ -17,7 +17,15 @@
  * selected at all.
  */
 
-import { createRegistry, defineBlock, emptyContext, emptyLayout, field } from "@mimnets/core";
+import {
+  columnShares,
+  createRegistry,
+  defineBlock,
+  emptyContext,
+  emptyLayout,
+  field,
+  layoutsWithColumns,
+} from "@mimnets/core";
 import type { PageLayout } from "@mimnets/core";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -254,5 +262,124 @@ describe("the preview's width", () => {
   it("wraps the Slots, because a container only governs what is inside it", () => {
     const el = frame("phone");
     expect(el.querySelector(".mn-ed-slot")).not.toBeNull();
+  });
+});
+
+/**
+ * Dragging the boundary between two Columns.
+ *
+ * Asked for as "can we just drag and resize the blocks", and the answer built was: **the
+ * drag is the gesture, and it snaps to a named layout.** Nothing new is stored, so no Page
+ * gained a free ratio that lines up with nothing else — the objection behind Section tones
+ * and the absent colour picker. The maths lives in `@mimnets/core` and is tested there; what
+ * is tested here is that the handle exists where it should, dispatches a real layout, and
+ * does not fight dnd-kit for the same pointer.
+ */
+describe("resizing Columns by dragging", () => {
+  function sectionWith(layout: "1" | "1-1" | "1-1-1" | "1-1-1-1") {
+    const page = emptyLayout();
+    const section = newSection(layout);
+    for (const column of section.columns) column.blocks.push(newBlock(spacer));
+    page.slots.main.push(section);
+    return page;
+  }
+
+  function drawWith(layout: "1" | "1-1" | "1-1-1" | "1-1-1-1") {
+    const dispatch = vi.fn();
+    const { container } = render(
+      <Preview
+        layout={sectionWith(layout)}
+        registry={registry}
+        selection={null}
+        dispatch={dispatch}
+        context={emptyContext()}
+        visibleSlots={["main"]}
+      />,
+    );
+    return { container, dispatch };
+  }
+
+  it("puts a handle in every gap, and none on the ends", () => {
+    // Two Columns is one boundary; three is two. A handle after the last Column would be a
+    // handle that resizes nothing.
+    expect(drawWith("1-1").container.querySelectorAll(".mn-ed-resizer")).toHaveLength(1);
+    expect(drawWith("1-1-1").container.querySelectorAll(".mn-ed-resizer")).toHaveLength(2);
+  });
+
+  it("offers no handle when there is only one Column", () => {
+    expect(drawWith("1").container.querySelectorAll(".mn-ed-resizer")).toHaveLength(0);
+  });
+
+  /**
+   * The case the `options.length < 2` guard exists for, and the reason it is not dead code.
+   *
+   * Four Columns have exactly one layout — an even split — so there is nothing for a drag to
+   * land on. Three gaps' worth of handles that cannot change anything is worse than none:
+   * an Author drags, nothing moves, and the Editor looks broken rather than constrained.
+   *
+   * Found by deleting the guard and watching nothing fail: the one-Column test above passes
+   * either way, because a single Column has no gap to draw a handle in.
+   */
+  it("offers no handle when the Column count admits only one layout", () => {
+    expect(layoutsWithColumns(4)).toHaveLength(1);
+    expect(drawWith("1-1-1-1").container.querySelectorAll(".mn-ed-resizer")).toHaveLength(0);
+  });
+
+  it("announces itself as a separator rather than as decoration", () => {
+    const handle = drawWith("1-1").container.querySelector(".mn-ed-resizer")!;
+
+    expect(handle.getAttribute("role")).toBe("separator");
+    expect(handle.getAttribute("aria-orientation")).toBe("vertical");
+    expect(handle.getAttribute("aria-label")).toBeTruthy();
+  });
+
+  /**
+   * dnd-kit is listening for a drag on the Blocks, and two drag systems on one surface is
+   * the thing to get wrong here. The guarantee is structural rather than about event order:
+   * the handle sits *between* Columns, so a pointer that lands on it never lands on a
+   * draggable at all. A handle rendered inside a Column would be inside a Block card, and
+   * then no amount of stopping propagation would be reliable.
+   *
+   * (The handler stops propagation as well, as a second line. That is not asserted here,
+   * because React's synthetic events do not make it a property a test can hold onto.)
+   */
+  it("sits between the Columns rather than inside one", () => {
+    const { container } = drawWith("1-1");
+    const handle = container.querySelector(".mn-ed-resizer")!;
+
+    expect(handle.parentElement?.className).toContain("mn-ed-columns");
+    expect(handle.closest(".mn-ed-column")).toBeNull();
+    expect(handle.closest(".mn-ed-block")).toBeNull();
+  });
+
+  /**
+   * The drag has to land on a real layout name. Dispatching a ratio, or a name with a
+   * different Column count, is the failure this whole design exists to avoid.
+   */
+  it("dispatches a named layout with the Column count it started with", () => {
+    const { container, dispatch } = drawWith("1-1");
+    const handle = container.querySelector<HTMLElement>(".mn-ed-resizer")!;
+    const columns = container.querySelector<HTMLElement>(".mn-ed-columns")!;
+
+    // jsdom has no layout, so the width has to be supplied.
+    columns.getBoundingClientRect = () =>
+      ({ left: 0, width: 1000, top: 0, height: 100, right: 1000, bottom: 100, x: 0, y: 0 }) as DOMRect;
+    handle.setPointerCapture = () => {};
+    handle.hasPointerCapture = () => true;
+    handle.releasePointerCapture = () => {};
+
+    // Drag well to the right: the first Column should end up the wider one.
+    handle.dispatchEvent(
+      new PointerEvent("pointerdown", { bubbles: true, cancelable: true, clientX: 780 }),
+    );
+
+    expect(dispatch).toHaveBeenCalled();
+    const action = dispatch.mock.calls.at(-1)![0] as { type: string; layout: string };
+    expect(action.type).toBe("setSectionLayout");
+    expect(layoutsWithColumns(2)).toContain(action.layout);
+
+    const shares = columnShares(action.layout as never);
+    expect(shares).toHaveLength(2);
+    expect(shares[0]!).toBeGreaterThan(0.5);
   });
 });
