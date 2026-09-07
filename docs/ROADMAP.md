@@ -449,8 +449,8 @@ width to see it stack, all without leaving the Editor.
 
 ## M10.5 — Four things a client asks for in the first week
 
-**Two of the four are built and merged (7 September): per-Section width, and a Header that
-stays. Popovers and the button row are not.** The intent below stands as written, with one
+**Three of the four are built and merged (7 September): per-Section width, a Header that
+stays, and the button row. Popovers are not.** The intent below stands as written, with one
 decision changed by contact with the code and recorded where the change was made:
 [ADR-0020](./adr/0020-a-header-stays-by-sticking-not-by-fixing.md) rejects `fixed`, so the
 Header setting shipped with two values rather than three.
@@ -486,7 +486,7 @@ flex column, and Blocks never contain other Blocks, which is
 [ADR-0003](./adr/0003-sections-and-columns-not-free-canvas.md)'s rule and is not the thing to
 reopen for this.
 
-So: **a button row Block** — a repeater of buttons laid out horizontally, wrapping on a phone,
+So: **a button row Block** *(Built.)* — a repeater of buttons laid out horizontally, wrapping on a phone,
 each with the same variants a single button has. It is the same shape as `logos` and `social`,
 which are already repeaters that lay their items out in a line, so it needs nothing from the
 layout engine and no new concept for an Author to learn.

@@ -1113,9 +1113,84 @@ export const socialBlock = defineBlock({
   },
 });
 
+/**
+ * Two or more buttons side by side.
+ *
+ * Asked for on 6 September, and the answer before this Block existed was "set the Section to
+ * two Columns" -- which is the wrong answer. That puts each button at half the width of the
+ * band with a gutter between them, when what a hero wants is "Book a table" and "See the
+ * menu" sitting next to each other.
+ *
+ * Blocks inside a Column stack, always. `.mn-column` is a flex column and Blocks never
+ * contain other Blocks, which is ADR-0003's rule and was not reopened for this. So this is a
+ * Block rather than a Column property: the same shape as `logos` and `social`, which are
+ * already repeaters laying their items out in a line, and it needs nothing from the layout
+ * engine and no new concept for an Author.
+ *
+ * **Each button carries its own style rather than the Block carrying a variant**, and that
+ * is the point of the Block. A hero wants one solid button and one outline beside it; a
+ * Block-level variant would make every button in the row the same and leave the pair looking
+ * like a mistake. `data-style` on the button is the mechanism already used by the call to
+ * action, a pricing plan and the comparison table -- see the note above `.mn-btn[data-style]`
+ * in blocks.css -- so this needed no new CSS mechanism either.
+ */
+export const buttonRowBlock = defineBlock({
+  name: "buttons",
+  label: "Button row",
+  fields: {
+    align: field.select({
+      label: "Alignment",
+      options: ["start", "center", "end"],
+      default: "start",
+    }),
+    size: field.select({ label: "Size", options: ["medium", "large"], default: "medium" }),
+    items: field.repeater({
+      label: "Buttons",
+      fields: {
+        label: field.text({ label: "Label", default: "" }),
+        href: field.text({ label: "Links to", default: "/" }),
+        style: field.select({
+          label: "Style",
+          options: ["primary", "accent", "outline"],
+          default: "primary",
+        }),
+      },
+    }),
+  },
+  render: ({ align, size, items }) => {
+    // A button with no label is a link nobody can see or click, which is what an Author
+    // leaves behind when they add a row item and change their mind. The same filter the
+    // logo strip and the social row apply to their own empty items.
+    const shown = items.filter((item) => item.label);
+    if (shown.length === 0) return null;
+
+    return (
+      <div className="mn-buttons" data-align={align}>
+        {shown.map((item, index) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <a
+            key={index}
+            className="mn-btn"
+            data-style={item.style}
+            data-size={size}
+            // Author input that becomes an href, so it goes through the same check every
+            // other Block with a link uses. React refuses `javascript:` on its own and does
+            // not refuse `vbscript:` -- see the note in carousel.test.tsx.
+            href={safeHref(item.href) || "/"}
+          >
+            {item.label}
+          </a>
+        ))}
+      </div>
+    );
+  },
+});
+
+
 export const designBlocks = [
   eyebrowBlock,
   buttonBlock,
+  buttonRowBlock,
   featuresBlock,
   statsBlock,
   testimonialBlock,

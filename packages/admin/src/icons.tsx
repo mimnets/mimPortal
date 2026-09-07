@@ -184,6 +184,13 @@ export const ButtonIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const ButtonRowIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="1.5" y="5" width="6" height="6" rx="2" />
+    <rect x="8.5" y="5" width="6" height="6" rx="2" />
+  </Icon>
+);
+
 export const FeaturesIcon = (props: IconProps) => (
   <Icon {...props}>
     <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
@@ -301,6 +308,7 @@ export const ICONS_BY_BLOCK: Record<string, (props: IconProps) => React.JSX.Elem
   image: ImageIcon,
   eyebrow: EyebrowIcon,
   button: ButtonIcon,
+  buttons: ButtonRowIcon,
   features: FeaturesIcon,
   stats: StatsIcon,
   testimonial: TestimonialIcon,

@@ -703,6 +703,32 @@ h3.mn-heading {
   font-size: 1.0625rem;
 }
 
+/* A row of buttons, because Blocks in a Column stack and two buttons should not have to
+   (ADR-0003 stays closed; the row is a Block).
+ *
+ * `flex-wrap` is the whole of the responsive behaviour and is why this needs no media query:
+ * two buttons sit side by side until they cannot, and then the second drops beneath the
+ * first. On a 320px screen a pair of medium buttons wraps rather than overflowing the band.
+ *
+ * `align-items: start` is load-bearing. `.mn-btn` sets `align-self: flex-start` for the
+ * stacked case, which in a row would leave buttons of different text lengths -- one wrapping
+ * to two lines, one not -- with mismatched heights and their labels off each other's
+ * baseline. Stating the cross-axis here overrides that for the row and nowhere else. */
+.mn-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.mn-buttons[data-align="center"] {
+  justify-content: center;
+}
+
+.mn-buttons[data-align="end"] {
+  justify-content: flex-end;
+}
+
 /* ---- Feature grid ---- */
 
 .mn-features {

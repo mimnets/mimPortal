@@ -44,7 +44,7 @@ were worth anything.
 | ✅ | **M6.5** Forms and email | Contact Block, Enquiries in the Dashboard, pluggable spam checks, EmailAdapter |
 | ✅ | **M7** AI writing assistant | Rewrite, shorten, alt text, search descriptions, over a chain of providers (ADR-0014) |
 | ✅ | **M8** Packaging, Site two | Packages build and publish; `sites/ledger` installs them rather than linking to source |
-| ✅ | **M8.5** Block library | 22 Block Types, Section tones, a Theme built around them |
+| ✅ | **M8.5** Block library | 23 Block Types, Section tones, a Theme built around them |
 | ✅ | **M9** Presets | Generate a Theme and Pages together, validated against the registry before they land |
 | ✅ | **Stock images** | Photographs fetched into the Site's own store when a Preset is applied |
 | ⚠️ | **M10** The Editor an Author lives in | Undo/redo and duplicate built; Blueprints and the responsive preview are not |
@@ -157,10 +157,13 @@ met its exit criterion and is finished; M10.5 is half built and M12 is untouched
     the Header's own height to offset the Page, which means either a magic number or the
     first JavaScript a published Site has ever shipped. A Footer is refused the behaviour in
     the renderer as well as in the Dashboard.
+  - **A button row.** The twenty-third Block Type: a repeater of buttons laid out in a line,
+    wrapping on a phone. A Block rather than a Column property, because Blocks in a Column
+    stack and ADR-0003 was not worth reopening for two buttons. Each button carries its own
+    style, which is the point — a hero wants one solid and one outline, and a Block-level
+    variant would make the pair identical.
 
-  Still to build: **popovers** for a biography or a service's detail, and a **button row** so
-  two buttons can sit side by side. The button row is a Block rather than a Column property,
-  because Blocks in a Column stack and that rule is not worth reopening for two buttons.
+  Still to build: **popovers** for a biography or a service's detail.
 - **M11** is done and merged, including the review that followed it. It is described above;
   the only thing consciously left out of it is CSS 3D.
 - **M12** — what the AI does next, and what it must not: importing a client's existing site as
