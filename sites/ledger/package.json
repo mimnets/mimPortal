@@ -2,7 +2,7 @@
   "name": "ledger",
   "version": "0.0.0",
   "private": true,
-  "description": "Site number two \u2014 a chartered accountant, proving ADR-0001",
+  "description": "Site number two — a chartered accountant, proving ADR-0001",
   "type": "module",
   "scripts": {
     "setup": "node scripts/setup.mjs",
@@ -15,9 +15,9 @@
     "seed": "node scripts/seed.mjs"
   },
   "dependencies": {
-    "@mimnets/admin": "^0.1.1",
-    "@mimnets/blocks": "^0.1.1",
-    "@mimnets/core": "^0.1.1",
+    "@mimnets/admin": "^0.4.0",
+    "@mimnets/blocks": "^0.4.0",
+    "@mimnets/core": "^0.4.0",
     "better-auth": "^1.6.29",
     "drizzle-orm": "^0.45.2",
     "next": "^16.3.1",
@@ -30,7 +30,9 @@
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
   }
 }

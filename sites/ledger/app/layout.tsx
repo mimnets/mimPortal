@@ -4,6 +4,7 @@ import { themeToCss } from "@mimnets/core";
 
 import { theme } from "../theme";
 import { activeTheme } from "../lib/theme";
+import "@mimnets/blocks/blocks.css";
 import "./globals.css";
 
 /**
