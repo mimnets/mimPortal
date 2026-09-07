@@ -139,7 +139,10 @@ export const logoBlock = defineBlock({
     href: field.text({ label: "Links to", default: "/" }),
   },
   render: ({ image, text, href }, context) => (
-    <a className="mn-logo" href={href || "/"}>
+    // Author input that becomes an href, and the most exposed one in the library: a logo
+    // lives in the Header, a Header is shared, so a bad address here is on every Page of the
+    // Site at once. React refuses `javascript:` and refuses neither `vbscript:` nor `data:`.
+    <a className="mn-logo" href={safeHref(href) || "/"}>
       {image.key ? (
         <img
           src={`${context.mediaBaseUrl}/${image.key}`}

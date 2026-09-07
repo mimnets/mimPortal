@@ -66,7 +66,12 @@ export const buttonBlock = defineBlock({
   },
   render: ({ label, href, size }) =>
     label ? (
-      <a className="mn-btn" data-size={size} href={href || "/"}>
+      // Author input that becomes an href, so it goes through the same check the call to
+      // action, a pricing plan, the carousel, the comparison table, the menu and the social
+      // row all use. This Block was the one that did not, and it is the most likely of the
+      // lot to carry a link somebody typed: React refuses `javascript:` on its own, which is
+      // why nothing looked wrong, and refuses neither `vbscript:` nor a `data:` URL.
+      <a className="mn-btn" data-size={size} href={safeHref(href) || "/"}>
         {label}
       </a>
     ) : null,
