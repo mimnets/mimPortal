@@ -7,9 +7,14 @@ versioned packages plus a Starter app. You clone the Starter once per client, an
 clone is a complete website with a Dashboard where content, layout and theme are changed
 without touching code. Fixes made here reach every Site through a dependency upgrade.
 
-> **Status: M5 complete.** Foundations, layout engine, Editor, draft/publish with history,
-> auth with roles and an installer, and Pages, Menus and Theme. M6 — media and SEO — is
-> next. Today's state and tomorrow's starting point: [HANDOFF.md](./HANDOFF.md).
+> **Status: M0 through M11 are done and merged, and so is M10.5.** The layout engine, the
+> Editor, draft/publish with history, auth and the installer, Pages/Menus/Theme, media and
+> SEO, forms and email, the AI writing assistant, packaging, the 24-Block library, Presets,
+> and Theme variants. The packages are published on npm at 0.4.0.
+>
+> What is built and what is not: [docs/FEATURES.md](./docs/FEATURES.md). Where to pick up:
+> [HANDOFF.md](./HANDOFF.md). This file is the front door — what Mimnets is and how to run
+> it — and it defers to those two rather than repeating them.
 
 ## Installation
 
@@ -59,7 +64,10 @@ default recommendation, for reasons in
 | `pnpm typecheck` | Type-check every package |
 | `pnpm db:generate` | Turn a schema change into a migration file |
 | `pnpm db:migrate` | Apply pending migrations |
+| `pnpm seed` | Demo Pages, the main Menu, an image and a contact form |
+| `pnpm test` | The whole suite. The count is the thing to read |
 | `pnpm changeset` | Record a change for the next package release |
+| `pnpm release` | Publish the packages. Run `pnpm changeset version` first, from `main` |
 
 ### Running the database yourself
 
@@ -155,8 +163,10 @@ the same Zod schemas the Editor writes through. The model cannot invent a Block 
 does not exist — invalid output is rejected before it is stored, so there is no failure
 mode where generation breaks a live Site.
 
-Generation is provider-agnostic with `claude-opus-5` as the default. The model is an
-Owner-only Site setting, each Site holds its own API key, and an Author never sees a model
+Generation goes through a **chain** of providers rather than one, tried in order until one
+answers: OpenRouter's free models first, then Anthropic, OpenAI and DeepSeek
+([ADR-0014](./docs/adr/0014-free-models-first-paid-as-fallback.md)). The chain is an
+Owner-only Site setting, each Site holds its own keys, and an Author never sees a model
 dropdown ([ADR-0007](./docs/adr/0007-ai-generated-presets.md)).
 
 ## Repository shape
@@ -166,8 +176,10 @@ mimnets/                            ← this repo (the product)
 ├── packages/
 │   ├── core/          layout schema, block registry, renderer, storage adapter
 │   ├── admin/         the Dashboard and the Editor
-│   └── blocks/        the 14 standard Block Types, heading through pricing plan
-└── starter/           the thin app cloned to create a Site
+│   └── blocks/        the 24 standard Block Types, heading through popovers
+├── starter/           the thin app cloned to create a Site
+└── sites/ledger/      Site number two, and the proof ADR-0001 works: it installs
+                       the published packages rather than linking to the source
 
 client-site/                       ← a clone of starter/
 ├── package.json       depends on @mimnets/core, @mimnets/admin, @mimnets/blocks
@@ -176,7 +188,12 @@ client-site/                       ← a clone of starter/
 └── blocks/            Block Types only this client needs
 ```
 
-Sites are independent: own database, own domain, own deploy, own API key. Nothing is
+**The three packages are published on npm**, currently at 0.4.0, so a Site installs them the
+way it installs anything else. `sites/ledger` is the one that proves it: it resolves
+`@mimnets/*` from the registry with no workspace link and no local override, which is the
+only way to find out whether what was packaged is what a Site actually needs.
+
+Sites are independent: own database, own domain, own deploy, own keys. Nothing is
 shared at runtime ([ADR-0001](./docs/adr/0001-packaged-template-cloned-per-site.md)).
 
 ## Stack
@@ -190,8 +207,8 @@ shared at runtime ([ADR-0001](./docs/adr/0001-packaged-template-cloned-per-site.
 | Validation | Zod — shared by the database, the Editor forms and Presets  |
 | Styling    | Tailwind wired to Theme tokens                             |
 | Auth       | Better Auth (Owner / Author)                               |
-| Files      | StorageAdapter → S3 / R2, swappable for local disk         |
-| AI         | Provider-agnostic, default `claude-opus-5`, key per Site   |
+| Files      | StorageAdapter → the Site's own disk by default, a bucket as the upgrade ([ADR-0012](./docs/adr/0012-local-disk-is-the-default-storage.md)) |
+| AI         | A chain of providers, free ones first ([ADR-0014](./docs/adr/0014-free-models-first-paid-as-fallback.md)), keys per Site |
 | Monorepo   | pnpm workspaces + Turborepo + Changesets                   |
 | Hosting    | Portable — standalone build + Dockerfile ([HOSTING.md](./docs/HOSTING.md)) |
 
@@ -210,13 +227,17 @@ a deleted homepage is recoverable.
 
 ## Scope
 
-**v1 is finished when** an Author can log in, arrange Blocks across several Pages, publish
-them, and the Site renders live with its own Theme, working responsive navigation,
-uploaded images, per-Page SEO fields and a sitemap.
+**v1 was finished when** an Author could log in, arrange Blocks across several Pages,
+publish them, and the Site rendered live with its own Theme, working responsive navigation,
+uploaded images, per-Page SEO fields and a sitemap. **All of that is done**, and each clause
+was checked by hand in a browser rather than by a passing test — see the milestone notes in
+[docs/ROADMAP.md](./docs/ROADMAP.md).
 
-The one AI feature inside v1 is a writing assistant in the Editor: write, rewrite, shorten,
-generate alt text, draft an SEO description. **Presets come immediately after v1**, once
-the Block library is large enough for generated Sites to look genuinely different.
+The AI does three things now, not one: the writing assistant in the Editor (write, rewrite,
+shorten, alt text, search descriptions), **Presets** — which shipped as M9 rather than
+"immediately after v1" — and reading a palette out of an image. What it is deliberately not
+allowed to do is in M12's section of the roadmap: schemas, security boundaries and anything
+whose failure is silent stay hand-written.
 
 **Deliberately excluded** — Collections, a public chatbot, redirect management, JSON-LD, an
 analytics dashboard, a translation UI, and a raw database admin UI (that last one
@@ -239,6 +260,15 @@ was considered and rejected for a reason.
 9. [Plain Postgres, Neon as the default managed host](./docs/adr/0009-plain-postgres-neon-as-default-host.md)
 10. [The web installer has two modes](./docs/adr/0010-web-installer-two-modes.md)
 11. [Markdown for prose, JSON for layout](./docs/adr/0011-markdown-for-prose-json-for-layout.md)
+12. [The local disk is the default storage](./docs/adr/0012-local-disk-is-the-default-storage.md)
+13. [The band is the Section's job](./docs/adr/0013-the-band-is-the-sections-job.md)
+14. [Free models first, paid ones as the fallback](./docs/adr/0014-free-models-first-paid-as-fallback.md)
+15. [Headers and Footers are shared](./docs/adr/0015-headers-and-footers-are-shared.md)
+16. [The installer fails closed](./docs/adr/0016-the-installer-fails-closed.md)
+17. [The Editor does not own Shared Slots](./docs/adr/0017-the-editor-does-not-own-shared-slots.md)
+18. [The Editor is ours because the Block Type is](./docs/adr/0018-the-editor-is-ours-because-the-block-type-is.md)
+19. [A Theme derives what it can check](./docs/adr/0019-a-theme-derives-what-it-can-check.md)
+20. [A Header stays by sticking, not by fixing](./docs/adr/0020-a-header-stays-by-sticking-not-by-fixing.md)
 
 ## Build order
 

@@ -9,13 +9,16 @@ private to the account that owns it, and it is a snapshot: where it and this fil
 
 ## What owns what
 
-Four documents, and the reason to keep them apart is that two of them have already drifted
-into each other once. On 5 September `docs/ROADMAP.md` and `HANDOFF.md` named different Block
-Types as M8.5's remaining work, and nobody could tell which was true without reading the code.
-So:
+Five documents, and the reason to keep them apart is that they have already drifted into each
+other twice. On 5 September `docs/ROADMAP.md` and `HANDOFF.md` named different Block Types as
+M8.5's remaining work, and nobody could tell which was true without reading the code. On
+7 September `readme.md` was found still saying "Status: M5 complete" and "the 14 standard Block
+Types" — six milestones and ten Blocks out of date — because it was the one file with no
+declared job and so nobody's to update. It has one now. So:
 
 | File | Owns | Does not |
 | --- | --- | --- |
+| **`readme.md`** | The front door: what Mimnets is, how to install it, how a Page is built | Track state — it names the milestone reached and defers here for the detail |
 | **`docs/FEATURES.md`** (this) | The inventory: what is built, what is not | Say why, or what to do next |
 | **`docs/ROADMAP.md`** | Intent: milestones, what each is for, its exit criterion | Track day-to-day state |
 | **`HANDOFF.md`** | Where to pick up, and what needs a person | Restate the inventory |
