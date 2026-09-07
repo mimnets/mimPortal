@@ -449,6 +449,12 @@ width to see it stack, all without leaving the Editor.
 
 ## M10.5 — Four things a client asks for in the first week
 
+**Two of the four are built and merged (7 September): per-Section width, and a Header that
+stays. Popovers and the button row are not.** The intent below stands as written, with one
+decision changed by contact with the code and recorded where the change was made:
+[ADR-0020](./adr/0020-a-header-stays-by-sticking-not-by-fixing.md) rejects `fixed`, so the
+Header setting shipped with two values rather than three.
+
 Raised on 5 September, none of them in any milestone, and all small enough that leaving them
 unplanned was the only reason they were not built. Three of the four share a shape: each is a
 property the layout engine could already carry, sitting one field away from existing. The
@@ -456,7 +462,8 @@ fourth, the button row, is a Block rather than a property, and it is here becaus
 same size of job and comes from the same place — somebody trying to build an ordinary page and
 finding they cannot.
 
-**A Header that stays.** A Site's Header scrolls away and there is no option not to. `position:
+**A Header that stays.** *(Built, with two values — see ADR-0020.)* A Site's Header scrolls
+away and there is no option not to. `position:
 fixed` appears exactly once in the whole stylesheet and it is the gallery's lightbox. The
 setting belongs on the Shared Slot rather than on a Page — a Header is shared
 ([ADR-0015](./adr/0015-headers-and-footers-are-shared.md)) and one that stuck on some Pages and
@@ -464,7 +471,7 @@ not others would read as a bug. Three values: scrolls, sticky, fixed. The work t
 obvious is the rest of the page: a fixed Header needs the content below it offset by its own
 height, which is a `scroll-padding-top` and a measurement, not a magic number.
 
-**Per-Section width.** A Section has a tone, a padding and a background, and no width, so every
+**Per-Section width.** *(Built.)* A Section has a tone, a padding and a background, and no width, so every
 band is the Theme's one global `measure`. That is the wrong default for exactly the Blocks
 added in M8.5: a gallery, a carousel and a map all want the full width of the window, and today
 they cannot have it. The field is `width: "measure" | "wide" | "full"`, resolving to Theme

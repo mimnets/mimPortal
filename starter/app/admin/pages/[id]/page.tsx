@@ -34,7 +34,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
 
   // The Editor shows what the Page will actually look like, so a shared Header is rendered
   // in place rather than showing the Page's own unused copy.
-  const shown = await resolveLayout(layout, {
+  const { layout: shown } = await resolveLayout(layout, {
     headerSlotId: page.headerSlotId,
     footerSlotId: page.footerSlotId,
   });

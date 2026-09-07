@@ -29,6 +29,8 @@ export {
   SECTION_TONES,
   SECTION_WIDTHS,
   SLOT_NAMES,
+  SLOT_STICKY,
+  toSlotSticky,
   buildLayoutSchema,
   columnCount,
   columnTemplate,
@@ -51,6 +53,7 @@ export type {
   SectionWidth,
   SectionTone,
   SlotName,
+  SlotSticky,
 } from "./layout/schema";
 
 export { assertLockedSlotsUnchanged, lockedSlotViolation } from "./layout/locking";

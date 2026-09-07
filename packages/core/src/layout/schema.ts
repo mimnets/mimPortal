@@ -89,6 +89,39 @@ export type SectionPadding = (typeof SECTION_PADDINGS)[number];
 export const SECTION_WIDTHS = ["measure", "wide", "full"] as const;
 export type SectionWidth = (typeof SECTION_WIDTHS)[number];
 
+/**
+ * Whether a Header stays on screen as the Page scrolls.
+ *
+ * A property of the *Slot*, not of a Page and not of a Section. A Header is shared
+ * (ADR-0015), and one that stuck on some Pages and scrolled away on others would read as a
+ * bug rather than as a setting -- the same argument that put the Header in a Shared Slot to
+ * begin with. It is stated here rather than in `db/schema.ts` because the renderer and the
+ * Dashboard both need the vocabulary and neither should import the database.
+ *
+ * **Two values, and "fixed" is deliberately not the third** -- see ADR-0020. `position:
+ * sticky` leaves the Header in flow, so nothing below it needs offsetting and no height
+ * has to be measured. `position: fixed` takes it out of flow, so the first band of every
+ * Page slides underneath it unless something replaces the height it gave up, and there is
+ * no way to know that height without either a magic number or the first line of
+ * JavaScript a public Site has ever shipped. It buys one thing sticky does not -- a Header
+ * overlaying content from scroll position zero -- and that is a transparent-header design
+ * with its own contrast problems, not this setting.
+ */
+export const SLOT_STICKY = ["scrolls", "sticky"] as const;
+export type SlotSticky = (typeof SLOT_STICKY)[number];
+
+/**
+ * Narrows an unknown to the enum, defaulting to scrolling.
+ *
+ * The column is `text`, so anything can be in it: a row written by a Site on newer
+ * packages, or one left behind by a rollback. Falling back to "scrolls" is what the Site
+ * did before the column existed, which makes an unrecognised value a Header that behaves
+ * normally rather than a Header that does something arbitrary.
+ */
+export function toSlotSticky(value: unknown): SlotSticky {
+  return SLOT_STICKY.includes(value as SlotSticky) ? (value as SlotSticky) : "scrolls";
+}
+
 export interface SectionBackground {
   /** A storage key, like every other image in a layout. Empty means no image. */
   key: string;

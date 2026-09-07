@@ -1,0 +1,1 @@
+ALTER TABLE "shared_slots" ADD COLUMN "sticky" text DEFAULT 'scrolls' NOT NULL;

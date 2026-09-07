@@ -100,7 +100,7 @@ export default async function PublicPage({
 
   // The Page holds Main and Sidebar; its Header and Footer usually come from a shared Slot,
   // which is what makes editing one change every Page that uses it.
-  const resolved = await resolveLayout(layout, {
+  const { layout: resolved, headerSticky } = await resolveLayout(layout, {
     headerSlotId: page.headerSlotId,
     footerSlotId: page.footerSlotId,
   });
@@ -116,7 +116,13 @@ export default async function PublicPage({
         Skip to content
       </a>
 
-      <SlotView layout={resolved} slot="header" registry={registry} context={context} />
+      <SlotView
+        layout={resolved}
+        slot="header"
+        registry={registry}
+        context={context}
+        sticky={headerSticky}
+      />
       <main id="main">
         <SlotView layout={resolved} slot="main" registry={registry} context={context} />
         <SlotView layout={resolved} slot="sidebar" registry={registry} context={context} />

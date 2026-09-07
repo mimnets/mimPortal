@@ -76,6 +76,33 @@ a {
   padding-block: 1.25rem;
 }
 
+/* ---- A Header that stays ----------------------------------------------------
+   `position: sticky` and deliberately not `position: fixed` (ADR-0020). Sticky leaves the
+   Header in flow, so nothing below it moves and no height has to be measured; fixed would
+   need the first band offset by a height that cannot be known without either a magic number
+   or the first JavaScript a public Site has ever shipped.
+
+   Two things here are load-bearing and neither is obvious.
+
+   The background. A Header whose Section is the default tone paints nothing -- only the
+   `primary`, `dark`, `surface` and `mesh` tones set a colour -- so a sticky Header would be
+   transparent and the Page would scroll visibly through its own navigation. This paints the
+   page colour underneath, which is what a default-tone Header already looks like standing
+   still. A Section carrying a tone paints over it and is unaffected.
+
+   The z-index. This does establish a stacking context, which is the thing the divider and
+   the grain comments both warn about, and here it is wanted and safe. The mobile nav drawer
+   (z-index: 30) lives inside the Header, so it rides with it. The gallery lightbox
+   (z-index: 50) is `position: fixed` in the Page's main content, outside this context and
+   competing at the root -- 50 beats 20, so an opened lightbox still covers the Header
+   rather than appearing behind it. Both were checked rather than assumed. */
+.mn-slot[data-sticky="sticky"] {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--mn-color-background);
+}
+
 .mn-columns {
   display: grid;
   gap: var(--mn-gutter);

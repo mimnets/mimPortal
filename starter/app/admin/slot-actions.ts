@@ -2,7 +2,7 @@
 
 import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import type { PageLayout } from "@mimnets/core";
+import { toSlotSticky, type PageLayout, type SlotSticky } from "@mimnets/core";
 import { createDatabase, pages, sharedSlots } from "@mimnets/core/db";
 
 import { registry } from "../../blocks.config";
@@ -30,6 +30,8 @@ export interface SharedSlotSummary {
   updatedAt: string;
   /** How many Pages use it, so deleting one can say what it will affect. */
   usedBy: number;
+  /** Whether it stays on screen. Meaningful on a Header; carried by both. */
+  sticky: SlotSticky;
 }
 
 function database() {
@@ -60,6 +62,7 @@ export async function listSharedSlotSummaries(): Promise<SharedSlotSummary[]> {
     name: row.name,
     slot: row.slot as ShareableSlot,
     updatedAt: row.updatedAt.toISOString(),
+    sticky: toSlotSticky(row.sticky),
     usedBy: allPages.filter((page) =>
       row.slot === "header" ? page.header === row.id : page.footer === row.id,
     ).length,
@@ -130,6 +133,29 @@ export async function saveSharedSlot(id: string, sections: unknown): Promise<voi
     .where(eq(sharedSlots.id, id));
 
   // Every Page could be showing this, so the whole Site is revalidated.
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/slots");
+}
+
+/**
+ * Whether a Header stays on screen as the Page scrolls.
+ *
+ * Owner-only like every other change here, and revalidates the whole Site for the same
+ * reason a save does: every Page could be rendering this Slot.
+ *
+ * The value is narrowed rather than trusted. This is a server action, so its argument is
+ * whatever the network sent, and it is written to a `text` column that the renderer turns
+ * into a `data-` attribute -- `toSlotSticky` is the boundary, and an unrecognised word
+ * becomes "scrolls" rather than reaching the DOM.
+ */
+export async function setSharedSlotSticky(id: string, sticky: string): Promise<void> {
+  await requireOwner();
+
+  await database()
+    .update(sharedSlots)
+    .set({ sticky: toSlotSticky(sticky), updatedAt: new Date() })
+    .where(eq(sharedSlots.id, id));
+
   revalidatePath("/", "layout");
   revalidatePath("/admin/slots");
 }

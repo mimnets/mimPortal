@@ -231,6 +231,19 @@ export const sharedSlots = pgTable(
     slot: text("slot").notNull(),
     /** The Sections it holds, in the same shape a Page's Slot holds. */
     sections: jsonb("sections").$type<unknown>().notNull().default([]),
+    /**
+     * Whether this Slot stays on screen as the Page scrolls: "scrolls" or "sticky".
+     *
+     * `text` with a default rather than a Postgres enum, because adding a value to a
+     * Postgres enum is its own migration and the vocabulary belongs in `SLOT_STICKY`, where
+     * the renderer and the Dashboard can both see it. A row holding a word this Site does
+     * not know scrolls -- which is what every row did before this column existed. See
+     * `toSlotSticky`.
+     *
+     * Meaningful on a Header. A Footer carries the column rather than being a special case
+     * in the table, and is refused the behaviour in the renderer instead.
+     */
+    sticky: text("sticky").notNull().default("scrolls"),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("shared_slots_slot_idx").on(table.slot)],

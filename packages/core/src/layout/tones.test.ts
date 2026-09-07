@@ -12,7 +12,14 @@ import { describe, expect, it } from "vitest";
 import { defineBlock } from "../blocks/define";
 import { field } from "../blocks/fields";
 import { createRegistry } from "../blocks/registry";
-import { BLOCK_TONES, SECTION_TONES, SECTION_WIDTHS, sectionDefaults } from "./schema";
+import {
+  BLOCK_TONES,
+  SECTION_TONES,
+  SECTION_WIDTHS,
+  SLOT_STICKY,
+  sectionDefaults,
+  toSlotSticky,
+} from "./schema";
 
 const registry = createRegistry([
   defineBlock({
@@ -242,5 +249,30 @@ describe("a Section's width", () => {
     // added to it -- a Section built without `width` would be one the schema then defaults,
     // which works by accident and stops working the moment the default changes.
     expect(sectionDefaults().width).toBe("measure");
+  });
+});
+
+/**
+ * M10.5's Header that stays, at the boundary where it comes out of the database.
+ *
+ * The column is `text`, so `toSlotSticky` is what stands between whatever is in a row and a
+ * `data-` attribute in the page. It has the same job the `.catch()` on every Section enum
+ * has, and it exists as a function rather than a schema rule because a Shared Slot's
+ * scrolling behaviour is not part of the layout document.
+ */
+describe("reading a Slot's scrolling behaviour out of a row", () => {
+  it("keeps the two values it knows", () => {
+    for (const value of SLOT_STICKY) {
+      expect(toSlotSticky(value)).toBe(value);
+    }
+  });
+
+  it("scrolls for anything else, which is what every row did before the column existed", () => {
+    // A row written by a Site on newer packages, one left by a rollback, and the two shapes
+    // that would matter if this ever reached the DOM. "fixed" is in the list deliberately:
+    // ADR-0020 rejected it, and a Site that had it before this decision must not get it.
+    for (const value of ["fixed", "", "STICKY", "sticky; }", null, undefined, 7, {}]) {
+      expect(toSlotSticky(value)).toBe("scrolls");
+    }
   });
 });

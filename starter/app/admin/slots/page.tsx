@@ -6,6 +6,7 @@ import {
   deleteSharedSlot,
   listSharedSlotSummaries,
   renameSharedSlot,
+  setSharedSlotSticky,
 } from "../slot-actions";
 import { DashboardShell } from "../DashboardShell";
 import { SlotList } from "./SlotList";
@@ -33,6 +34,7 @@ export default async function SlotsPage() {
         onCreate={createSharedSlot}
         onRename={renameSharedSlot}
         onDelete={deleteSharedSlot}
+        onStickyChange={setSharedSlotSticky}
       />
     </DashboardShell>
   );

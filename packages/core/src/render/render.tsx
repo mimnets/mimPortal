@@ -9,6 +9,7 @@ import {
   type PageLayout,
   type SectionNode,
   type SlotName,
+  type SlotSticky,
 } from "../layout/schema";
 
 /**
@@ -127,11 +128,26 @@ export function SlotView({
   slot,
   registry,
   context = emptyContext(),
+  sticky,
 }: {
   layout: PageLayout;
   slot: SlotName;
   registry: BlockRegistry;
   context?: RenderContext;
+  /**
+   * Whether this Slot stays on screen, which only a Shared Slot can say.
+   *
+   * Optional, so every existing call site -- the Editor's preview, and every Site's own
+   * page.tsx, which is cloned code this package cannot edit -- keeps compiling and keeps
+   * rendering exactly what it rendered before. A Page's own Header has nowhere to store this
+   * and so never sends it.
+   *
+   * No `= "scrolls"` default, deliberately. One was written here first and reverting it
+   * failed no test, because `undefined === "sticky"` is already false -- the default could
+   * only ever restate what the comparison below does. A line that cannot be broken is a line
+   * that is not doing anything.
+   */
+  sticky?: SlotSticky;
 }): ReactNode {
   const sections = layout.slots[slot];
   if (sections.length === 0) return null;
@@ -142,8 +158,14 @@ export function SlotView({
   // past the Menu and meets it again on every Page of the Site.
   const Tag = slot === "header" ? "header" : slot === "footer" ? "footer" : "div";
 
+  // Only a Header stays. A Footer is already at the bottom of the document: "sticky" pins
+  // it where it happens to be and covers the end of every Page with it, which is a way of
+  // breaking a Site rather than a setting. The Dashboard does not offer it there, and this
+  // is the second guard, because the column carries the value for both kinds of Slot.
+  const stays = slot === "header" && sticky === "sticky";
+
   return (
-    <Tag className="mn-slot" data-slot={slot}>
+    <Tag className="mn-slot" data-slot={slot} data-sticky={stays ? "sticky" : undefined}>
       {sections.map((section) => (
         <SectionView key={section.id} section={section} registry={registry} context={context} />
       ))}

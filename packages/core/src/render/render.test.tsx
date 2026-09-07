@@ -23,6 +23,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { defineBlock } from "../blocks/define";
 import { field } from "../blocks/fields";
 import { createRegistry } from "../blocks/registry";
+import type { SlotName } from "../layout/schema";
 import { SlotView } from "./render";
 
 afterEach(cleanup);
@@ -144,6 +145,62 @@ describe("a Section's bottom edge", () => {
     // whether absence meant "the measure" or "written before widths existed".
     expect(band({ width: "measure" }).getAttribute("data-width")).toBe("measure");
     expect(band({}).getAttribute("data-width")).toBe("measure");
+  });
+});
+
+/**
+ * M10.5's Header that stays.
+ *
+ * `sticky` is the only thing `SlotView` renders that does not come out of the layout
+ * document, because staying on screen is a property of the Slot rather than of any band in
+ * it. Two values, not three: ADR-0020 records why `fixed` is not the third.
+ */
+describe("a Slot that stays on screen", () => {
+  function slot(name: SlotName, sticky?: "scrolls" | "sticky") {
+    const parsed = registry.parseLayout({
+      version: 1,
+      slots: {
+        header: [{ id: "h-1", layout: "1", columns: [{ id: "hc-1", blocks: [] }] }],
+        main: [],
+        sidebar: [],
+        footer: [{ id: "f-1", layout: "1", columns: [{ id: "fc-1", blocks: [] }] }],
+      },
+    });
+
+    const { container } = render(
+      <SlotView layout={parsed} slot={name} registry={registry} sticky={sticky} />,
+    );
+    const el = container.querySelector(".mn-slot");
+    if (!el) throw new Error("no Slot was rendered");
+    return el;
+  }
+
+  it("marks a Header that was asked to stay", () => {
+    expect(slot("header", "sticky").getAttribute("data-sticky")).toBe("sticky");
+  });
+
+  it("says nothing about a Header that scrolls, which is almost all of them", () => {
+    expect(slot("header", "scrolls").hasAttribute("data-sticky")).toBe(false);
+  });
+
+  /**
+   * The reason the prop is optional. Every Site's `page.tsx` is cloned code this package
+   * cannot edit, and the Editor's preview renders Slots too. All of them call `SlotView`
+   * without this prop and must keep rendering exactly what they rendered before.
+   */
+  it("says nothing when nobody passed the prop at all", () => {
+    expect(slot("header").hasAttribute("data-sticky")).toBe(false);
+  });
+
+  /**
+   * The second guard. The column carries the value for a Footer as well -- it is one table
+   * -- and the Dashboard simply does not offer the control there. This is what makes that a
+   * guard rather than a convention: a Footer pinned to the top of the viewport covers the
+   * end of every Page on the Site, and a row could ask for it through the action, a rollback
+   * or a hand-written UPDATE.
+   */
+  it("refuses to make a Footer stay, whatever the row says", () => {
+    expect(slot("footer", "sticky").hasAttribute("data-sticky")).toBe(false);
   });
 });
 

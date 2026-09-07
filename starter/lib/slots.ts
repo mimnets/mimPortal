@@ -1,5 +1,5 @@
 import { eq, inArray } from "drizzle-orm";
-import type { PageLayout, SlotName } from "@mimnets/core";
+import { toSlotSticky, type PageLayout, type SlotSticky, type SlotName } from "@mimnets/core";
 import { createDatabase, sharedSlots, type SharedSlotRow } from "@mimnets/core/db";
 
 import { registry } from "../blocks.config";
@@ -20,6 +20,20 @@ import { requireDatabaseUrl } from "./env";
 export interface PageSlotRefs {
   headerSlotId: string | null;
   footerSlotId: string | null;
+}
+
+/**
+ * What resolution produces: the document to render, and the one thing about a Slot that is
+ * not inside it.
+ *
+ * `headerSticky` cannot live in the layout because a layout is Sections, and staying on
+ * screen is a property of the Slot rather than of any band in it. Returning it beside the
+ * document rather than smuggling it into one is what keeps `PageLayout` the same shape a
+ * Page stores, an Editor posts back, and `restoreOwnSlots` compares.
+ */
+export interface ResolvedLayout {
+  layout: PageLayout;
+  headerSticky: SlotSticky;
 }
 
 /** Which Slots can be shared. Main and Sidebar are per-Page by definition. */
@@ -45,14 +59,18 @@ export async function listSharedSlots(): Promise<SharedSlotRow[]> {
  * rather than rendering nothing — a Site missing its navigation because a row disappeared is
  * a worse failure than a Header that is briefly out of date.
  */
-export async function resolveLayout(layout: PageLayout, refs: PageSlotRefs): Promise<PageLayout> {
+export async function resolveLayout(
+  layout: PageLayout,
+  refs: PageSlotRefs,
+): Promise<ResolvedLayout> {
   const wanted = [refs.headerSlotId, refs.footerSlotId].filter((id): id is string => Boolean(id));
-  if (wanted.length === 0) return layout;
+  if (wanted.length === 0) return { layout, headerSticky: "scrolls" };
 
   const rows = await database().select().from(sharedSlots).where(inArray(sharedSlots.id, wanted));
   const byId = new Map(rows.map((row) => [row.id, row]));
 
   const resolved: PageLayout = { ...layout, slots: { ...layout.slots } };
+  let headerSticky: SlotSticky = "scrolls";
 
   for (const [slot, id] of [
     ["header", refs.headerSlotId],
@@ -64,9 +82,14 @@ export async function resolveLayout(layout: PageLayout, refs: PageSlotRefs): Pro
 
     const sections = parseSections(row);
     if (sections) resolved.slots[slot as SlotName] = sections;
+
+    // Read from the row that was actually used, and only for the Header. A Page whose own
+    // Header is rendered -- no shared Slot, or one that has since been deleted -- has
+    // nowhere to have stored this and keeps the behaviour it had.
+    if (slot === "header") headerSticky = toSlotSticky(row.sticky);
   }
 
-  return resolved;
+  return { layout: resolved, headerSticky };
 }
 
 /**

@@ -17,11 +17,13 @@ export function SlotList({
   onCreate,
   onRename,
   onDelete,
+  onStickyChange,
 }: {
   slots: SharedSlotSummary[];
   onCreate: (input: { name: string; slot: string; copyFromId?: string }) => Promise<string>;
   onRename: (id: string, name: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onStickyChange: (id: string, sticky: string) => Promise<void>;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +44,20 @@ export function SlotList({
         router.push(`/admin/slots/${id}`);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "That could not be created.");
+      }
+    });
+  }
+
+  function setSticky(slot: SharedSlotSummary, sticky: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await onStickyChange(slot.id, sticky);
+        // Every Page using this Header renders differently now, and the count beside it is
+        // how many. Refreshing is what shows the change without a reload.
+        router.refresh();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "That could not be changed.");
       }
     });
   }
@@ -97,6 +113,24 @@ export function SlotList({
                   ? "Unused"
                   : `${slot.usedBy} Page${slot.usedBy === 1 ? "" : "s"}`}
               </span>
+
+              {/* Headers only. A Footer is already at the bottom of the document, so making
+                  one stay pins it over the end of every Page -- see ADR-0020. The renderer
+                  refuses it as well; this is only the half that stops it being asked for. */}
+              {kind === "header" ? (
+                <label className="mn-field mn-field-inline" htmlFor={`sticky-${slot.id}`}>
+                  <span className="mn-visually-hidden">Scrolling behaviour for {slot.name}</span>
+                  <select
+                    id={`sticky-${slot.id}`}
+                    value={slot.sticky}
+                    disabled={busy}
+                    onChange={(event) => setSticky(slot, event.target.value)}
+                  >
+                    <option value="scrolls">Scrolls away</option>
+                    <option value="sticky">Stays on screen</option>
+                  </select>
+                </label>
+              ) : null}
 
               <button type="button" className="mn-button" disabled={busy} onClick={() => rename(slot)}>
                 Rename

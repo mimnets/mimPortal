@@ -143,13 +143,24 @@ with Neon · Blueprints and the responsive preview (the rest of M10).
 ### Planned on 5 September
 
 Raised the same day, and written into the roadmap rather than left as wishes. M11 has since
-met its exit criterion and is finished; M10.5 and M12 are untouched:
+met its exit criterion and is finished; M10.5 is half built and M12 is untouched:
 
-- **M10.5** — a Header that stays (scrolls, sticky or fixed), per-Section width so a gallery or
-  a map can run edge to edge, popovers for a biography or a service's detail, and a button row
-  so two buttons can sit side by side. The first three are a property the layout engine could
-  already carry; the button row is a Block, because Blocks in a Column stack and that rule is
-  not worth reopening for two buttons.
+- **M10.5** — two of its four are **built and merged** (7 September):
+  - **Per-Section width.** `width: "measure" | "wide" | "full"`, so a gallery, a carousel or
+    a map can run edge to edge. `wide` is `--mn-measure-wide`, derived as
+    `calc(measure * 1.25)` rather than stated, so it is wider than the measure for every
+    Theme rather than only the default one. `full` also drops the band's side gutter, and is
+    refused in a Header.
+  - **A Header that stays.** A `sticky` column on the Shared Slot, set in Headers & Footers.
+    **Two values, not the three the roadmap asked for** — `fixed` was rejected and
+    [ADR-0020](./adr/0020-a-header-stays-by-sticking-not-by-fixing.md) records why: it needs
+    the Header's own height to offset the Page, which means either a magic number or the
+    first JavaScript a published Site has ever shipped. A Footer is refused the behaviour in
+    the renderer as well as in the Dashboard.
+
+  Still to build: **popovers** for a biography or a service's detail, and a **button row** so
+  two buttons can sit side by side. The button row is a Block rather than a Column property,
+  because Blocks in a Column stack and that rule is not worth reopening for two buttons.
 - **M11** is done and merged, including the review that followed it. It is described above;
   the only thing consciously left out of it is CSS 3D.
 - **M12** — what the AI does next, and what it must not: importing a client's existing site as
