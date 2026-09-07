@@ -44,7 +44,7 @@ were worth anything.
 | ✅ | **M6.5** Forms and email | Contact Block, Enquiries in the Dashboard, pluggable spam checks, EmailAdapter |
 | ✅ | **M7** AI writing assistant | Rewrite, shorten, alt text, search descriptions, over a chain of providers (ADR-0014) |
 | ✅ | **M8** Packaging, Site two | Packages build and publish; `sites/ledger` installs them rather than linking to source |
-| ✅ | **M8.5** Block library | 23 Block Types, Section tones, a Theme built around them |
+| ✅ | **M8.5** Block library | 24 Block Types, Section tones, a Theme built around them |
 | ✅ | **M9** Presets | Generate a Theme and Pages together, validated against the registry before they land |
 | ✅ | **Stock images** | Photographs fetched into the Site's own store when a Preset is applied |
 | ⚠️ | **M10** The Editor an Author lives in | Undo/redo and duplicate built; Blueprints and the responsive preview are not |
@@ -145,7 +145,7 @@ with Neon · Blueprints and the responsive preview (the rest of M10).
 Raised the same day, and written into the roadmap rather than left as wishes. M11 has since
 met its exit criterion and is finished; M10.5 is half built and M12 is untouched:
 
-- **M10.5** — two of its four are **built and merged** (7 September):
+- **M10.5** — **built and merged, all four** (7 September):
   - **Per-Section width.** `width: "measure" | "wide" | "full"`, so a gallery, a carousel or
     a map can run edge to edge. `wide` is `--mn-measure-wide`, derived as
     `calc(measure * 1.25)` rather than stated, so it is wider than the measure for every
@@ -162,8 +162,15 @@ met its exit criterion and is finished; M10.5 is half built and M12 is untouched
     stack and ADR-0003 was not worth reopening for two buttons. Each button carries its own
     style, which is the point — a hero wants one solid and one outline, and a Block-level
     variant would make the pair identical.
+  - **Popovers.** The twenty-fourth Block Type: a list of triggers, each opening a panel with
+    a heading, Markdown and an optional picture. Built on `:target` like the gallery's
+    lightbox, so it opens before hydration and with a blocked script. **A Block rather than a
+    field on the button**, which was the milestone's open question — the field version is
+    more useful and needs ids unique across a whole Page, panel markup in every adopting
+    Block Type, and a nested Editor form for a field that is really a small document. The
+    case that comes up is a list, and a list is what this is.
 
-  Still to build: **popovers** for a biography or a service's detail.
+  M10.5 is finished.
 - **M11** is done and merged, including the review that followed it. It is described above;
   the only thing consciously left out of it is CSS 3D.
 - **M12** — what the AI does next, and what it must not: importing a client's existing site as

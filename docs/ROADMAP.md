@@ -449,8 +449,8 @@ width to see it stack, all without leaving the Editor.
 
 ## M10.5 — Four things a client asks for in the first week
 
-**Three of the four are built and merged (7 September): per-Section width, a Header that
-stays, and the button row. Popovers are not.** The intent below stands as written, with one
+**All four are built and merged (7 September): per-Section width, a Header that stays, the
+button row, and popovers.** The intent below stands as written, with one
 decision changed by contact with the code and recorded where the change was made:
 [ADR-0020](./adr/0020-a-header-stays-by-sticking-not-by-fixing.md) rejects `fixed`, so the
 Header setting shipped with two values rather than three.
@@ -498,7 +498,8 @@ does not want to be in a row; and the case that actually comes up is two buttons
 mechanism for one common case is how a page builder acquires a second layout system nobody
 can explain. Worth revisiting if a third case appears.
 
-**Popovers.** Clicking a word or a button to open a panel with more detail and a picture: a
+**Popovers.** *(Built, as a Block — the open question below is answered.)* Clicking a word
+or a button to open a panel with more detail and a picture: a
 team member's biography, what a service includes, the story behind a photograph. There is a
 proven pattern already in the repository — the gallery's lightbox is `:target` and no
 JavaScript — and it should be reused rather than reinvented, because it works before hydration

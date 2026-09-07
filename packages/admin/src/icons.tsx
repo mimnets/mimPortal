@@ -191,6 +191,13 @@ export const ButtonRowIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const PopoversIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="1.5" y="3" width="9" height="7" rx="1.5" />
+    <rect x="5.5" y="6" width="9" height="7" rx="1.5" />
+  </Icon>
+);
+
 export const FeaturesIcon = (props: IconProps) => (
   <Icon {...props}>
     <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" />
@@ -322,6 +329,7 @@ export const ICONS_BY_BLOCK: Record<string, (props: IconProps) => React.JSX.Elem
   embed: EmbedIcon,
   compare: CompareIcon,
   social: SocialIcon,
+  popovers: PopoversIcon,
   contact: ContactIcon,
   menu: MenuIcon,
   logo: LogoIcon,

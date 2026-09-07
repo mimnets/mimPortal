@@ -1187,6 +1187,95 @@ h3.mn-heading {
   font-family: var(--mn-font-body);
 }
 
+/* ---- Popovers ---------------------------------------------------------------
+   The gallery lightbox's mechanism, applied to a panel of text rather than a photograph:
+   hidden until its id is the fragment in the address bar, and no JavaScript involved.
+
+   `display: none` rather than opacity or a transform, deliberately. A panel that is merely
+   invisible is still in the tab order, so a keyboard user tabs through every closed
+   biography on a team page before reaching the footer, and a screen reader reads all of them.
+   `display: none` takes the whole subtree out of both, and `:target` puts it back.
+
+   z-index 50 matches the lightbox rather than exceeding it. The two are never open at once --
+   both are fragment-driven and a URL has one fragment -- and matching keeps a sticky Header
+   (z-index 20) underneath both. */
+.mn-popover-triggers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mn-popover-open {
+  color: var(--mn-color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.mn-popover {
+  display: none;
+}
+
+.mn-popover:target {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: rgb(0 0 0 / 0.6);
+}
+
+.mn-popover-panel {
+  position: relative;
+  max-width: min(36rem, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 2rem;
+  background: var(--mn-color-background);
+  border-radius: var(--mn-radius-lg);
+  box-shadow: var(--mn-surface-shadow);
+}
+
+.mn-popover-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  /* A tap target rather than a character. 44px is the smallest thing a thumb hits
+     reliably, and the close control being hard to hit is how a modal traps somebody. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mn-popover-image {
+  width: 100%;
+  height: auto;
+  margin-bottom: 1.25rem;
+  border-radius: var(--mn-radius-sm);
+}
+
+.mn-popover-heading {
+  margin: 0 0 0.75rem;
+  /* Room for the close control, so a long name does not run underneath it. */
+  padding-right: 2.5rem;
+  font-family: var(--mn-font-heading);
+}
+
+.mn-popovers-title {
+  margin: 0 0 1rem;
+  font-family: var(--mn-font-heading);
+}
+
 /* ---- Reveal on scroll ------------------------------------------------------
    Scroll-driven CSS, with no JavaScript and no observer.
 

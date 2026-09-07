@@ -19,7 +19,7 @@ import { describe, expect, it } from "vitest";
 
 import { BlockIcon, ICONS_BY_BLOCK } from "./icons";
 
-/** The twenty-three `@mimnets/blocks` ships, in declaration order. */
+/** The twenty-four `@mimnets/blocks` ships, in declaration order. */
 const STANDARD_BLOCKS = [
   "heading",
   "text",
@@ -44,6 +44,7 @@ const STANDARD_BLOCKS = [
   "embed",
   "compare",
   "social",
+  "popovers",
 ];
 
 describe("the Block picker's icons", () => {

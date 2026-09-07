@@ -1,4 +1,4 @@
-import { defineBlock, field, safeHref } from "@mimnets/core";
+import { defineBlock, field, renderMarkdown, safeHref } from "@mimnets/core";
 
 /**
  * Blocks that carry a design.
@@ -1187,6 +1187,117 @@ export const buttonRowBlock = defineBlock({
 });
 
 
+/**
+ * A list of things that open a panel: a biography, what a service includes, the story behind
+ * a photograph.
+ *
+ * **Built on `:target`, like the gallery's lightbox, and for the same reason.** No
+ * JavaScript is involved, so a panel opens before hydration, opens with a blocked script,
+ * and is keyboard operable without anybody implementing that -- the trigger is a link and
+ * every browser already knows what to do with one. A popover built the usual way is a button
+ * with `aria-expanded`, a click handler, an Escape listener and a focus trap, and it is none
+ * of those things until its script arrives.
+ *
+ * The trade is honest and worth stating: `:target` puts the open panel in the address bar,
+ * so opening one adds a history entry and Back closes it. That is the behaviour the gallery
+ * already has on this Site, and a shared link opens the panel it names, which for a
+ * biography is a feature.
+ *
+ * A **Block rather than a field on the button**, which was M10.5's open question. A field
+ * would let any button anywhere open a panel and is genuinely more useful, but it needs ids
+ * unique across a whole Page rather than within one Block, every adopting Block Type to
+ * render panel markup, and the Editor to generate a nested form for a field that is really a
+ * small document. The case that actually comes up -- a team page, a service list -- is a
+ * list, and a list is what `logos`, `social` and this all are. It is the same argument that
+ * kept the button row a Block instead of a Column property.
+ *
+ * The panel is rendered whether or not it is open. It is a `<div>` hidden with `display:
+ * none` until it is the fragment, so its text is in the document for in-page search and for
+ * anything reading the Page without CSS -- and, unlike a JavaScript panel, it is in the
+ * markup a crawler sees.
+ */
+export const popoversBlock = defineBlock({
+  name: "popovers",
+  label: "Popovers",
+  fields: {
+    title: field.text({ label: "Title", default: "" }),
+    items: field.repeater({
+      label: "Panels",
+      fields: {
+        trigger: field.text({ label: "Link text", default: "" }),
+        heading: field.text({ label: "Panel heading", default: "" }),
+        body: field.textarea({
+          label: "Panel text",
+          help: "Markdown. # for a heading, - for a list, [text](address) for a link.",
+          default: "",
+        }),
+        image: field.image({ label: "Picture", help: "Optional" }),
+      },
+    }),
+  },
+  render: ({ title, items }, context) => {
+    // An item with nothing to click on is not a popover. The same filter the logo strip and
+    // the button row apply to their own half-finished items.
+    const shown = items.filter((item) => item.trigger);
+    if (shown.length === 0) return null;
+
+    // Derived from the content, exactly as the gallery and carousel derive theirs, so two
+    // popover Blocks on one Page do not share fragment ids and open each other's panels.
+    const scope = stableName(shown.map((item) => `${item.trigger} | ${item.heading}`).join(" / "));
+
+    return (
+      <div className="mn-popovers" id={`mn-pop-${scope}`}>
+        {title ? <h2 className="mn-popovers-title">{title}</h2> : null}
+
+        <ul className="mn-popover-triggers">
+          {shown.map((item, index) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <li key={index}>
+              <a className="mn-popover-open" href={`#mn-pop-${scope}-${index}`}>
+                {item.trigger}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        {shown.map((item, index) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <div className="mn-popover" id={`mn-pop-${scope}-${index}`} key={index}>
+            <div className="mn-popover-panel">
+              {/* Back to the Block's own id rather than to "#", which would jump the Page to
+                  the top on close. The gallery closes the same way. */}
+              <a
+                className="mn-popover-close"
+                href={`#mn-pop-${scope}`}
+                aria-label={`Close ${item.heading || item.trigger}`}
+              >
+                <span aria-hidden="true">&times;</span>
+              </a>
+
+              {item.image.key ? (
+                <img
+                  className="mn-popover-image"
+                  src={`${context.mediaBaseUrl}/${item.image.key}`}
+                  alt={item.image.decorative ? "" : item.image.alt}
+                  width={item.image.width ?? undefined}
+                  height={item.image.height ?? undefined}
+                  loading="lazy"
+                />
+              ) : null}
+
+              {item.heading ? <h3 className="mn-popover-heading">{item.heading}</h3> : null}
+              {/* The same Markdown renderer the prose Block uses, so raw HTML is never
+                  parsed -- an Author is a client, which is ADR-0011's argument. */}
+              <div className="mn-prose">{renderMarkdown(item.body)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  },
+});
+
+
 export const designBlocks = [
   eyebrowBlock,
   buttonBlock,
@@ -1204,4 +1315,5 @@ export const designBlocks = [
   embedBlock,
   compareBlock,
   socialBlock,
+  popoversBlock,
 ];
