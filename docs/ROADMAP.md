@@ -405,6 +405,13 @@ database admin UI. See [ADR-0006](./adr/0006-v1-scope-boundary.md).
 
 ## M10 — The Editor an Author lives in
 
+**Built and merged (7 September).** Undo and redo, duplicate a Block and a Section,
+Blueprints, and a preview that narrows. The responsive preview took the container-query
+route this section recommends, and the note below that it is "mechanical" was wrong --
+see the commit: `container-type` makes an element a containing block for `position: fixed`
+descendants, so the container had to stay out of published CSS entirely or it would trap
+the gallery lightbox and the popover panels.
+
 M9 finished the generative half: a Site can be given a look it did not have. This milestone
 is about the hours after that, when an Author is arranging a real Page and the Editor is the
 only thing between them and the work.
@@ -509,6 +516,79 @@ a property of the button, and the second is more useful and harder.
 
 **Done when:** a Header can be made to stay, a gallery can run edge to edge, and a team page's
 photographs open a biography — none of it needing a line of custom code in a Site.
+
+## M10.6 — Two things asked for on 7 September
+
+Raised while using the Editor rather than while planning it, which is the best reason an item
+gets onto this list. Neither is built. Both reopen a decision that was made deliberately, so
+each is written against the decision it argues with.
+
+**A popover an Author can attach to anything.** Popovers shipped in M10.5 as a Block: a list
+of triggers, each opening a panel. The request is for the other half — "this button opens a
+panel", available wherever an Author is, not only inside the popovers Block.
+
+This is the field-versus-Block question M10.5 recorded as open and answered *Block*, and that
+answer is still right for the list case. What the request adds is that the two are not
+exclusive: a list is a Block, and "opens a panel" is a property something else can have.
+
+The work is not the panel — that is done, and since the close-jump fix it is a checkbox, a
+label and a `display: none`, with no fragment and no navigation. The work is three things the
+Block version got for free:
+
+- **Ids unique across a whole Page**, not within one Block. The popovers Block derives its
+  checkbox ids from its own content, which is enough while the panels live inside it. A button
+  in Section 1 and a button in Section 9 share no scope to derive from, and two Blocks minting
+  the same id would have one trigger opening the other's panel.
+- **Panel markup in every adopting Block Type.** A `field.popover()` that returns data is not
+  enough; something has to render the checkbox, the backdrop and the panel, and `defineBlock`
+  has no notion of a field that draws chrome around itself.
+- **A nested form in the Editor.** The panel is a heading, Markdown and an image — a small
+  document rather than a value, and the settings panel generates flat controls from field
+  declarations.
+
+The cheap version worth costing first is narrower and probably enough: **the button and the
+button row gain an optional panel**, since "this button opens a panel" is the case that
+actually comes up. That needs the id question answered and nothing else, because both already
+render their own markup.
+
+**Drag to resize Columns.** A Section's `layout` is one of a fixed set — one column, two,
+three, 1-2, 2-1 — and the proportions arrive with the name. The request is to drag the
+boundary between Columns and set the proportions directly, for a Section holding one Block or
+several.
+
+This argues with [ADR-0003](./adr/0003-sections-and-columns-not-free-canvas.md), and it is
+worth being precise about how much. ADR-0003 refuses a *free canvas*: absolute positioning,
+overlapping Blocks, and layouts that must be authored twice because nothing responds on its
+own. Resizable Columns are none of those — the Columns still stack on a phone, Blocks still
+cannot overlap, and nothing gains a coordinate. So this is not the decision ADR-0003 made.
+
+What it does argue with is the smaller rule that produced the fixed set, and that rule is the
+one behind Section tones, Section widths and the absence of a colour picker: **a client given
+a continuous control will use it to produce something off-brand.** A named layout is a
+proportion somebody chose; a dragged one is wherever the mouse stopped, and 63/37 with a
+gutter that no longer lines up with the Section above it is the kind of mess this product
+exists to prevent.
+
+The likely resolution is the one the Theme keeps reaching for: **snap to a scale.** Dragging
+is the gesture, but it lands on twelfths — the proportions a grid can express, which includes
+every ratio the fixed set already names. An Author gets the directness they asked for and
+cannot produce a Column that lines up with nothing else on the Page.
+
+Two things to settle before building it:
+
+- **What gets stored.** A `layout` name is portable between Sites and survives a Block Type
+  being removed; a pair of numbers is neither. Widening `ColumnLayout` to admit a ratio has to
+  keep every Preset, seed and stored Page parsing — and the `.catch()` trick the other Section
+  enums use does not apply, because `layout` is deliberately *not* caught: a Section whose
+  layout cannot be read is refused rather than repainted, since the Column count must match
+  it.
+- **What the handle is on a touch screen.** A 2px boundary is not a target, and the Editor's
+  drag already belongs to dnd-kit for moving Blocks between Columns. Two drag gestures on one
+  boundary is a decision, not a library.
+
+**Done when:** an Author can make a button open a panel without adding a popovers Block, and
+can drag the edge between two Columns to a proportion that still lines up with the Section
+above it.
 
 ## M11 — Variants, and the end of counting Blocks
 
