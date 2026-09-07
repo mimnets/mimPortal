@@ -12,8 +12,21 @@ wrong.
 
 ## Where to start
 
-**Publish `main` at 0.3.0.** `npm login` is interactive, which is the only reason this is
-still open. Everything else a session could do without a decision is done.
+**The publish is done, and this section's old instruction is spent.** It said to publish
+`main` at 0.3.0. That happened on 6 September, and it went out at 0.4.0 rather than 0.3.0
+because the editable-form-fields changeset was still unconsumed when the version was cut.
+`npm view @mimnets/core versions --json` lists 0.1.1, 0.2.0, 0.3.0 and 0.4.0, and blocks and
+admin match it -- the scope moves as one version, which is what `fixed` in
+`.changeset/config.json` buys.
+
+The session that ran the publish ended without committing `pnpm changeset version`'s output,
+so for a day the repository could not say what it had released. That is committed now, and
+`sites/ledger` is merged onto the published `^0.4.0` -- the bump three handoffs in a row
+called blocked on the publish.
+
+**Where to actually start: M10.5.** Four things a client asks for in the first week, none of
+them needing a decision from a person. See `docs/ROADMAP.md` for the four and why the button
+row is a Block rather than a Column property.
 
 Two things learned the hard way on 6 September, both worth reading before running it:
 
@@ -25,9 +38,12 @@ Two things learned the hard way on 6 September, both worth reading before runnin
   version can be there while the tag has not caught up, which read as a failed publish and was
   not. `npm view <pkg> versions --json` is the honest question.
 
-`sites/ledger` still asks for `^0.1.1`, which does not match 0.2.0 or 0.3.0 — a caret on a 0.x
-pins the minor. That bump plus the two stylesheet lines in the changeset finishes Ledger, and
-neither can happen until there is something on the registry to install.
+`sites/ledger` asked for `^0.1.1` for three handoffs running, which matches neither 0.2.0 nor
+0.3.0 because a caret on a 0.x pins the minor. It asks for `^0.4.0` now and installs from npm
+proper. The stylesheet half went with it: `app/globals.css` fell from 936 lines to 93, because
+everything removed was a drifted copy of the standard Block stylesheet that now arrives as
+`@mimnets/blocks/blocks.css`. Ledger gained the accordion, carousel, compare and embed Blocks,
+plus variants, by deleting code rather than writing any.
 
 Read what `pnpm release` prints rather than trusting it. A-28 was `pnpm build:packages`
 matching no packages at all and being willing to publish whatever happened to be in `dist`.
@@ -421,10 +437,14 @@ the test stubs it, so the *visibility* half of that filter still needs a browser
 
 Honest list. None of it is hidden behind a green tick.
 
-- **Nothing is published to npm.** The registry is Verdaccio, behind the `registry` profile
-  in `docker-compose.yml`, so the `@mimnets` scope is unclaimed and no version is public. The
-  build, the exports, the publish guard, the install and the upgrade are all real; only the
-  hostname is local.
+- ~~**Nothing is published to npm.**~~ **Closed on 6 September.** All three packages are on
+  public npm at 0.4.0 and `sites/ledger` installs them from there -- its `.npmrc` no longer
+  overrides the registry, so the lockfile's integrity hashes come from somewhere another
+  machine can reach. That closes A-14, which was about hashes minted by a disposable
+  Verdaccio volume.
+- **Ledger's migration 0009 is generated but not applied.** It needs a live database. It is
+  wider than the 0.4.0 changeset describes, because Ledger crosses three releases at once and
+  so also carries the media provenance columns from the stock-images work.
 - **The keyboard sensor and the focus trap's visibility filter are still browser-only.**
   Everything else about the boundary and the trap is now in CI. See the Tests section.
 
