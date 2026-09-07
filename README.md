@@ -117,7 +117,7 @@ PAGE  /about
 │    │    ├── Column 1 → Heading block, Text block
 │    │    └── Column 2 → Image block
 │    └── Section [1 column]
-│         └── Video block
+│         └── Embed block          → a YouTube or Vimeo video, allowlisted
 └── Slot: footer        [locked]
 ```
 

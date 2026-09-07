@@ -301,7 +301,7 @@ Every item below is **verified**, and together they are the most fixable class o
 | I-77 | HANDOFF.md is dated 19 Aug and presents M7 as "next up" | Last touched at `f2fb9c9`, **7 commits behind HEAD**. M7, Shared Slots, M9 Presets, image-derived design and per-Block styling all shipped after it |
 | I-78 | `docs/ROADMAP.md:164` leaves M7 unticked | Built at `356109b` |
 | I-79 | ROADMAP M8.5 says "eight exist… six missing" | **14 Block Types exist** (`packages/blocks/src/index.tsx:258-268`). The six named gaps are real |
-| I-80 | `readme.md:169` lists a `video` Block Type | No `videoBlock` anywhere in the repo |
+| I-80 | ~~`readme.md:169` lists a `video` Block Type~~ **Closed 7 September.** No `videoBlock` ever existed; the tree now names the `embed` Block, which is the real one. The file is `README.md` now |
 | I-81 | `docs/ROADMAP.md:206` begins mid-sentence — the word "Markdown" is missing | Verified with `cat -A` |
 | I-82 | HANDOFF.md:204 says 108 tests | 166 |
 | I-83 | `starter/AGENTS.md` contains **only** the auto-generated Next.js block | No project guidance; `CLAUDE.md` is a one-line `@AGENTS.md` |
