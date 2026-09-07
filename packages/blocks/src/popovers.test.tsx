@@ -34,40 +34,108 @@ const TEAM = [
 ];
 
 describe("what it draws", () => {
-  it("gives every panel a trigger that points at it", () => {
+  it("gives every panel a checkbox, and a trigger that toggles it", () => {
     const { container } = draw(TEAM);
 
-    const triggers = Array.from(container.querySelectorAll("a.mn-popover-open"));
+    const toggles = Array.from(container.querySelectorAll("input.mn-popover-toggle"));
+    const triggers = Array.from(container.querySelectorAll("label.mn-popover-open"));
     const panels = Array.from(container.querySelectorAll(".mn-popover"));
 
-    expect(triggers).toHaveLength(2);
+    expect(toggles).toHaveLength(2);
     expect(panels).toHaveLength(2);
 
-    // The link and the panel it opens have to agree, which is the whole mechanism.
+    // The label and the box it toggles have to agree, which is the whole mechanism.
     for (const [index, trigger] of triggers.entries()) {
-      expect(trigger.getAttribute("href")).toBe(`#${panels[index]?.id}`);
+      expect(trigger.getAttribute("for")).toBe(toggles[index]!.id);
+      expect(toggles[index]!.id).not.toBe("");
+    }
+  });
+
+  /**
+   * Reported from a real Page, and it was a real bug: closing threw the reader somewhere
+   * else. This is the assertion that the cause is gone rather than reduced.
+   *
+   * The first build used `:target`, which makes opening and closing a *navigation* — so the
+   * browser scrolls to whatever the fragment names. Pointing the close link at the Block
+   * jumped to the top of the list; pointing it at the trigger instead still jumped, measured
+   * at 445px in Chrome, because scrolling is what following a fragment means. There is no
+   * href that does not scroll.
+   *
+   * A checkbox does not navigate. Nothing here may be an anchor, and that is the property
+   * worth pinning: an `<a href>` creeping back in is the bug returning.
+   */
+  it("closes without navigating, so nothing can scroll", () => {
+    const { container } = draw(TEAM);
+
+    const close = container.querySelector(".mn-popover-close")!;
+    const backdrop = container.querySelector(".mn-popover-backdrop")!;
+    const toggleId = container.querySelector("input.mn-popover-toggle")!.id;
+
+    // Both close controls are labels for the same checkbox, not links.
+    expect(close.tagName).toBe("LABEL");
+    expect(backdrop.tagName).toBe("LABEL");
+    expect(close.getAttribute("for")).toBe(toggleId);
+    expect(backdrop.getAttribute("for")).toBe(toggleId);
+
+    // Nothing in the whole Block navigates.
+    expect(container.querySelectorAll("a[href]")).toHaveLength(0);
+  });
+
+  /**
+   * Clicking away closes it, which is what everybody expects of a panel like this. The
+   * backdrop is a label the size of the dim area, so a click outside the panel unchecks the
+   * same box the button does.
+   */
+  it("closes when the backdrop is clicked", () => {
+    const { container } = draw(TEAM);
+    const toggle = container.querySelector<HTMLInputElement>("input.mn-popover-toggle")!;
+    const backdrop = container.querySelector<HTMLLabelElement>(".mn-popover-backdrop")!;
+
+    toggle.checked = true;
+    expect(toggle.checked).toBe(true);
+
+    backdrop.click();
+    expect(toggle.checked).toBe(false);
+  });
+
+  it("closes when the close button is clicked", () => {
+    const { container } = draw(TEAM);
+    const toggle = container.querySelector<HTMLInputElement>("input.mn-popover-toggle")!;
+    const close = container.querySelector<HTMLLabelElement>(".mn-popover-close")!;
+
+    toggle.checked = true;
+    close.click();
+    expect(toggle.checked).toBe(false);
+  });
+
+  /**
+   * The checkbox is the control, so it carries the name and stays reachable by keyboard.
+   * The label and the two close controls are decoration a thumb hits, and announcing all
+   * three would put "Close" in the tab order twice.
+   */
+  it("keeps the checkbox reachable and the decoration out of the way", () => {
+    const { container } = draw(TEAM);
+    const toggle = container.querySelector("input.mn-popover-toggle")!;
+
+    expect(toggle.getAttribute("aria-label")).toContain("Dr Amara Osei");
+    // Never display:none -- that would take it out of the focus order and leave a keyboard
+    // user with no way to open the panel at all.
+    expect(toggle.getAttribute("hidden")).toBeNull();
+
+    for (const cls of [".mn-popover-open", ".mn-popover-backdrop", ".mn-popover-close"]) {
+      expect(container.querySelector(cls)!.getAttribute("aria-hidden")).toBe("true");
     }
   });
 
   it("renders the panel's text whether or not it is open", () => {
     // `display: none` hides it; the words are still in the document, so in-page search finds
-    // them and a crawler sees them. A JavaScript panel has neither property before its
-    // script arrives.
-    const { container } = draw(TEAM);
-    expect(container.textContent).toContain("Twenty years in tax.");
-  });
-
-  it("closes back to the Block rather than to the top of the Page", () => {
-    const { container } = draw(TEAM);
-    const block = container.querySelector(".mn-popovers");
-    const close = container.querySelector("a.mn-popover-close");
-
-    expect(close?.getAttribute("href")).toBe(`#${block?.id}`);
+    // them and a crawler sees them.
+    expect(draw(TEAM).container.textContent).toContain("Twenty years in tax.");
   });
 
   it("drops an item with nothing to click on", () => {
     const { container } = draw([{ trigger: "Kept" }, { trigger: "" }]);
-    expect(container.querySelectorAll("a.mn-popover-open")).toHaveLength(1);
+    expect(container.querySelectorAll("label.mn-popover-open")).toHaveLength(1);
   });
 
   it("draws nothing rather than an empty list", () => {

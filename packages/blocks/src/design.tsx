@@ -1250,48 +1250,66 @@ export const popoversBlock = defineBlock({
         {title ? <h2 className="mn-popovers-title">{title}</h2> : null}
 
         <ul className="mn-popover-triggers">
-          {shown.map((item, index) => (
-            // eslint-disable-next-line react/no-array-index-key
-            <li key={index}>
-              <a className="mn-popover-open" href={`#mn-pop-${scope}-${index}`}>
-                {item.trigger}
-              </a>
-            </li>
-          ))}
-        </ul>
+          {shown.map((item, index) => {
+            const toggleId = `mn-pop-${scope}-${index}`;
 
-        {shown.map((item, index) => (
-          // eslint-disable-next-line react/no-array-index-key
-          <div className="mn-popover" id={`mn-pop-${scope}-${index}`} key={index}>
-            <div className="mn-popover-panel">
-              {/* Back to the Block's own id rather than to "#", which would jump the Page to
-                  the top on close. The gallery closes the same way. */}
-              <a
-                className="mn-popover-close"
-                href={`#mn-pop-${scope}`}
-                aria-label={`Close ${item.heading || item.trigger}`}
-              >
-                <span aria-hidden="true">&times;</span>
-              </a>
-
-              {item.image.key ? (
-                <img
-                  className="mn-popover-image"
-                  src={`${context.mediaBaseUrl}/${item.image.key}`}
-                  alt={item.image.decorative ? "" : item.image.alt}
-                  width={item.image.width ?? undefined}
-                  height={item.image.height ?? undefined}
-                  loading="lazy"
+            return (
+              // eslint-disable-next-line react/no-array-index-key
+              <li key={index}>
+                {/* The checkbox is the control a keyboard reaches, so the name belongs on
+                    it -- the same division the mobile nav drawer makes, and the same reason:
+                    the label is the thing a thumb hits and carries no meaning of its own. */}
+                <input
+                  type="checkbox"
+                  id={toggleId}
+                  className="mn-popover-toggle"
+                  aria-label={item.heading ? `${item.trigger}: ${item.heading}` : item.trigger}
                 />
-              ) : null}
+                <label htmlFor={toggleId} className="mn-popover-open" aria-hidden="true">
+                  {item.trigger}
+                </label>
 
-              {item.heading ? <h3 className="mn-popover-heading">{item.heading}</h3> : null}
-              {/* The same Markdown renderer the prose Block uses, so raw HTML is never
-                  parsed -- an Author is a client, which is ADR-0011's argument. */}
-              <div className="mn-prose">{renderMarkdown(item.body)}</div>
-            </div>
-          </div>
-        ))}
+                <div className="mn-popover">
+                  {/* Clicking away closes it: a label the size of the backdrop, painted
+                      behind the panel. Unchecking the box is all any of these do. */}
+                  <label
+                    htmlFor={toggleId}
+                    className="mn-popover-backdrop"
+                    aria-hidden="true"
+                  />
+
+                  <div className="mn-popover-panel">
+                    <label
+                      htmlFor={toggleId}
+                      className="mn-popover-close"
+                      aria-hidden="true"
+                    >
+                      <span>&times;</span>
+                    </label>
+
+                    {item.image.key ? (
+                      <img
+                        className="mn-popover-image"
+                        src={`${context.mediaBaseUrl}/${item.image.key}`}
+                        alt={item.image.decorative ? "" : item.image.alt}
+                        width={item.image.width ?? undefined}
+                        height={item.image.height ?? undefined}
+                        loading="lazy"
+                      />
+                    ) : null}
+
+                    {item.heading ? (
+                      <h3 className="mn-popover-heading">{item.heading}</h3>
+                    ) : null}
+                    {/* The same Markdown renderer the prose Block uses, so raw HTML is never
+                        parsed -- an Author is a client, which is ADR-0011's argument. */}
+                    <div className="mn-prose">{renderMarkdown(item.body)}</div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     );
   },

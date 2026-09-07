@@ -152,7 +152,29 @@ a {
 /* Columns stack on narrow screens, which is why absolute positioning was rejected
    (ADR-0003): responsive behaviour is a property of the layout, not something an Author
    has to author twice. */
+/* ---- Narrow screens, twice over ---------------------------------------------
+   Every rule below appears as a `@media` and again as a `@container`, and the duplication is
+   deliberate rather than lazy.
+
+   `@media` answers to the viewport, which is what a real visitor has and is the only thing
+   that works on a published Page. `@container` answers to the nearest ancestor declaring
+   `container-type`, and on a published Page **nothing does** -- so these never match there.
+   The Editor's preview pane declares one, which is how narrowing the pane stacks the Columns
+   without lying about what a phone will do.
+
+   **`container-type` is why this is not simply a migration.** It implies `contain: layout`,
+   which makes the element a containing block for `position: fixed` descendants -- so putting
+   it on `.mn-section` or `.mn-slot` would trap the gallery lightbox and the popover panels
+   inside whatever band they live in, which is the exact failure the divider comment warns
+   about for `clip-path`. Keeping the container in `@mimnets/admin`, on a preview wrapper that
+   holds no published markup, is what makes both halves safe. */
 @media (max-width: 720px) {
+  .mn-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@container (max-width: 720px) {
   .mn-columns {
     grid-template-columns: 1fr;
   }
@@ -271,6 +293,12 @@ a {
   }
 }
 
+@container (max-width: 720px) {
+  .mn-section[data-divider]::after {
+    --mn-divider-height: 2rem;
+  }
+}
+
 /* A band with a photograph behind it sets `background-image` inline and its own
    `background-color` stays transparent, so there is nothing to extend. Saying so here stops
    a half-drawn edge appearing under a hero. */
@@ -382,6 +410,80 @@ h3.mn-heading {
 }
 
 @media (max-width: 720px) {
+  .mn-nav {
+    position: relative;
+    justify-content: flex-end !important;
+  }
+
+  /* Visually hidden, but still in the focus order. `display: none` would take the
+     checkbox out of it entirely and leave a keyboard user with no way to open the
+     drawer — the links become unreachable below 720px. */
+  .mn-nav-toggle {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    opacity: 0;
+  }
+
+  /* The checkbox is invisible, so its focus ring has to be drawn on the button. */
+  .mn-nav-toggle:focus-visible ~ .mn-nav-button {
+    outline: 2px solid var(--mn-color-primary);
+    outline-offset: 2px;
+  }
+
+  .mn-nav-button {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    border: var(--mn-border-base) solid var(--mn-color-border);
+    border-radius: var(--mn-radius-sm);
+  }
+
+  .mn-nav-button span {
+    display: block;
+    height: 2px;
+    background: var(--mn-color-text);
+  }
+
+  .mn-nav-list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 30;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 12rem;
+    padding: 0.5rem;
+    background: var(--mn-color-background);
+    border: var(--mn-border-base) solid var(--mn-color-border);
+    border-radius: var(--mn-radius-base);
+    box-shadow: var(--mn-elevation-high);
+  }
+
+  .mn-nav-toggle:checked ~ .mn-nav-list {
+    display: flex;
+  }
+
+  .mn-nav-list a {
+    display: block;
+    padding: 0.5rem;
+    border-bottom: none;
+  }
+}
+
+@container (max-width: 720px) {
   .mn-nav {
     position: relative;
     justify-content: flex-end !important;
@@ -1059,6 +1161,17 @@ h3.mn-heading {
   }
 }
 
+@container (max-width: 720px) {
+  .mn-features,
+  .mn-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .mn-logos ul {
+    gap: 1.5rem;
+  }
+}
+
 /* ---- Typographic corrections ----------------------------------------------
    Found by looking at the rendered page rather than at the stylesheet. */
 
@@ -1104,6 +1217,13 @@ h3.mn-heading {
    puts the logo on its own row and leaves the row below it empty apart from the
    hamburger, which costs roughly a third of the first screen on a phone. */
 @media (max-width: 720px) {
+  .mn-slot[data-slot="header"] .mn-columns {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}
+
+@container (max-width: 720px) {
   .mn-slot[data-slot="header"] .mn-columns {
     grid-template-columns: 1fr auto;
     align-items: center;
@@ -1188,17 +1308,28 @@ h3.mn-heading {
 }
 
 /* ---- Popovers ---------------------------------------------------------------
-   The gallery lightbox's mechanism, applied to a panel of text rather than a photograph:
-   hidden until its id is the fragment in the address bar, and no JavaScript involved.
+   A checkbox and a sibling selector, exactly like the mobile nav drawer, and **not**
+   `:target` -- which is what this was first and why it had to change.
 
-   `display: none` rather than opacity or a transform, deliberately. A panel that is merely
-   invisible is still in the tab order, so a keyboard user tabs through every closed
-   biography on a team page before reaching the footer, and a screen reader reads all of them.
-   `display: none` takes the whole subtree out of both, and `:target` puts it back.
+   `:target` makes opening and closing a *navigation*. The browser then scrolls to whatever
+   the href names, so closing a biography halfway down a team page threw the reader somewhere
+   else: first to the top of the Block, and then, after pointing the close link at the
+   trigger instead, to wherever the browser decided to put the trigger. It was reported from
+   a real Page and measured at a 445px jump. There is no href that does not scroll, because
+   scrolling is what following a fragment means.
 
-   z-index 50 matches the lightbox rather than exceeding it. The two are never open at once --
-   both are fragment-driven and a URL has one fragment -- and matching keeps a sticky Header
-   (z-index 20) underneath both. */
+   A checkbox does not navigate. Nothing scrolls, nothing enters the history, and Back still
+   means "the previous Page" rather than "close the panel I opened". What it costs is the
+   shareable link -- a URL can no longer name an open panel -- which is worth less than a
+   Page that stays where the reader left it.
+
+   `display: none` rather than opacity, and this is the accessibility half: an invisible
+   panel is still in the tab order, so a keyboard user would tab through every closed
+   biography on a team page before reaching the footer. The panel's text stays in the
+   document either way, so in-page search and crawlers still find it.
+
+   z-index 50 matches the gallery lightbox rather than exceeding it. The two are never open
+   at once in practice, and matching keeps a sticky Header (z-index 20) underneath both. */
 .mn-popover-triggers {
   display: flex;
   flex-wrap: wrap;
@@ -1208,17 +1339,39 @@ h3.mn-heading {
   list-style: none;
 }
 
+/* Visually hidden, but still in the focus order. `display: none` would take the checkbox
+   out of it entirely and leave a keyboard user with no way to open a panel at all -- the
+   same note the nav drawer's checkbox carries, for the same reason. */
+.mn-popover-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  opacity: 0;
+}
+
 .mn-popover-open {
   color: var(--mn-color-primary);
   text-decoration: underline;
   text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+/* The checkbox is invisible, so its focus ring has to be drawn on the label. */
+.mn-popover-toggle:focus-visible ~ .mn-popover-open {
+  outline: 2px solid var(--mn-color-primary);
+  outline-offset: 2px;
 }
 
 .mn-popover {
   display: none;
 }
 
-.mn-popover:target {
+.mn-popover-toggle:checked ~ .mn-popover {
   display: flex;
   position: fixed;
   inset: 0;
@@ -1226,11 +1379,21 @@ h3.mn-heading {
   align-items: center;
   justify-content: center;
   padding: 2rem 1.5rem;
+}
+
+/* Clicking away closes it: the dim is a label filling the backdrop, so a click anywhere
+   outside the panel unchecks the box. The panel sits above it, so a click inside the panel
+   never reaches this. */
+.mn-popover-backdrop {
+  position: absolute;
+  inset: 0;
   background: rgb(0 0 0 / 0.6);
+  cursor: pointer;
 }
 
 .mn-popover-panel {
   position: relative;
+  z-index: 1;
   max-width: min(36rem, 100%);
   max-height: 100%;
   overflow-y: auto;
@@ -1245,7 +1408,7 @@ h3.mn-heading {
   top: 0.75rem;
   right: 0.75rem;
   /* A tap target rather than a character. 44px is the smallest thing a thumb hits
-     reliably, and the close control being hard to hit is how a modal traps somebody. */
+     reliably, and a close control that is hard to hit is how a modal traps somebody. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1254,7 +1417,7 @@ h3.mn-heading {
   font-size: 1.5rem;
   line-height: 1;
   color: inherit;
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .mn-popover-image {
@@ -1406,6 +1569,10 @@ h3.mn-heading {
 
 /* One column of photographs on a phone beats four thumbnails nobody can make out. */
 @media (max-width: 40rem) {
+  .mn-gallery-grid { --mn-gallery-columns: 1; }
+}
+
+@container (max-width: 40rem) {
   .mn-gallery-grid { --mn-gallery-columns: 1; }
 }
 
