@@ -145,8 +145,8 @@ with Neon · Blueprints and the responsive preview (the rest of M10).
 
 ### Planned on 5 September
 
-Raised the same day, and written into the roadmap rather than left as wishes. M11 has since
-met its exit criterion and is finished; M10.5 is half built and M12 is untouched:
+Raised the same day, and written into the roadmap rather than left as wishes. M11 and M10.5
+have both since met their exit criteria and are finished; M12 is untouched:
 
 - **M10.5** — **built and merged, all four** (7 September):
   - **Per-Section width.** `width: "measure" | "wide" | "full"`, so a gallery, a carousel or
