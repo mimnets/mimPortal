@@ -33,8 +33,11 @@
   
   **Upgrading an existing Site:**
   
-  1. Run `pnpm db:migrate`. The migration adds one nullable-by-default `jsonb` column to
-     `form_submissions`; it is additive and needs no downtime.
+  1. Run `pnpm db:migrate`. The migration adds one `jsonb` column to `form_submissions`,
+     generated as `DEFAULT '[]'::jsonb NOT NULL` -- an earlier version of this note called it
+     nullable-by-default, which is wrong about the shape. It is still additive and still needs
+     no downtime: Postgres 11 and later do not rewrite a table to add a column with a default.
+     Every existing row reads back as an empty list.
   2. Nothing else. Every existing contact form declares no extra questions and behaves exactly
      as it did, and every stored enquiry reads back with an empty list.
 

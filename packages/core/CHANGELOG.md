@@ -33,8 +33,11 @@
   
   **Upgrading an existing Site:**
   
-  1. Run `pnpm db:migrate`. The migration adds one nullable-by-default `jsonb` column to
-     `form_submissions`; it is additive and needs no downtime.
+  1. Run `pnpm db:migrate`. The migration adds one `jsonb` column to `form_submissions`,
+     generated as `DEFAULT '[]'::jsonb NOT NULL` -- an earlier version of this note called it
+     nullable-by-default, which is wrong about the shape. It is still additive and still needs
+     no downtime: Postgres 11 and later do not rewrite a table to add a column with a default.
+     Every existing row reads back as an empty list.
   2. Nothing else. Every existing contact form declares no extra questions and behaves exactly
      as it did, and every stored enquiry reads back with an empty list.
 
@@ -71,8 +74,21 @@
   Author is actually asking. Deleting still breaks the Pages that used a file, as ADR-0012
   intends; you can now find out first.
   
-  **Upgrading an existing Site:** nothing is required. A Site with its own Dashboard styling that
-  overrides `.mn-ed-block` may want to check it against a coloured band.
+  **Upgrading an existing Site:** run `pnpm db:migrate`. A Site with its own Dashboard styling
+  that overrides `.mn-ed-block` may also want to check it against a coloured band.
+  
+  **This note is a correction, added on 7 September.** It originally read "nothing is required",
+  and that was wrong: 0.3.0's `db/schema.ts` already declares the `extra` column on
+  `form_submissions`, because the contact-form extras work was on `main` when 0.3.0 was cut but
+  its changeset was not consumed until 0.4.0. So the code that reads and writes the column
+  shipped in 0.3.0 while the note telling anyone to migrate shipped in 0.4.0, and a Site that
+  installed 0.3.0 and read this section would have had a schema its database did not match.
+  
+  Exposure is narrow -- 0.3.0 was the `latest` tag for about thirty minutes, and 0.4.0 documents
+  the migration properly -- but the copy of this changelog already on npm still carries the wrong
+  sentence and cannot be edited. If you are on 0.3.0, migrate before upgrading. The lesson is
+  the changeset one: a release describes the changesets it consumes, not the code it contains,
+  and those are the same thing only when every change has a changeset.
 
 ## 0.2.0
 
